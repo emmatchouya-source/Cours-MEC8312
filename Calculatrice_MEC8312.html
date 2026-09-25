@@ -11,14 +11,14 @@
   --warn:#8a5200; --warn-soft:#fff4e0; --bad:#b42318; --bad-soft:#fdecea;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",system-ui,sans-serif}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 "Segoe UI",system-ui,sans-serif}
 button{font:inherit}
 math{font-family:"Cambria Math","STIX Two Math",math}
-header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;padding:10px 20px}
+header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center;padding:6px 14px}
 .brand{font-weight:700;white-space:nowrap}
-.brand small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.brand small{display:none}
 .search{position:relative;flex:1;max-width:780px}
-.search input{width:100%;font:16px "Segoe UI",sans-serif;padding:10px 70px 10px 38px;border:1.5px solid var(--line);border-radius:10px;background:#fbfcfd;color:var(--ink)}
+.search input{width:100%;font:15px "Segoe UI",sans-serif;padding:8px 70px 8px 34px;border:1.5px solid var(--line);border-radius:10px;background:#fbfcfd;color:var(--ink)}
 .search input:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px var(--accent-soft)}
 .search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
 .search kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%)}
@@ -34,9 +34,18 @@ kbd{font:12px "Segoe UI",sans-serif;border:1px solid var(--line);border-bottom-w
 .res.vide{color:var(--muted);cursor:default}
 .tag{font-size:11px;border-radius:99px;padding:1px 8px;background:#eef0f3;color:var(--muted);white-space:nowrap}
 .tag.cible{background:var(--ok-soft);color:var(--ok)}
-.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;padding:20px;max-width:1400px;margin:0 auto}
-aside .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:16px}
-aside h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.burger{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:14px;color:var(--ink)}
+.burger:hover{border-color:var(--accent);color:var(--accent)}
+#drawer{position:fixed;top:0;left:0;bottom:0;width:320px;background:#fff;border-right:1px solid var(--line);box-shadow:8px 0 30px rgba(20,30,50,.12);z-index:40;transform:translateX(-105%);transition:transform .18s;overflow:auto;padding:14px}
+#drawer.on{transform:none}
+#drawer .dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+#voile{position:fixed;inset:0;background:rgba(20,30,50,.18);z-index:35;display:none}
+#voile.on{display:block}
+#outils{position:fixed;left:10px;bottom:10px;z-index:25;width:270px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(20,30,50,.15)}
+#outils .ot{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;cursor:pointer;font-weight:600;font-size:13px;user-select:none}
+#outils .ob{padding:0 12px 12px;display:none;max-height:60vh;overflow:auto}
+#outils.on .ob{display:block}
+#outils h3,#drawer h3{margin:10px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .nav a{display:block;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;cursor:pointer;font-size:14px}
 .nav a:hover{background:#f0f3f7}
 .nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
@@ -44,71 +53,121 @@ aside h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.
 .nav a.off:hover{background:none}
 .nav .grp{font-size:11px;color:var(--muted);margin:10px 8px 2px;text-transform:uppercase;letter-spacing:.05em}
 .nav .grp:first-child{margin-top:0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px}
-.fhead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:14px}
-.fhead h1{margin:2px 0;font-size:24px}
-.ch{font-size:12px;color:var(--accent);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.sous{color:var(--muted)}
-.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.btn{font-size:13px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--ink);text-decoration:none;white-space:nowrap}
+.wrap{max-width:1900px;margin:0 auto;padding:8px 12px 60px}
+.fbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.fbar h1{margin:0;font-size:19px;display:inline}
+.ch{font-size:11px;color:#fff;background:var(--accent);border-radius:5px;padding:1px 6px;font-weight:600;margin-right:8px;vertical-align:2px}
+.sous{color:var(--muted);font-size:13px;display:inline;margin-left:10px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.btn{font-size:13px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 9px;cursor:pointer;color:var(--ink);text-decoration:none;white-space:nowrap}
 .btn:hover{border-color:#b8c2cf;background:#f8f9fb}
-.opts{margin-top:10px;font-size:14px}
+.opts{font-size:13px}
 .opts label{cursor:pointer}
-.step{margin-top:20px}
-.sh{font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.sh .n{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;display:inline-grid;place-items:center}
 .hint{color:var(--muted);font-size:13px;font-weight:400}
-.eqs{display:grid;gap:6px}
-.eq{display:grid;grid-template-columns:200px minmax(0,1fr);align-items:center;gap:12px;padding:6px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:#fff;min-height:54px}
-.eq:hover{border-color:#b8c2cf}
-.eq.on{border-color:var(--accent);background:var(--accent-soft)}
-.eq .el{font-size:13px;color:var(--muted)}
-.eq.on .el{color:var(--accent);font-weight:600}
-.eq math{font-size:21px}
+.work{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:12px;align-items:start}
+.blocs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.bloc{background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px 10px;cursor:pointer;display:flex;flex-direction:column;min-height:120px}
+.bloc:hover{border-color:#b8c2cf}
+.bloc.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bloc .bh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bloc .bt{font-size:14px;font-weight:600;color:var(--muted)}
+.bb{font-size:11px;border-radius:99px;padding:0 8px;white-space:nowrap}
+.bloc.fait{border-left:5px solid var(--ok)}
+.bloc.fait .bb{background:var(--ok-soft);color:var(--ok)}
+.bloc.incoh{border-color:var(--bad)}
+.bloc.incoh .bb{background:var(--bad-soft);color:var(--bad)}
+.bcalc{margin-top:6px;padding-top:4px;border-top:1px dashed var(--line)}
+.bcalc:empty{display:none}
+.lc .un,.lc .p{overflow:hidden;text-align:center;padding:1px 0}
+.lc .p.b{padding-left:14px}
+.inter .lc .un,.inter .lc .p{text-align:left}
+.inter .lc{margin:3px 0}
+.bcalc math{font-size:16px}
+.lc .pin{float:right}
+.bcalc .manque{color:var(--muted);font-size:13px;text-align:center}
+.bcalc .manque math{font-size:16px}
+.bcalc .pin{float:right}
+.bloc.flash{animation:flash 1.2s}
+@keyframes flash{0%,40%{box-shadow:0 0 0 5px #f4c542}100%{box-shadow:none}}
+.grid .calc[data-voir]{cursor:pointer;text-decoration:underline dotted}
+.bloc.on .bt{color:var(--accent)}
+.bloc .bf{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 0 0;overflow:hidden}
+.bloc math{font-size:25px}
+.panneau{position:sticky;top:50px;max-height:calc(100vh - 58px);overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.panneau h2{margin:0 0 6px;font-size:14px;color:var(--muted);font-weight:600}
+.panneau .sec{margin-top:8px;padding-top:6px;border-top:1px solid var(--line)}
 mrow.v{cursor:pointer;border-radius:4px;padding:0 1px}
 mrow.v:hover{background:#fff;color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 mrow.tgt{color:var(--ok);background:var(--ok-soft);border-radius:4px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:3px 12px;cursor:pointer;display:flex;gap:8px;align-items:center;color:var(--ink)}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:2px 12px;cursor:pointer;display:flex;gap:8px;align-items:center;color:var(--ink)}
 .chip:hover{border-color:var(--ok)}
 .chip math{font-size:18px}
 .chip small{color:var(--muted)}
 .chip.on{background:var(--ok);border-color:var(--ok);color:#fff}
 .chip.on small{color:#d7f3e9}
-.sol{border:1.5px solid var(--line);border-radius:12px;padding:14px 18px;background:#fcfdfe}
-.solf{padding:6px 0}
-.solf math{font-size:28px}
+.solf{padding:2px 0;overflow:hidden;text-align:center}
+.solf math{font-size:26px}
 mrow.pill{cursor:pointer;border:1.5px dashed #8fa8e6;background:#f3f6ff;color:var(--accent);border-radius:6px;padding:2px 5px;margin:0 2px}
 mrow.pill.have{border-style:solid;border-color:#c9d3e3;background:#fff;color:var(--ink)}
 mrow.pill:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-mtext.pv{font-family:"Segoe UI",sans-serif;font-size:12px;color:var(--accent);font-style:normal}
+mtext.pv{font-family:"Segoe UI",sans-serif;font-size:13px;color:var(--accent);font-style:normal}
 mrow.pill.have mtext.pv{color:var(--ink);font-weight:600}
 mrow.pill.calc mtext.pv{color:var(--ok)}
 mrow.resv{color:var(--ok);font-weight:700}
-.res-line{margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--ok-soft);display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
-.res-line math{font-size:24px}
-.res-line .acts{margin-left:auto}
-.inter{margin-top:10px;padding:6px 12px;border-left:3px solid var(--line)}
+.res-line{margin-top:6px;padding:5px 10px;border-radius:10px;background:var(--ok-soft)}
+.res-line .rm{overflow:hidden;padding:2px 0}
+.res-line math{font-size:22px}
+.res-line .lc .un,.res-line .lc .p{text-align:left}
+.res-line .acts{justify-content:flex-start;margin-top:3px}
+.inter{margin-top:6px;padding:2px 10px;border-left:3px solid var(--line)}
 .inter .il{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.inter div.l{margin:6px 0}
-.inter math{font-size:19px}
-.miss{margin-top:8px;color:var(--muted);line-height:2.6}
-.miss math{font-size:22px}
-.note{margin-top:8px;padding:7px 12px;border-radius:8px;font-size:14px}
+.inter div.l{margin:2px 0;overflow:hidden}
+.inter math{font-size:18px}
+.miss{margin-top:4px;color:var(--muted);line-height:2.2}
+.miss math{font-size:21px}
+.note{margin-top:6px;padding:5px 10px;border-radius:7px;font-size:14px}
 .note.info{background:var(--accent-soft)}
 .note.warn{background:var(--warn-soft);color:var(--warn)}
 .note.bad{background:var(--bad-soft);color:var(--bad)}
+.cu-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:12px}
+.cu-grid label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.cu-grid textarea{display:block;width:100%;min-height:150px;font:14px Consolas,monospace;border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--ink);resize:vertical}
+.cu-grid input{display:block;width:100%;font:15px "Segoe UI",sans-serif;padding:4px 7px;border:1px solid var(--line);border-radius:6px;color:var(--ink)}
+.cu-grid textarea:focus,.cu-grid input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.cu-grid .btn{margin:3px 3px 0 0}
+table.tab{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px}
+.tab th,.tab td{border-bottom:1px solid #eef1f4;padding:3px 6px;text-align:right;white-space:nowrap}
+.tab th{color:var(--muted);font-weight:600}
+.tab td:first-child,.tab th:first-child{text-align:left}
+.tab tr.tot td{font-weight:700;color:var(--ok)}
+.cl-A{color:var(--bad);font-weight:700}.cl-B{color:var(--warn);font-weight:700}.cl-C{color:var(--ok);font-weight:700}
+@media (max-width:1000px){.cu-grid{grid-template-columns:1fr}}
+.feuille{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 10px 8px;margin-bottom:10px}
+.feuille .fh{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.vars{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:6px}
+.vc{border:1px solid var(--line);border-radius:8px;padding:3px 6px 4px;background:#fcfdfe;min-width:0}
+.vc.tgt{background:var(--ok-soft);border-color:var(--ok)}
+.vt{display:flex;align-items:center;gap:4px;min-height:24px;min-width:0}
+.vt math{font-size:17px;white-space:nowrap}
+.vt .nom{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.vc input{width:100%;font:15px "Segoe UI",sans-serif;padding:3px 7px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff}
+.vc input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.vc input[readonly]{border-color:var(--ok);color:var(--ok);font-weight:700}
+.vc input::placeholder{color:#b3bcc7;font-style:italic}
+.vc .etat{font-size:12px;min-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vc .etat .pin{padding:0 2px}
 table.grid{width:100%;border-collapse:collapse}
-.grid td{padding:5px 8px;border-bottom:1px solid #eef1f4;vertical-align:middle}
+.grid td{padding:2px 4px;border-bottom:1px solid #eef1f4;vertical-align:middle}
 .grid tr.tgt td{background:var(--ok-soft)}
-.grid .sym{width:150px;white-space:nowrap}
-.grid .sym math{font-size:19px}
-.grid .nom{color:var(--muted);font-size:13px}
-.grid input{width:160px;font:15px "Segoe UI",sans-serif;padding:5px 8px;border:1px solid var(--line);border-radius:7px;color:var(--ink)}
+.grid .sym{white-space:nowrap}
+.grid .sym math{font-size:18px}
+.grid .nom{display:block;color:var(--muted);font-size:12px;line-height:1.2;max-width:170px}
+.grid input{width:112px;font:15px "Segoe UI",sans-serif;padding:4px 7px;border:1px solid var(--line);border-radius:7px;color:var(--ink)}
 .grid input::placeholder{color:#b3bcc7;font-style:italic}
 .grid input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .grid input[readonly]{background:#fff;border-color:var(--ok);color:var(--ok);font-weight:700}
-.grid .etat{font-size:13px}
+.grid .etat{font-size:14px}
 .calc{color:var(--ok);font-weight:600}
 .muted{color:var(--muted)}
 .bad{color:var(--bad)}
@@ -131,39 +190,44 @@ table.grid{width:100%;border-collapse:collapse}
 #calc-in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 #calc-out{margin-top:5px;font-weight:600;min-height:20px}
 .small{font-size:12px;color:var(--muted)}
-footer{max-width:1400px;margin:0 auto;padding:0 20px 24px;font-size:12px;color:var(--muted)}
+footer{max-width:1700px;margin:0 auto;padding:0 20px 24px;font-size:12px;color:var(--muted)}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:7px 14px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.on{opacity:.92}
-@media (max-width:900px){.layout{grid-template-columns:1fr}.eq{grid-template-columns:1fr}header{flex-wrap:wrap}.grid .nom{display:none}}
+@media (max-width:1000px){.work{grid-template-columns:1fr}.panneau{position:static;max-height:none}}
+@media (max-width:700px){.blocs{grid-template-columns:1fr}header{flex-wrap:wrap}#outils{width:auto;left:18px}}
 </style>
 </head>
 <body>
 <header>
+  <button class="burger" id="btn-fiches" title="Liste des fiches (Ctrl+B)">☰ Fiches</button>
   <div class="brand">Calculatrice MEC8312<small>Fiabilité et sécurité — hors ligne</small></div>
   <div class="search">
     <span class="ico">🔍</span>
-    <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Chercher une formule : weibull, pièces de rechange, dispo optimale, échelle, MTBF…">
+    <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Chercher une formule (weibull, pièces de rechange, MTBF…) ou taper N(10;2) t=5 · W(2;1000) t=500 · Exp(0,001)">
     <kbd>Ctrl K</kbd>
     <div id="results"></div>
   </div>
 </header>
 
-<div class="layout">
-  <aside>
-    <div class="box"><h3>Fiches</h3><div class="nav" id="nav"></div></div>
-    <div class="box">
-      <h3>Mémoire</h3>
-      <div class="mems" id="mems"></div>
-      <div class="small" style="margin-top:6px">📌 épingle un résultat. Clic sur une mémoire = la coller dans le champ actif. Utilisable aussi comme M1, M2… dans un calcul.</div>
-    </div>
-    <div class="box">
-      <h3>Calcul libre</h3>
-      <input id="calc-in" type="text" autocomplete="off" spellcheck="false" placeholder="ex. 1 - (1 - 0,95)^2">
-      <div id="calc-out"></div>
-      <div class="small">Fonctions : sqrt ln log exp gamma phi phiinv · √ ^ · M1, M2… · Entrée = épingler</div>
-    </div>
-  </aside>
-  <main id="main"></main>
+<div id="voile"></div>
+<nav id="drawer">
+  <div class="dh"><b>Fiches</b><button class="btn" id="btn-fermer">✕</button></div>
+  <div class="nav" id="nav"></div>
+</nav>
+
+<div class="wrap"><main id="main"></main></div>
+
+<div id="outils">
+  <div class="ot" id="ot"><span>🧮 Mémoire &amp; calcul libre <span id="nb-mem" class="tag"></span></span><span id="ot-fl">▲</span></div>
+  <div class="ob">
+    <h3>Calcul libre</h3>
+    <input id="calc-in" type="text" autocomplete="off" spellcheck="false" placeholder="ex. 1 - (1 - 0,95)^2">
+    <div id="calc-out"></div>
+    <div class="small">Fonctions : sqrt ln log exp gamma phi phiinv · serie(…) par(…) rm(r;m;R) pont(…) comb(n;k) fact(n) · M1, M2… · Entrée = épingler</div>
+    <h3>Mémoire</h3>
+    <div class="mems" id="mems"></div>
+    <div class="small" style="margin-top:6px">📌 épingle un résultat. Clic sur une mémoire = la coller dans le champ actif (ou M1, M2… dans un calcul).</div>
+  </div>
 </div>
 <footer>Maquette — 3 fiches actives (Weibull, maintenance corrective, stock). Saisie : 0,994 · 1/500 · 5e-4 · sqrt(2) · gamma(1,5). <a href="#test" id="lien-test">Autotest</a></footer>
 
@@ -190,10 +254,15 @@ const M = {
     return Math.sqrt(2 * Math.PI) * Math.pow(t, x + 0.5) * Math.exp(-t) * a;
   },
   erfc(x){
-    const z = Math.abs(x), t = 1 / (1 + 0.5 * z);
-    const r = t * Math.exp(-z*z - 1.26551223 + t*(1.00002368 + t*(0.37409196 + t*(0.09678418 + t*(-0.18628806 +
-      t*(0.27886807 + t*(-1.13520398 + t*(1.48851587 + t*(-0.82215223 + t*0.17087277)))))))));
-    return x >= 0 ? r : 2 - r;
+    if (x < 0) return 2 - M.erfc(-x);
+    if (x < 3){
+      let s = x, terme = x;
+      for (let n = 1; n < 300; n++){ terme *= 2 * x * x / (2 * n + 1); s += terme; if (terme < 1e-17 * s) break; }
+      return 1 - 2 / Math.sqrt(Math.PI) * Math.exp(-x * x) * s;
+    }
+    let t = x;
+    for (let k = 80; k >= 1; k--) t = x + (k / 2) / t;
+    return Math.exp(-x * x) / Math.sqrt(Math.PI) / t;
   },
   phi(u){ return 0.5 * M.erfc(-u / Math.SQRT2); },
   phiinv(p){
@@ -209,12 +278,18 @@ const M = {
       return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
     const q = p - 0.5, r = q*q;
     return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  },
+  quantile(p){
+    let x = M.phiinv(p);
+    if (!isFinite(x)) return x;
+    for (let i = 0; i < 3; i++) x -= (M.phi(x) - p) / (Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI));
+    return x;
   }
 };
 
 /* Saisie : 0,994 · 1/500 · 5e-4 · 2^3 · √2 · sqrt(2) · gamma(1,5) · M1 */
 const FUNCS = {sqrt:Math.sqrt, racine:Math.sqrt, ln:Math.log, log:Math.log10, exp:Math.exp,
-  gamma:x=>M.gamma(x), "γ":x=>M.gamma(x), phi:x=>M.phi(x), "φ":x=>M.phi(x), phiinv:p=>M.phiinv(p),
+  gamma:x=>M.gamma(x), "γ":x=>M.gamma(x), phi:x=>M.phi(x), "φ":x=>M.phi(x), phiinv:p=>M.quantile(p),
   abs:Math.abs, sin:Math.sin, cos:Math.cos, tan:Math.tan};
 const CONSTS = {pi:Math.PI, "π":Math.PI, e:Math.E};
 
@@ -241,6 +316,7 @@ function evalExpr(str, env){
         return FUNCS[nom](...args);
       }
       if (nom in CONSTS) return CONSTS[nom];
+      if (env && m[0] in env) return env[m[0]];
       if (env && nom in env) return env[nom];
       throw "inconnu : " + m[0];
     }
@@ -276,6 +352,126 @@ function evalExpr(str, env){
   return v;
 }
 
+/* ---------- outils numériques supplémentaires ---------- */
+function simpson(g, a, b, n){
+  n = n || 400; if (a === b) return 0; if (n % 2) n++;
+  const h = (b - a) / n; let s = g(a) + g(b);
+  for (let i = 1; i < n; i++) s += (i % 2 ? 4 : 2) * g(a + i * h);
+  return s * h / 3;
+}
+function minimiser(g, a, b, n){
+  n = n || 300;
+  let bi = 0, bv = Infinity; const xs = [];
+  for (let i = 0; i <= n; i++){ const x = a + (b - a) * i / n; xs.push(x); const v = g(x); if (v < bv){ bv = v; bi = i; } }
+  let lo = xs[Math.max(bi - 1, 0)], hi = xs[Math.min(bi + 1, n)];
+  const gr = (Math.sqrt(5) - 1) / 2;
+  let c = hi - gr * (hi - lo), d = lo + gr * (hi - lo), fc = g(c), fd = g(d);
+  for (let k = 0; k < 120 && hi - lo > 1e-12 * Math.max(1, Math.abs(c)); k++){
+    if (fc < fd){ hi = d; d = c; fd = fc; c = hi - gr * (hi - lo); fc = g(c); }
+    else { lo = c; c = d; fc = fd; d = lo + gr * (hi - lo); fd = g(d); }
+  }
+  const x = (lo + hi) / 2;
+  return {x, v: g(x)};
+}
+const comb = (n, k) => { n = Math.round(n); k = Math.round(k); if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; };
+const fact = n => { let r = 1; for (let i = 2; i <= Math.round(n); i++) r *= i; return r; };
+const harm = (a, b) => { let s = 0; for (let y = Math.round(a); y <= Math.round(b); y++) s += 1 / y; return s; };
+/* abaque d'optimisation de la maintenance systématique (Weibull) */
+function ratioAbaque(x, beta, r){
+  if (!(x > 0)) return Infinity;
+  const I = simpson(u => Math.exp(-Math.pow(u, beta)), 0, x, 400);
+  return (1 + (1 - Math.exp(-Math.pow(x, beta))) * r) / I * M.gamma(1 + 1 / beta) / (1 + r);
+}
+function x0Abaque(beta, r){ return minimiser(x => ratioAbaque(x, beta, r), 1e-4, 3, 300).x; }
+/* remplacement préventif à âge fixé (Weibull) */
+const RW = (t, beta, eta) => Math.exp(-Math.pow(t / eta, beta));
+function coutAge(th, v){ return (v.Cp * RW(th, v.beta, v.eta) + v.Cd * (1 - RW(th, v.beta, v.eta))) / simpson(t => RW(t, v.beta, v.eta), 0, th, 400); }
+function thetaOpt(v){ const mttf = v.eta * M.gamma(1 + 1 / v.beta); return minimiser(th => coutAge(th, v), mttf * 1e-3, 3 * mttf, 300).x; }
+
+/* fonctions utilisables dans les champs et le calcul libre */
+Object.assign(FUNCS, {
+  serie: (...a) => a.reduce((p, x) => p * x, 1),
+  par: (...a) => 1 - a.reduce((p, x) => p * (1 - x), 1),
+  parallele: (...a) => 1 - a.reduce((p, x) => p * (1 - x), 1),
+  rm: (r, m, R) => { let s = 0; for (let y = Math.round(r); y <= Math.round(m); y++) s += comb(m, y) * Math.pow(R, y) * Math.pow(1 - R, m - y); return s; },
+  pont: (a, b, c, d, e) => (1 - (1 - a) * (1 - b)) * (1 - (1 - c) * (1 - d)) * e + (1 - (1 - a * c) * (1 - b * d)) * (1 - e),
+  comb, fact, harm,
+  poisson: (k, m) => { let t = Math.exp(-m), s = t; for (let j = 1; j <= Math.round(k); j++){ t *= m / j; s += t; } return s; }
+});
+
+/* ---------- chaîne de Markov quelconque ---------- */
+function expm(A){
+  const n = A.length;
+  const nm = Math.max(0, ...A.map(l => l.reduce((s, x) => s + Math.abs(x), 0)));
+  const s = nm > 0.5 ? Math.max(0, Math.ceil(Math.log2(nm)) + 1) : 0;
+  const As = A.map(l => l.map(x => x / Math.pow(2, s)));
+  const mul = (X, Y) => X.map(l => Y[0].map((_, j) => l.reduce((acc, x, k) => acc + x * Y[k][j], 0)));
+  let E = A.map((l, i) => l.map((_, j) => +(i === j))), T = E.map(l => l.slice());
+  for (let k = 1; k < 30; k++){ T = mul(T, As).map(l => l.map(x => x / k)); E = E.map((l, i) => l.map((x, j) => x + T[i][j])); }
+  for (let i = 0; i < s; i++) E = mul(E, E);
+  return E;
+}
+function markovCalc(lignes, init, pannes, ts){
+  const trans = [];
+  for (const l of lignes){
+    if (!l.trim()) continue;
+    const m = /^\s*(\S+)\s+(\S+)\s+(.+?)\s*$/.exec(l);
+    if (!m) throw `ligne invalide : « ${l} »`;
+    const r = evalExpr(m[3], memEnv());
+    if (!isFinite(r) || r < 0) throw `taux invalide : « ${m[3]} »`;
+    trans.push({a: m[1], b: m[2], r});
+  }
+  if (!trans.length) throw "aucune transition";
+  const etats = [];
+  for (const t of trans) for (const e of [t.a, t.b]) if (!etats.includes(e)) etats.push(e);
+  if (!etats.includes(init)) throw `état initial « ${init} » absent des transitions`;
+  const n = etats.length, idx = Object.fromEntries(etats.map((e, i) => [e, i]));
+  const gen = abs => {
+    const Q = etats.map(() => Array(n).fill(0));
+    for (const t of trans){ if (abs && pannes.includes(t.a)) continue; Q[idx[t.a]][idx[t.b]] += t.r; Q[idx[t.a]][idx[t.a]] -= t.r; }
+    return Q;
+  };
+  const Q = gen(false), Qa = gen(true);
+  const p0 = etats.map(e => e === init ? 1 : 0);
+  const marche = etats.filter(e => !pannes.includes(e));
+  const res = ts.map(t => {
+    const E = expm(Q.map(l => l.map(x => x * t))), Ea = expm(Qa.map(l => l.map(x => x * t)));
+    const P = etats.map((_, j) => p0.reduce((s, p, i) => s + p * E[i][j], 0));
+    const Pa = etats.map((_, j) => p0.reduce((s, p, i) => s + p * Ea[i][j], 0));
+    return {t, P, A: marche.reduce((s, e) => s + P[idx[e]], 0), R: marche.reduce((s, e) => s + Pa[idx[e]], 0)};
+  });
+  let mttf = NaN;
+  if (marche.includes(init) && pannes.length){
+    const A = marche.map(ei => marche.map(ej => -Qa[idx[ej]][idx[ei]]));
+    try { mttf = gauss(A, marche.map(e => e === init ? 1 : 0)).reduce((s, x) => s + x, 0); } catch (e){}
+  }
+  let pinf = null, Ainf = NaN;
+  if (!etats.some((e, i) => Q[i].every(x => x === 0))){
+    const A = etats.map((_, i) => etats.map((_, j) => Q[j][i]));
+    A[n - 1] = Array(n).fill(1);
+    const b = Array(n).fill(0); b[n - 1] = 1;
+    try { pinf = gauss(A, b); Ainf = marche.reduce((s, e) => s + pinf[idx[e]], 0); } catch (e){}
+  }
+  return {etats, trans, idx, res, mttf, pinf, Ainf, marche};
+}
+
+/* ---------- analyse ABC ---------- */
+function abcCalc(lignes, sA, sB){
+  const d = [];
+  for (const l of lignes){
+    if (!l.trim()) continue;
+    const m = /^\s*(\S+)\s+(\S+)\s+(\S+)\s*$/.exec(l);
+    if (!m) throw `ligne invalide : « ${l} »`;
+    d.push({n: m[1], c: evalExpr(m[2], memEnv()), p: evalExpr(m[3], memEnv())});
+  }
+  if (!d.length) throw "aucune machine";
+  d.sort((a, b) => b.c - a.c);
+  const CT = d.reduce((s, x) => s + x.c, 0), NPT = d.reduce((s, x) => s + x.p, 0);
+  let sc = 0, sp = 0;
+  return {CT, NPT, rows: d.map(x => { sc += x.c; sp += x.p; const pc = 100 * sc / CT, pn = 100 * sp / NPT;
+    return Object.assign({}, x, {sc, pc, sp, pn, cl: pc <= sA + 1e-9 ? "A" : pc <= sB + 1e-9 ? "B" : "C"}); })};
+}
+
 /* Nombres à la française */
 const SUP = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
 const plain = n => String(n).replace(".", ",").replace("-", "−");
@@ -301,7 +497,7 @@ function txt(html){ return String(html).replace(/<[^>]*>/g, ""); }
    2. FORMULES : mini-LaTeX → MathML (affichage) et → texte (copie)
       @var = variable ; \frac{}{} \sqrt{} ^{} _{} \left( \right) \sum \overset{}{}
    ===================================================================== */
-const TEX_ID = {Gamma:"Γ", Phi:"Φ", lambda:"λ", theta:"θ", eta:"η", beta:"β", mu:"μ", kappa:"κ", sigma:"σ", Delta:"Δ", infty:"∞"};
+const TEX_ID = {Gamma:"Γ", Phi:"Φ", lambda:"λ", theta:"θ", eta:"η", beta:"β", mu:"μ", kappa:"κ", sigma:"σ", Delta:"Δ", infty:"∞", pi:"π"};
 const TEX_OP = {cdot:"·", times:"×", geq:"≥", leq:"≤", lceil:"⌈", rceil:"⌉", "{":"{", "}":"}", Rightarrow:"⇒", ":":":"};
 const TEX_FN = new Set(["exp", "ln", "min", "max", "log"]);
 const _cacheTex = new Map();
@@ -324,8 +520,11 @@ function parseTex(src){
       if (c === "overset"){ const o = atom(), b = atom(); return {t: "over", o, b}; }
       if (c === "text"){ i++; const j = src.indexOf("}", i); const v = src.slice(i, j); i = j + 1; return {t: "text", v}; }
       if (c === "left"){ const open = delim(); const items = seq("\\right"); i += 6; const close = delim(); return {t: "fence", open, close, items}; }
-      if (c === "sum") return {t: "sum"};
-      if (c === ",") return {t: "sp"};
+      if (c === "sum") return {t: "sum", v: "∑"};
+      if (c === "," || c === ";" || c === "quad") return {t: "sp"};
+      if (c === "binom"){ const a = atom(), b = atom(); return {t: "binom", a, b}; }
+      if (c === "int") return {t: "sum", v: "∫"};
+      if (c === "imp") return {t: "imp"};
       if (TEX_FN.has(c)) return {t: "fn", v: c};
       if (TEX_ID[c]) return {t: "id", v: TEX_ID[c]};
       if (TEX_OP[c]) return {t: "op", v: TEX_OP[c]};
@@ -390,16 +589,23 @@ function ml1(n, ctx){
     case "num": return "<mn>" + n.v + "</mn>";
     case "id": return miML(n.v);
     case "fn": return "<mi>" + n.v + '</mi><mo>&#x2061;</mo><mspace width="0.17em"></mspace>';
-    case "op": return "<mo>" + esc(n.v) + "</mo>";
+    case "op": return "([{".includes(n.v) ? '<mo stretchy="false" lspace="0" rspace="0">' + esc(n.v) + "</mo>" : ")]}".includes(n.v) ? '<mo stretchy="false" lspace="0" rspace="0">' + esc(n.v) + "</mo>" : "<mo>" + esc(n.v) + "</mo>";
     case "sp": return '<mspace width="0.17em"></mspace>';
+    case "imp": return ctx.num ? "<mo>·</mo>" : "";
     case "text": return "<mtext>" + esc(n.v) + "</mtext>";
-    case "sum": return '<mo largeop="true">∑</mo>';
+    case "sum": return '<mo largeop="true">' + n.v + "</mo>";
+    case "binom": return "<mrow><mo>(</mo><mfrac linethickness=\"0\">" + grp(n.a, ctx) + grp(n.b, ctx) + "</mfrac><mo>)</mo></mrow>";
     case "frac": return "<mfrac>" + grp(n.a, ctx) + grp(n.b, ctx) + "</mfrac>";
     case "sqrt": return "<msqrt>" + grp(n.a, ctx) + "</msqrt>";
     case "over": return "<mover>" + grp(n.b, ctx) + grp(n.o, ctx) + "</mover>";
-    case "fence": return "<mrow>" + (n.open ? '<mo fence="true" stretchy="true">' + esc(n.open) + "</mo>" : "") + ml(n.items, ctx) + (n.close ? '<mo fence="true" stretchy="true">' + esc(n.close) + "</mo>" : "") + "</mrow>";
+    case "fence": {
+      const seul = n.items.length === 1 && n.items[0].t === "ph";
+      const corps = seul ? ctx.ph(n.items[0].k, false, true) : ml(n.items, ctx);
+      return "<mrow>" + (n.open ? '<mo fence="true" stretchy="true" lspace="0" rspace="0">' + esc(n.open) + "</mo>" : "") + corps + (n.close ? '<mo fence="true" stretchy="true" lspace="0" rspace="0">' + esc(n.close) + "</mo>" : "") + "</mrow>";
+    }
     case "script": {
       const b = n.base.t === "ph" ? ctx.ph(n.base.k, true) : grp(n.base, ctx);
+      if (n.base.t === "sum" && n.base.v === "∫") return '<msubsup><mo largeop="true">∫</mo>' + grp(n.sub, ctx) + grp(n.sup, ctx) + "</msubsup>";
       if (n.base.t === "sum") return '<munderover><mo largeop="true" movablelimits="false">∑</mo>' + grp(n.sub, ctx) + grp(n.sup, ctx) + "</munderover>";
       if (n.sup && n.sub) return "<msubsup>" + b + grp(n.sub, ctx) + grp(n.sup, ctx) + "</msubsup>";
       if (n.sup) return "<msup>" + b + grp(n.sup, ctx) + "</msup>";
@@ -424,13 +630,15 @@ function tx1(n, ctx){
     case "fn": return n.v;
     case "op": return ["=", "+", "−", "≥", "≤", ":", "⇒"].includes(n.v) ? " " + n.v + " " : n.v;
     case "sp": return " ";
-    case "sum": return "Σ";
+    case "imp": return ctx.num ? "·" : "";
+    case "sum": return n.v === "∫" ? "∫" : "Σ";
+    case "binom": return "C(" + tx1(n.a, ctx) + ";" + tx1(n.b, ctx) + ")";
     case "frac": return par(tx1(n.a, ctx)) + "/" + par(tx1(n.b, ctx));
     case "sqrt": return "√" + par(tx1(n.a, ctx));
     case "over": return tx1(n.b, ctx) + "̊";
-    case "fence": return (n.open || "") + tx(n.items, ctx) + (n.close || "");
+    case "fence": return (n.open || "") + (n.items.length === 1 && n.items[0].t === "ph" ? ctx.ph(n.items[0].k, false, true) : tx(n.items, ctx)) + (n.close || "");
     case "script": {
-      if (n.base.t === "sum") return "Σ(" + tx1(n.sub, ctx) + ".." + tx1(n.sup, ctx) + ") ";
+      if (n.base.t === "sum") return (n.base.v === "∫" ? "∫(" : "Σ(") + tx1(n.sub, ctx) + ".." + tx1(n.sup, ctx) + ") ";
       const b = n.base.t === "ph" ? ctx.ph(n.base.k, true) : tx1(n.base, ctx);
       return b + (n.sub ? tx1(n.sub, ctx) : "") + (n.sup ? "^" + par(tx1(n.sup, ctx)) : "");
     }
@@ -467,6 +675,60 @@ const exp = Math.exp, ln = Math.log, pow = Math.pow, sqrt = Math.sqrt;
 
 const FICHES = [
 {
+  id: "expo", ch: "M2", titre: "Loi exponentielle", sous: "Taux de défaillance constant λ : fiabilité, MTTF = 1/λ, intervalle Δt, nombre de défaillances",
+  ref: {doc: "Topic 2/M2-Maths.pdf", page: 24, lib: "M2 diapos 24–27, 48"},
+  mots: ["loi exponentielle", "exponentielle", "expo", "taux constant", "lambda constant", "vie utile", "mttf 1/lambda", "sans mémoire", "poisson"],
+  vars: {
+    lam:  V("\\lambda", "taux de défaillance (constant)", ["lambda", "λ", "taux", "failure rate", "pannes par heure"]),
+    t:    V("t", "temps (durée de mission)", ["temps", "durée", "mission", "heures", "instant"]),
+    R:    V("R(t)", "fiabilité", ["fiabilité", "survie", "reliability"], {lo: 0, hi: 1, lin: true}),
+    F:    V("F(t)", "probabilité de défaillance", ["défaillance", "répartition", "panne", "cdf"], {lo: 0, hi: 1, lin: true}),
+    f:    V("f(t)", "densité de probabilité", ["densité", "pdf"]),
+    mttf: V("MTTF", "durée moyenne de bon fonctionnement", ["mttf", "mtbf", "temps moyen", "durée de vie moyenne", "1/lambda"]),
+    t1:   V("t_{1}", "début de l'intervalle", ["t1", "début", "intervalle"]),
+    t2:   V("t_{2}", "fin de l'intervalle", ["t2", "fin", "intervalle"]),
+    RDt:  V("R(\\Delta t)", "fiabilité sur Δt (sachant le bon fonctionnement jusqu'à t1)", ["delta t", "conditionnelle", "sachant", "intervalle"], {lo: 0, hi: 1, lin: true}),
+    FDt:  V("F(\\Delta t)", "probabilité de défaillance dans Δt", ["défaillance dans l'intervalle", "delta t"], {lo: 0, hi: 1, lin: true}),
+    x:    V("x", "nombre de défaillances", ["nombre de défaillances", "nombre de pannes", "x"]),
+    Px:   V("P_{x}(t)", "probabilité d'avoir exactement x défaillances sur (0, t)", ["poisson", "probabilité de x défaillances", "exactement"], {lo: 0, hi: 1, lin: true})
+  },
+  eqs: [
+    {id: "e1", label: "Fonction fiabilité", main: "R", solve: {
+      R:   {tpl: "\\exp\\left(-@lam\\imp @t\\right)", fn: v => exp(-v.lam * v.t)},
+      t:   {tpl: "\\frac{-\\ln @R}{@lam}", fn: v => -ln(v.R) / v.lam},
+      lam: {tpl: "\\frac{-\\ln @R}{@t}", fn: v => -ln(v.R) / v.t}}},
+    {id: "e2", label: "Fonction de répartition", main: "F", solve: {
+      F: {tpl: "1-@R", fn: v => 1 - v.R},
+      R: {tpl: "1-@F", fn: v => 1 - v.F}}},
+    {id: "e3", label: "MTTF", main: "mttf", solve: {
+      mttf: {tpl: "\\frac{1}{@lam}", fn: v => 1 / v.lam},
+      lam:  {tpl: "\\frac{1}{@mttf}", fn: v => 1 / v.mttf}}},
+    {id: "e4", label: "Densité de probabilité", main: "f", oneWay: true, solve: {
+      f: {tpl: "@lam\\imp\\exp\\left(-@lam\\imp @t\\right)", fn: v => v.lam * exp(-v.lam * v.t)}}},
+    {id: "e5", label: "Fiabilité dans Δt (sachant t1)", main: "RDt", solve: {
+      RDt: {tpl: "\\exp\\left[-@lam\\left(@t2-@t1\\right)\\right]", fn: v => exp(-v.lam * (v.t2 - v.t1))},
+      t2:  {tpl: "@t1-\\frac{\\ln @RDt}{@lam}", fn: v => v.t1 - ln(v.RDt) / v.lam},
+      t1:  {tpl: "@t2+\\frac{\\ln @RDt}{@lam}", fn: v => v.t2 + ln(v.RDt) / v.lam},
+      lam: {tpl: "\\frac{-\\ln @RDt}{@t2-@t1}", fn: v => -ln(v.RDt) / (v.t2 - v.t1)}}},
+    {id: "e6", label: "Défaillance dans Δt", main: "FDt", solve: {
+      FDt: {tpl: "1-@RDt", fn: v => 1 - v.RDt},
+      RDt: {tpl: "1-@FDt", fn: v => 1 - v.FDt}}},
+    {id: "e7", label: "x défaillances sur (0, t) — Poisson", main: "Px", oneWay: true, solve: {
+      Px: {tpl: "\\frac{\\left(@lam\\imp @t\\right)^{@x}\\exp\\left(-@lam\\imp @t\\right)}{@x!}", fn: v => {
+        const n = Math.round(v.x); if (n < 0 || Math.abs(n - v.x) > 1e-9) return NaN;
+        let fac = 1; for (let i = 2; i <= n; i++) fac *= i;
+        return pow(v.lam * v.t, n) * exp(-v.lam * v.t) / fac; }}}}
+  ],
+  notes(val){
+    const n = [];
+    n.push({type: "info", html: "Taux de défaillance <b>constant</b> : λ(t) = λ → maintenance préventive <b>inutile</b> (loi sans mémoire)."});
+    if ("t" in val && "mttf" in val && val.mttf > 0) n.push({type: "info", html: `t = ${fmt(val.t / val.mttf)} × MTTF`});
+    if ("R" in val && !(val.R > 0 && val.R <= 1)) n.push({type: "bad", html: "R doit être compris entre 0 et 1."});
+    if ("t1" in val && "t2" in val && val.t2 < val.t1) n.push({type: "warn", html: "t2 doit être supérieur à t1."});
+    if ("x" in val && Math.abs(Math.round(val.x) - val.x) > 1e-9) n.push({type: "bad", html: "x doit être un nombre entier de défaillances."});
+    return n;
+  }
+},{
   id: "weibull", ch: "M2", titre: "Loi de Weibull", sous: "Fiabilité, défaillance, taux, MTTF (2 paramètres, t0 = 0)",
   ref: {doc: "Topic 2/M2-Maths.pdf", page: 35, lib: "M2 diapo 35"},
   mots: ["weibull", "loi", "usure", "vieillissement", "beta eta", "rayleigh", "courbe en baignoire"],
@@ -478,7 +740,11 @@ const FICHES = [
     F:    V("F", "probabilité de défaillance F(t)", ["défaillance", "répartition", "panne", "cdf", "non-fiabilité"], {lo: 1e-300, hi: 1}),
     lam:  V("\\lambda", "taux de défaillance λ(t)", ["taux", "lambda", "λ", "hasard", "failure rate"]),
     g:    V("\\Gamma\\left(1+\\frac{1}{b}\\right)", "fonction Gamma (Annexe G)", ["gamma", "annexe g"]),
-    mttf: V("MTTF", "durée moyenne de bon fonctionnement", ["mttf", "moyenne", "espérance", "durée de vie moyenne", "temps moyen"])
+    mttf: V("MTTF", "durée moyenne de bon fonctionnement", ["mttf", "moyenne", "espérance", "durée de vie moyenne", "temps moyen"]),
+    t1:   V("t_{1}", "début de l'intervalle", ["t1", "début", "intervalle"]),
+    t2:   V("t_{2}", "fin de l'intervalle", ["t2", "fin", "intervalle"]),
+    RDt:  V("R(\\Delta t)", "fiabilité sur Δt (sachant le bon fonctionnement jusqu'à t1)", ["delta t", "conditionnelle", "sachant"], {lo: 0, hi: 1, lin: true}),
+    FDt:  V("F(\\Delta t)", "probabilité de défaillance dans Δt", ["défaillance dans l'intervalle", "delta t"], {lo: 0, hi: 1, lin: true})
   },
   eqs: [
     {id: "w1", label: "Fonction fiabilité", main: "R", solve: {
@@ -494,11 +760,19 @@ const FICHES = [
       th:  {tpl: "\\left(\\frac{@b\\cdot @t^{@b-1}}{@lam}\\right)^{\\frac{1}{@b}}", fn: v => pow(v.b * pow(v.t, v.b - 1) / v.lam, 1 / v.b)},
       t:   {tpl: "@th\\left(\\frac{@lam\\cdot @th}{@b}\\right)^{\\frac{1}{@b-1}}", fn: v => v.th * pow(v.lam * v.th / v.b, 1 / (v.b - 1))}}},
     {id: "w4", label: "MTTF", main: "mttf", solve: {
-      mttf: {tpl: "@th\\,@g", fn: v => v.th * v.g},
+      mttf: {tpl: "@th\\imp @g", fn: v => v.th * v.g},
       th:   {tpl: "\\frac{@mttf}{@g}", fn: v => v.mttf / v.g},
       g:    {tpl: "\\frac{@mttf}{@th}", fn: v => v.mttf / v.th}}},
     {id: "w5", label: "Fonction Gamma", main: "g", cache: true, solve: {
-      g: {tpl: "\\Gamma\\left(1+\\frac{1}{@b}\\right)", fn: v => M.gamma(1 + 1 / v.b)}}}
+      g: {tpl: "\\Gamma\\left(1+\\frac{1}{@b}\\right)", fn: v => M.gamma(1 + 1 / v.b)}}},
+    {id: "w6", label: "Fiabilité dans Δt (sachant t1)", main: "RDt", solve: {
+      RDt: {tpl: "\\exp\\left[-\\frac{@t2^{@b}-@t1^{@b}}{@th^{@b}}\\right]", fn: v => exp(-(pow(v.t2, v.b) - pow(v.t1, v.b)) / pow(v.th, v.b))},
+      t2:  {tpl: "\\left(@t1^{@b}-@th^{@b}\\imp\\ln @RDt\\right)^{\\frac{1}{@b}}", fn: v => pow(pow(v.t1, v.b) - pow(v.th, v.b) * ln(v.RDt), 1 / v.b)},
+      t1:  {tpl: "\\left(@t2^{@b}+@th^{@b}\\imp\\ln @RDt\\right)^{\\frac{1}{@b}}", fn: v => pow(pow(v.t2, v.b) + pow(v.th, v.b) * ln(v.RDt), 1 / v.b)},
+      th:  {tpl: "\\left(\\frac{@t2^{@b}-@t1^{@b}}{-\\ln @RDt}\\right)^{\\frac{1}{@b}}", fn: v => pow((pow(v.t2, v.b) - pow(v.t1, v.b)) / -ln(v.RDt), 1 / v.b)}}},
+    {id: "w7", label: "Défaillance dans Δt", main: "FDt", solve: {
+      FDt: {tpl: "1-@RDt", fn: v => 1 - v.RDt},
+      RDt: {tpl: "1-@FDt", fn: v => 1 - v.FDt}}}
   ],
   notes(val){
     const n = [];
@@ -512,6 +786,92 @@ const FICHES = [
   }
 },
 {
+  id: "normale", ch: "M2", titre: "Loi normale N(m, σ)", sous: "Variable réduite u, tableau N1, fiabilité, taux, intervalle Δt",
+  ref: {doc: "Topic 2/M2-Maths.pdf", page: 28, lib: "M2 diapos 28–34"},
+  mots: ["loi normale", "normale", "gauss", "gaussienne", "N(m,σ)", "centrée réduite", "tableau n1", "usure", "écart-type", "moyenne"],
+  vars: {
+    t:    V("t", "temps", ["temps", "durée", "âge", "instant"]),
+    m:    V("m", "moyenne (= MTTF)", ["moyenne", "mu", "μ", "espérance", "m"], {lo: -1e12, hi: 1e12, lin: true}),
+    sig:  V("\\sigma", "écart-type", ["sigma", "σ", "écart-type", "ecart type", "dispersion"], {lo: 1e-12, hi: 1e12}),
+    u:    V("u", "variable normale réduite", ["u", "variable réduite", "centrée réduite", "quantile"], {lo: -40, hi: 40, lin: true}),
+    F:    V("F(t)", "probabilité de défaillance (tableau N1)", ["défaillance", "répartition", "panne", "cdf", "F(u)"], {lo: 0, hi: 1, lin: true}),
+    R:    V("R(t)", "fiabilité", ["fiabilité", "survie", "reliability"], {lo: 0, hi: 1, lin: true}),
+    f:    V("f(t)", "densité de probabilité", ["densité", "pdf", "f(t)"]),
+    lam:  V("\\lambda(t)", "taux de défaillance", ["taux", "lambda", "λ", "hasard"]),
+    mttf: V("MTTF", "durée moyenne de bon fonctionnement", ["mttf", "temps moyen", "durée de vie moyenne"], {lo: -1e12, hi: 1e12, lin: true}),
+    t1:   V("t_{1}", "début de l'intervalle", ["t1", "début", "intervalle"]),
+    t2:   V("t_{2}", "fin de l'intervalle", ["t2", "fin", "intervalle"]),
+    u1:   V("u_{1}", "variable réduite en t1", ["u1"], {lo: -40, hi: 40, lin: true}),
+    u2:   V("u_{2}", "variable réduite en t2", ["u2"], {lo: -40, hi: 40, lin: true}),
+    R1:   V("R(t_{1})", "fiabilité en t1", ["R1"], {lo: 0, hi: 1, lin: true}),
+    R2:   V("R(t_{2})", "fiabilité en t2", ["R2"], {lo: 0, hi: 1, lin: true}),
+    RDt:  V("R(\\Delta t)", "fiabilité sur Δt sachant le bon fonctionnement jusqu'à t1", ["delta t", "conditionnelle", "sachant", "intervalle"], {lo: 0, hi: 1, lin: true}),
+    FDt:  V("F(\\Delta t)", "probabilité de défaillance dans Δt (conditionnelle)", ["défaillance dans l'intervalle", "delta t"], {lo: 0, hi: 1, lin: true}),
+    P12:  V("P(t_{1}<T\\leq t_{2})", "probabilité de défaillance entre t1 et t2 (non conditionnelle)", ["entre", "probabilité entre"], {lo: 0, hi: 1, lin: true})
+  },
+  eqs: [
+    {id: "n1", label: "Variable réduite", main: "u", solve: {
+      u:   {tpl: "\\frac{@t-@m}{@sig}", fn: v => (v.t - v.m) / v.sig},
+      t:   {tpl: "@m+@u\\imp @sig", fn: v => v.m + v.u * v.sig},
+      m:   {tpl: "@t-@u\\imp @sig", fn: v => v.t - v.u * v.sig},
+      sig: {tpl: "\\frac{@t-@m}{@u}", fn: v => (v.t - v.m) / v.u}}},
+    {id: "n2", label: "Fonction de répartition (tableau N1)", main: "F", solve: {
+      F: {tpl: "F\\left(@u\\right)", fn: v => M.phi(v.u)},
+      u: {tpl: "F^{-1}\\left(@F\\right)", fn: v => M.quantile(v.F)}}},
+    {id: "n3", label: "Fonction fiabilité", main: "R", solve: {
+      R: {tpl: "1-@F", fn: v => 1 - v.F},
+      F: {tpl: "1-@R", fn: v => 1 - v.R}}},
+    {id: "n4", label: "Densité de probabilité", main: "f", oneWay: true, solve: {
+      f: {tpl: "\\frac{1}{@sig\\sqrt{2\\pi}}\\exp\\left[-\\frac{\\left(@t-@m\\right)^{2}}{2\\imp @sig^{2}}\\right]", fn: v => exp(-pow(v.t - v.m, 2) / (2 * v.sig * v.sig)) / (v.sig * sqrt(2 * Math.PI))}}},
+    {id: "n5", label: "Taux de défaillance", main: "lam", solve: {
+      lam: {tpl: "\\frac{@f}{@R}", fn: v => v.f / v.R},
+      f:   {tpl: "@lam\\imp @R", fn: v => v.lam * v.R},
+      R:   {tpl: "\\frac{@f}{@lam}", fn: v => v.f / v.lam}}},
+    {id: "n6", label: "MTTF", main: "mttf", solve: {
+      mttf: {tpl: "@m", fn: v => v.m},
+      m:    {tpl: "@mttf", fn: v => v.mttf}}},
+    {id: "n7", label: "Variable réduite en t1", main: "u1", solve: {
+      u1:  {tpl: "\\frac{@t1-@m}{@sig}", fn: v => (v.t1 - v.m) / v.sig},
+      t1:  {tpl: "@m+@u1\\imp @sig", fn: v => v.m + v.u1 * v.sig},
+      m:   {tpl: "@t1-@u1\\imp @sig", fn: v => v.t1 - v.u1 * v.sig},
+      sig: {tpl: "\\frac{@t1-@m}{@u1}", fn: v => (v.t1 - v.m) / v.u1}}},
+    {id: "n8", label: "Variable réduite en t2", main: "u2", solve: {
+      u2:  {tpl: "\\frac{@t2-@m}{@sig}", fn: v => (v.t2 - v.m) / v.sig},
+      t2:  {tpl: "@m+@u2\\imp @sig", fn: v => v.m + v.u2 * v.sig},
+      m:   {tpl: "@t2-@u2\\imp @sig", fn: v => v.t2 - v.u2 * v.sig},
+      sig: {tpl: "\\frac{@t2-@m}{@u2}", fn: v => (v.t2 - v.m) / v.u2}}},
+    {id: "n9", label: "Fiabilité en t1", main: "R1", solve: {
+      R1: {tpl: "1-F\\left(@u1\\right)", fn: v => 1 - M.phi(v.u1)},
+      u1: {tpl: "F^{-1}\\left(1-@R1\\right)", fn: v => M.quantile(1 - v.R1)}}},
+    {id: "n10", label: "Fiabilité en t2", main: "R2", solve: {
+      R2: {tpl: "1-F\\left(@u2\\right)", fn: v => 1 - M.phi(v.u2)},
+      u2: {tpl: "F^{-1}\\left(1-@R2\\right)", fn: v => M.quantile(1 - v.R2)}}},
+    {id: "n11", label: "Fiabilité dans Δt (sachant t1)", main: "RDt", solve: {
+      RDt: {tpl: "\\frac{@R2}{@R1}", fn: v => v.R2 / v.R1},
+      R2:  {tpl: "@RDt\\imp @R1", fn: v => v.RDt * v.R1},
+      R1:  {tpl: "\\frac{@R2}{@RDt}", fn: v => v.R2 / v.RDt}}},
+    {id: "n12", label: "Défaillance dans Δt (sachant t1)", main: "FDt", solve: {
+      FDt: {tpl: "1-@RDt", fn: v => 1 - v.RDt},
+      RDt: {tpl: "1-@FDt", fn: v => 1 - v.FDt}}},
+    {id: "n13", label: "Défaillance entre t1 et t2", main: "P12", solve: {
+      P12: {tpl: "F\\left(@u2\\right)-F\\left(@u1\\right)", fn: v => M.phi(v.u2) - M.phi(v.u1)},
+      u2:  {tpl: "F^{-1}\\left(@P12+F\\left(@u1\\right)\\right)", fn: v => M.quantile(v.P12 + M.phi(v.u1))},
+      u1:  {tpl: "F^{-1}\\left(F\\left(@u2\\right)-@P12\\right)", fn: v => M.quantile(M.phi(v.u2) - v.P12)}}}
+  ],
+  notes(val){
+    const n = [];
+    const sym = (nom, u) => {
+      if (!(u < 0)) return;
+      const a = -u, Fa = M.phi(a);
+      n.push({type: "info", html: `${nom} = ${fmt(u)} &lt; 0 : le tableau N1 ne donne que u ≥ 0 → F(${fmt(u)}) = 1 − F(${fmt(a)}) = 1 − ${fmt(Fa)} = <b>${fmt(1 - Fa)}</b>`});
+    };
+    sym("u", val.u); sym("u<sub>1</sub>", val.u1); sym("u<sub>2</sub>", val.u2);
+    if ("sig" in val && !(val.sig > 0)) n.push({type: "bad", html: "σ doit être strictement positif."});
+    for (const k of ["F", "R", "R1", "R2"]) if (k in val && !(val[k] >= 0 && val[k] <= 1)) n.push({type: "bad", html: "Une probabilité doit être comprise entre 0 et 1."});
+    if ("t1" in val && "t2" in val && val.t2 < val.t1) n.push({type: "warn", html: "t2 doit être supérieur à t1."});
+    return n;
+  }
+},{
   id: "corrective", ch: "M3", titre: "Maintenance corrective — disponibilité optimale", sous: "K1, K2, κ, Å∞, Cmv et coûts d'exploitation",
   ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 86, lib: "M3 diapos 83–87"},
   mots: ["maintenance corrective", "disponibilité optimale", "optimisation coût disponibilité", "main d'œuvre", "kappa", "coût total", "charges d'exploitation", "intensifier"],
@@ -537,8 +897,8 @@ const FICHES = [
   },
   eqs: [
     {id: "c1", label: "Calcul de K1", main: "K1", solve: {
-      K1:   {tpl: "@Cmvp\\,\\frac{1-@Ap}{@Ap}", fn: v => v.Cmvp * (1 - v.Ap) / v.Ap},
-      Cmvp: {tpl: "\\frac{@K1\\,@Ap}{1-@Ap}", fn: v => v.K1 * v.Ap / (1 - v.Ap)},
+      K1:   {tpl: "@Cmvp\\imp\\frac{1-@Ap}{@Ap}", fn: v => v.Cmvp * (1 - v.Ap) / v.Ap},
+      Cmvp: {tpl: "\\frac{@K1\\imp @Ap}{1-@Ap}", fn: v => v.K1 * v.Ap / (1 - v.Ap)},
       Ap:   {tpl: "\\frac{@Cmvp}{@K1+@Cmvp}", fn: v => v.Cmvp / (v.K1 + v.Cmvp)}}},
     {id: "c2", label: "Calcul de K2", main: "K2", solve: {
       K2:   {tpl: "@c\\cdot @mttf", fn: v => v.c * v.mttf},
@@ -552,8 +912,8 @@ const FICHES = [
       Ao:  {tpl: "\\frac{\\sqrt{@kap}}{1+\\sqrt{@kap}}", fn: v => sqrt(v.kap) / (1 + sqrt(v.kap))},
       kap: {tpl: "\\left(\\frac{@Ao}{1-@Ao}\\right)^{2}", fn: v => pow(v.Ao / (1 - v.Ao), 2)}}},
     {id: "c5", label: "Coût moyen de la main-d'œuvre", main: "Cmv", solve: {
-      Cmv: {tpl: "@K1\\,\\frac{@Ao}{1-@Ao}", fn: v => v.K1 * v.Ao / (1 - v.Ao)},
-      K1:  {tpl: "@Cmv\\,\\frac{1-@Ao}{@Ao}", fn: v => v.Cmv * (1 - v.Ao) / v.Ao},
+      Cmv: {tpl: "@K1\\imp\\frac{@Ao}{1-@Ao}", fn: v => v.K1 * v.Ao / (1 - v.Ao)},
+      K1:  {tpl: "@Cmv\\imp\\frac{1-@Ao}{@Ao}", fn: v => v.Cmv * (1 - v.Ao) / v.Ao},
       Ao:  {tpl: "\\frac{@Cmv}{@K1+@Cmv}", fn: v => v.Cmv / (v.K1 + v.Cmv)}}},
     {id: "c6", label: "Pertes actuelles", main: "Pa", solve: {
       Pa: {tpl: "@K2\\left(\\frac{1}{@Ap}-1\\right)", fn: v => v.K2 * (1 / v.Ap - 1)},
@@ -603,7 +963,6 @@ const FICHES = [
   vars: {
     lam: V("\\lambda", "taux de défaillance d'un élément", ["taux", "lambda", "λ", "pannes par heure"]),
     T:   V("T", "durée de la mission", ["durée", "mission", "période", "heures"]),
-    m:   V("\\lambda T", "nombre moyen de défaillances sur T", ["nombre moyen", "lambda T"]),
     p0:  V("p_{o}", "probabilité d'avoir un stock suffisant", ["probabilité", "niveau de confiance", "p0"], {lo: 1e-12, hi: 1 - 1e-12, lin: true}),
     u:   V("u", "variable normale réduite (tableau N1)", ["u", "normale réduite", "tableau n1", "quantile"], {lo: -10, hi: 10, lin: true}),
     SN:  V("S_{N}", "niveau du stock (formule approximative)", ["niveau du stock", "sn", "stock"]),
@@ -611,23 +970,21 @@ const FICHES = [
     kP:  V("k", "stock exact (loi de Poisson)", ["poisson", "exact", "k"])
   },
   eqs: [
-    {id: "s1", label: "Nombre moyen de défaillances", main: "m", solve: {
-      m:   {tpl: "@lam\\cdot @T", fn: v => v.lam * v.T},
-      lam: {tpl: "\\frac{@m}{@T}", fn: v => v.m / v.T},
-      T:   {tpl: "\\frac{@m}{@lam}", fn: v => v.m / v.lam}}},
-    {id: "s2", label: "Loi normale (tableau N1)", main: "p0", solve: {
+    {id: "s3", label: "Niveau du stock (formule approximative)", main: "SN", solve: {
+      SN:  {tpl: "@lam\\imp @T+@u\\imp\\sqrt{@lam\\imp @T}", fn: v => v.lam * v.T + v.u * sqrt(v.lam * v.T)},
+      u:   {tpl: "\\frac{@SN-@lam\\imp @T}{\\sqrt{@lam\\imp @T}}", fn: v => (v.SN - v.lam * v.T) / sqrt(v.lam * v.T)},
+      lam: {tpl: "\\frac{1}{@T}\\left(\\frac{-@u+\\sqrt{@u^{2}+4\\imp @SN}}{2}\\right)^{2}", fn: v => pow((-v.u + sqrt(v.u * v.u + 4 * v.SN)) / 2, 2) / v.T},
+      T:   {tpl: "\\frac{1}{@lam}\\left(\\frac{-@u+\\sqrt{@u^{2}+4\\imp @SN}}{2}\\right)^{2}", fn: v => pow((-v.u + sqrt(v.u * v.u + 4 * v.SN)) / 2, 2) / v.lam}}},
+    {id: "s2", label: "Niveau de confiance (tableau N1)", main: "p0", solve: {
       p0: {tpl: "F\\left(@u\\right)", fn: v => M.phi(v.u)},
-      u:  {tpl: "F^{-1}\\left(@p0\\right)", fn: v => M.phiinv(v.p0)}}},
-    {id: "s3", label: "Niveau du stock (approx.)", main: "SN", solve: {
-      SN: {tpl: "@m+@u\\sqrt{@m}", fn: v => v.m + v.u * sqrt(v.m)},
-      u:  {tpl: "\\frac{@SN-@m}{\\sqrt{@m}}", fn: v => (v.SN - v.m) / sqrt(v.m)},
-      m:  {tpl: "\\left(\\frac{-@u+\\sqrt{@u^{2}+4@SN}}{2}\\right)^{2}", fn: v => pow((-v.u + sqrt(v.u * v.u + 4 * v.SN)) / 2, 2)}}},
+      u:  {tpl: "F^{-1}\\left(@p0\\right)", fn: v => M.quantile(v.p0)}}},
     {id: "s4", label: "Arrondi à l'entier supérieur", main: "N", oneWay: true, solve: {
       N: {tpl: "\\lceil @SN\\rceil", fn: v => Math.ceil(v.SN - 1e-9)}}},
-    {id: "s5", label: "Loi de Poisson (exact)", main: "kP", oneWay: true, solve: {
-      kP: {tpl: "\\min\\left\\{k \\,:\\, \\exp\\left(-@m\\right)\\sum_{j=0}^{k}\\frac{@m^{j}}{j!}\\geq @p0\\right\\}", fn: v => {
-        let t = exp(-v.m), c = t, k = 0;
-        while (c < v.p0 && k < 100000){ k++; t *= v.m / k; c += t; }
+    {id: "s5", label: "Loi de Poisson (calcul exact)", main: "kP", oneWay: true, solve: {
+      kP: {tpl: "\\min\\left\\{k \\,:\\, \\exp\\left(-@lam\\imp @T\\right)\\sum_{j=0}^{k}\\frac{\\left(@lam\\imp @T\\right)^{j}}{j!}\\geq @p0\\right\\}", fn: v => {
+        const m = v.lam * v.T;
+        let t = exp(-m), c = t, k = 0;
+        while (c < v.p0 && k < 100000){ k++; t *= m / k; c += t; }
         return k; }}}}
   ],
   notes(val){
@@ -636,27 +993,623 @@ const FICHES = [
     if ("SN" in val) n.push({type: "info", html: "Arrondir S<sub>N</sub> à l'entier <b>supérieur</b> pour obtenir le stock."});
     return n;
   }
+},
+{
+  id: "lognormale", ch: "M2", titre: "Loi log-normale", sous: "Y = ln T suit une loi normale N(μy, σy)",
+  ref: {doc: "Topic 2/M2-Maths.pdf", page: 42, lib: "M2 diapos 42–47"},
+  mots: ["loi log-normale", "log-normale", "lognormale", "log normale", "ln t", "sigma y", "mu y"],
+  vars: {
+    mu:   V("\\mu", "moyenne de T", ["moyenne", "mu", "μ", "m"]),
+    sig:  V("\\sigma", "écart-type de T", ["sigma", "σ", "écart-type", "ecart type"]),
+    sy:   V("\\sigma_{y}", "écart-type de Y = ln T", ["sigma y", "σy", "sy"]),
+    my:   V("\\mu_{y}", "moyenne de Y = ln T", ["mu y", "μy", "my"], {lo: -1e3, hi: 1e3, lin: true}),
+    t:    V("t", "temps", ["temps", "durée", "instant"]),
+    u:    V("u", "variable normale réduite", ["u", "variable réduite"], {lo: -40, hi: 40, lin: true}),
+    F:    V("F(t)", "probabilité de défaillance (tableau N1)", ["défaillance", "répartition"], {lo: 0, hi: 1, lin: true}),
+    R:    V("R(t)", "fiabilité", ["fiabilité", "survie"], {lo: 0, hi: 1, lin: true}),
+    f:    V("f(t)", "densité de probabilité", ["densité"]),
+    lam:  V("\\lambda(t)", "taux de défaillance", ["taux", "lambda", "λ"]),
+    mttf: V("MTTF", "durée moyenne de bon fonctionnement", ["mttf", "temps moyen"])
+  },
+  eqs: [
+    {id: "l1", label: "Écart-type de Y", main: "sy", solve: {
+      sy:  {tpl: "\\sqrt{\\ln\\left[\\left(\\frac{@sig}{@mu}\\right)^{2}+1\\right]}", fn: v => sqrt(ln(pow(v.sig / v.mu, 2) + 1))},
+      sig: {tpl: "@mu\\imp\\sqrt{\\exp\\left(@sy^{2}\\right)-1}", fn: v => v.mu * sqrt(exp(v.sy * v.sy) - 1)},
+      mu:  {tpl: "\\frac{@sig}{\\sqrt{\\exp\\left(@sy^{2}\\right)-1}}", fn: v => v.sig / sqrt(exp(v.sy * v.sy) - 1)}}},
+    {id: "l2", label: "Moyenne de Y", main: "my", solve: {
+      my: {tpl: "\\ln @mu-\\frac{1}{2}\\imp @sy^{2}", fn: v => ln(v.mu) - v.sy * v.sy / 2},
+      mu: {tpl: "\\exp\\left(@my+\\frac{@sy^{2}}{2}\\right)", fn: v => exp(v.my + v.sy * v.sy / 2)},
+      sy: {tpl: "\\sqrt{2\\left(\\ln @mu-@my\\right)}", fn: v => sqrt(2 * (ln(v.mu) - v.my))}}},
+    {id: "l3", label: "Variable réduite", main: "u", solve: {
+      u:  {tpl: "\\frac{\\ln @t-@my}{@sy}", fn: v => (ln(v.t) - v.my) / v.sy},
+      t:  {tpl: "\\exp\\left(@my+@u\\imp @sy\\right)", fn: v => exp(v.my + v.u * v.sy)},
+      my: {tpl: "\\ln @t-@u\\imp @sy", fn: v => ln(v.t) - v.u * v.sy},
+      sy: {tpl: "\\frac{\\ln @t-@my}{@u}", fn: v => (ln(v.t) - v.my) / v.u}}},
+    {id: "l4", label: "Fonction de répartition (tableau N1)", main: "F", solve: {
+      F: {tpl: "F\\left(@u\\right)", fn: v => M.phi(v.u)},
+      u: {tpl: "F^{-1}\\left(@F\\right)", fn: v => M.quantile(v.F)}}},
+    {id: "l5", label: "Fonction fiabilité", main: "R", solve: {
+      R: {tpl: "1-@F", fn: v => 1 - v.F},
+      F: {tpl: "1-@R", fn: v => 1 - v.R}}},
+    {id: "l6", label: "Densité de probabilité", main: "f", oneWay: true, solve: {
+      f: {tpl: "\\frac{1}{@sy\\imp @t\\sqrt{2\\pi}}\\exp\\left[-\\frac{1}{2}\\left(\\frac{\\ln @t-@my}{@sy}\\right)^{2}\\right]", fn: v => exp(-0.5 * pow((ln(v.t) - v.my) / v.sy, 2)) / (v.sy * v.t * sqrt(2 * Math.PI))}}},
+    {id: "l7", label: "Taux de défaillance", main: "lam", solve: {
+      lam: {tpl: "\\frac{@f}{@R}", fn: v => v.f / v.R},
+      f:   {tpl: "@lam\\imp @R", fn: v => v.lam * v.R},
+      R:   {tpl: "\\frac{@f}{@lam}", fn: v => v.f / v.lam}}},
+    {id: "l8", label: "MTTF", main: "mttf", solve: {
+      mttf: {tpl: "\\exp\\left(@my+\\frac{@sy^{2}}{2}\\right)", fn: v => exp(v.my + v.sy * v.sy / 2)},
+      my:   {tpl: "\\ln @mttf-\\frac{@sy^{2}}{2}", fn: v => ln(v.mttf) - v.sy * v.sy / 2}}}
+  ],
+  notes(val){
+    const n = [];
+    if (val.u < 0){ const a = -val.u; n.push({type: "info", html: `u = ${fmt(val.u)} &lt; 0 : F(${fmt(val.u)}) = 1 − F(${fmt(a)}) = 1 − ${fmt(M.phi(a))} = <b>${fmt(1 - M.phi(a))}</b>`}); }
+    return n;
+  }
+},
+{
+  id: "systemes", ch: "M2", titre: "Systèmes série / parallèle", sous: "k éléments identiques · éléments différents : tapez serie(…), par(…), rm(…), pont(…) dans un champ",
+  ref: {doc: "Topic 2/M2-Maths.pdf", page: 53, lib: "M2 diapos 51–66"},
+  mots: ["série", "serie", "parallèle", "parallele", "fiabilité structurale", "diagramme de fiabilité", "redondance active", "système en série", "système en parallèle"],
+  vars: {
+    R:      V("R", "fiabilité d'un élément", ["fiabilité élément"], {lo: 0, hi: 1, lin: true}),
+    k:      V("k", "nombre d'éléments identiques", ["k", "nombre d'éléments"], {entier: true, lo: 1, hi: 1e6}),
+    Rss:    V("R_{SS}", "fiabilité du système série", ["série", "Rss"], {lo: 0, hi: 1, lin: true}),
+    Rps:    V("R_{PS}", "fiabilité du système parallèle", ["parallèle", "Rps"], {lo: 0, hi: 1, lin: true}),
+    lam:    V("\\lambda", "taux de défaillance d'un élément", ["lambda", "λ", "taux"]),
+    t:      V("t", "temps", ["temps", "durée", "mission"]),
+    mttf:   V("MTTF", "MTTF d'un élément", ["mttf"]),
+    lamss:  V("\\lambda_{SS}", "taux de défaillance du système série", ["lambda ss"]),
+    mttfss: V("MTTF_{SS}", "MTTF du système série", ["mttf série", "mttfss"]),
+    Hk:     V("\\sum_{i=1}^{k}\\frac{1}{i}", "somme 1 + 1/2 + … + 1/k", ["harmonique"]),
+    mttfps: V("MTTF_{PS}", "MTTF du système parallèle", ["mttf parallèle", "mttfps"]),
+    lamps:  V("\\lambda_{PS}(t)", "taux de défaillance du parallèle (approx., λt < 0,2)", ["lambda ps"])
+  },
+  eqs: [
+    {id: "y1", label: "Système série", main: "Rss", solve: {
+      Rss: {tpl: "@R^{@k}", fn: v => pow(v.R, v.k)},
+      R:   {tpl: "@Rss^{\\frac{1}{@k}}", fn: v => pow(v.Rss, 1 / v.k)}}},
+    {id: "y2", label: "Système parallèle", main: "Rps", solve: {
+      Rps: {tpl: "1-\\left(1-@R\\right)^{@k}", fn: v => 1 - pow(1 - v.R, v.k)},
+      R:   {tpl: "1-\\left(1-@Rps\\right)^{\\frac{1}{@k}}", fn: v => 1 - pow(1 - v.Rps, 1 / v.k)}}},
+    {id: "y3", label: "Élément exponentiel", main: "R", solve: {
+      R:   {tpl: "\\exp\\left(-@lam\\imp @t\\right)", fn: v => exp(-v.lam * v.t)},
+      t:   {tpl: "\\frac{-\\ln @R}{@lam}", fn: v => -ln(v.R) / v.lam},
+      lam: {tpl: "\\frac{-\\ln @R}{@t}", fn: v => -ln(v.R) / v.t}}},
+    {id: "y4", label: "MTTF d'un élément", main: "mttf", solve: {
+      mttf: {tpl: "\\frac{1}{@lam}", fn: v => 1 / v.lam},
+      lam:  {tpl: "\\frac{1}{@mttf}", fn: v => 1 / v.mttf}}},
+    {id: "y5", label: "Série exponentielle : taux", main: "lamss", solve: {
+      lamss: {tpl: "@k\\imp @lam", fn: v => v.k * v.lam},
+      lam:   {tpl: "\\frac{@lamss}{@k}", fn: v => v.lamss / v.k}}},
+    {id: "y6", label: "Série exponentielle : MTTF", main: "mttfss", solve: {
+      mttfss: {tpl: "\\frac{@mttf}{@k}", fn: v => v.mttf / v.k},
+      mttf:   {tpl: "@k\\imp @mttfss", fn: v => v.k * v.mttfss}}},
+    {id: "y7", label: "Somme harmonique", main: "Hk", oneWay: true, cache: true, solve: {
+      Hk: {tpl: "\\sum_{i=1}^{@k}\\frac{1}{i}", fn: v => harm(1, v.k)}}},
+    {id: "y8", label: "Parallèle exponentiel : MTTF", main: "mttfps", solve: {
+      mttfps: {tpl: "@mttf\\imp @Hk", fn: v => v.mttf * v.Hk},
+      mttf:   {tpl: "\\frac{@mttfps}{@Hk}", fn: v => v.mttfps / v.Hk}}},
+    {id: "y9", label: "Parallèle exponentiel : taux (λt < 0,2)", main: "lamps", oneWay: true, solve: {
+      lamps: {tpl: "@k\\imp @t^{@k-1}\\imp @lam^{@k}", fn: v => v.k * pow(v.t, v.k - 1) * pow(v.lam, v.k)}}}
+  ],
+  notes(val){
+    const n = [{type: "info", html: "Éléments <b>différents</b> ou montages imbriqués : tapez dans n'importe quel champ <b>serie(R1; R2; …)</b>, <b>par(R1; R2; …)</b>, <b>rm(r; m; R)</b> ou <b>pont(RA; RB; RC; RD; RE)</b>, ex. serie(0,99; par(0,9; 0,9))."}];
+    if ("lam" in val && "t" in val && val.lam * val.t >= 0.2) n.push({type: "warn", html: "λt ≥ 0,2 : l'approximation du taux λ<sub>PS</sub>(t) n'est plus valable."});
+    return n;
+  }
+},
+{
+  id: "rm", ch: "M2", titre: "Redondance active r/m", sous: "Au moins r éléments sur m doivent fonctionner (éléments identiques)",
+  ref: {doc: "Topic 2/M2-Maths.pdf", page: 57, lib: "M2 diapos 57–58, 67"},
+  mots: ["redondance r/m", "r/m", "r parmi m", "r sur m", "k sur n", "vote", "au moins", "majoritaire", "2 sur 3"],
+  vars: {
+    R:      V("R", "fiabilité d'un élément", ["fiabilité élément"], {lo: 0, hi: 1, lin: true}),
+    r:      V("r", "nombre minimal d'éléments en marche", ["r", "minimum"], {entier: true, lo: 0, hi: 1e6}),
+    m:      V("m", "nombre total d'éléments", ["m", "total"], {entier: true, lo: 1, hi: 1e6}),
+    Rrm:    V("R_{r/m}", "fiabilité du système r/m", ["fiabilité système"], {lo: 0, hi: 1, lin: true}),
+    lam:    V("\\lambda", "taux de défaillance d'un élément", ["lambda", "λ", "taux"]),
+    t:      V("t", "temps", ["temps", "durée", "mission"]),
+    mttf:   V("MTTF", "MTTF d'un élément", ["mttf"]),
+    Hrm:    V("\\sum_{y=r}^{m}\\frac{1}{y}", "somme 1/r + … + 1/m", ["somme"]),
+    mttfrm: V("MTTF_{r/m}", "MTTF du système r/m", ["mttf système"])
+  },
+  eqs: [
+    {id: "z1", label: "Fiabilité r/m", main: "Rrm", solve: {
+      Rrm: {tpl: "\\sum_{y=@r}^{@m}\\binom{@m}{y}@R^{y}\\left(1-@R\\right)^{@m-y}", fn: v => FUNCS.rm(v.r, v.m, v.R)}}},
+    {id: "z2", label: "Élément exponentiel", main: "R", solve: {
+      R:   {tpl: "\\exp\\left(-@lam\\imp @t\\right)", fn: v => exp(-v.lam * v.t)},
+      t:   {tpl: "\\frac{-\\ln @R}{@lam}", fn: v => -ln(v.R) / v.lam},
+      lam: {tpl: "\\frac{-\\ln @R}{@t}", fn: v => -ln(v.R) / v.t}}},
+    {id: "z3", label: "MTTF d'un élément", main: "mttf", solve: {
+      mttf: {tpl: "\\frac{1}{@lam}", fn: v => 1 / v.lam},
+      lam:  {tpl: "\\frac{1}{@mttf}", fn: v => 1 / v.mttf}}},
+    {id: "z4", label: "Somme", main: "Hrm", oneWay: true, cache: true, solve: {
+      Hrm: {tpl: "\\sum_{y=@r}^{@m}\\frac{1}{y}", fn: v => harm(v.r, v.m)}}},
+    {id: "z5", label: "MTTF r/m (loi exponentielle)", main: "mttfrm", solve: {
+      mttfrm: {tpl: "@mttf\\imp @Hrm", fn: v => v.mttf * v.Hrm},
+      mttf:   {tpl: "\\frac{@mttfrm}{@Hrm}", fn: v => v.mttfrm / v.Hrm}}}
+  ],
+  notes(val){
+    const n = [{type: "info", html: "r = m → système <b>série</b> ; r = 1 → système <b>parallèle</b>."}];
+    if ("r" in val && "m" in val && val.r > val.m) n.push({type: "bad", html: "r doit être inférieur ou égal à m."});
+    return n;
+  }
+},
+{
+  id: "standby", ch: "M2", titre: "Système avec réserve (stand-by)", sous: "Modèles 1 à 6 : éléments identiques ou différents, commutateur idéal (Rs = 1) ou non",
+  ref: {doc: "Topic 2/M2-Maths.pdf", page: 68, lib: "M2 diapos 68–76"},
+  mots: ["stand-by", "standby", "réserve", "secours", "commutateur", "redondance passive", "passif", "modèle"],
+  vars: {
+    lam:    V("\\lambda", "taux de défaillance (éléments identiques)", ["lambda", "λ"]),
+    t:      V("t", "temps", ["temps", "durée", "mission"]),
+    n:      V("n", "nombre d'éléments en réserve", ["n", "réserve"], {entier: true, lo: 0, hi: 1e4}),
+    Rs:     V("R_{S}", "fiabilité du commutateur (1 = idéal)", ["commutateur", "Rs"], {lo: 0, hi: 1, lin: true}),
+    Rsb1:   V("R_{sb}", "modèles 1–2 : identiques, commutateur idéal", ["modèle 1", "modèle 2"], {lo: 0, hi: 1, lin: true}),
+    mttf1:  V("MTTF_{sb}", "MTTF modèles 1–2", ["mttf"]),
+    Rsb3:   V("R_{sb,3}", "modèle 3 : 1 actif + 1 réserve, commutateur Rs", ["modèle 3"], {lo: 0, hi: 1, lin: true}),
+    mttf3:  V("MTTF_{sb,3}", "MTTF modèle 3", []),
+    lamA:   V("\\lambda_{A}", "taux de l'élément actif A", ["lambda a", "λa"]),
+    lamB:   V("\\lambda_{B}", "taux de l'élément B une fois en marche", ["lambda b", "λb"]),
+    Rsb45:  V("R_{sb,4-5}", "modèles 4–5 : éléments différents, commutateur Rs", ["modèle 4", "modèle 5"], {lo: 0, hi: 1, lin: true}),
+    mttf45: V("MTTF_{sb,4-5}", "MTTF modèles 4–5", []),
+    lamBsb: V("\\lambda_{Bsb}", "taux de B en attente (modèle 6)", ["lambda bsb", "attente"]),
+    Rsb6:   V("R_{sb,6}", "modèle 6 : B peut défaillir en attente", ["modèle 6"], {lo: 0, hi: 1, lin: true})
+  },
+  eqs: [
+    {id: "b1", label: "Modèles 1–2 (identiques, Rs = 1)", main: "Rsb1", solve: {
+      Rsb1: {tpl: "\\sum_{x=0}^{@n}\\frac{\\left(@lam\\imp @t\\right)^{x}\\exp\\left(-@lam\\imp @t\\right)}{x!}", fn: v => FUNCS.poisson(v.n, v.lam * v.t)}}},
+    {id: "b2", label: "MTTF modèles 1–2", main: "mttf1", solve: {
+      mttf1: {tpl: "\\frac{@n+1}{@lam}", fn: v => (v.n + 1) / v.lam},
+      lam:   {tpl: "\\frac{@n+1}{@mttf1}", fn: v => (v.n + 1) / v.mttf1}}},
+    {id: "b3", label: "Modèle 3 (identiques, commutateur Rs)", main: "Rsb3", solve: {
+      Rsb3: {tpl: "\\exp\\left(-@lam\\imp @t\\right)\\left(1+@lam\\imp @t\\imp @Rs\\right)", fn: v => exp(-v.lam * v.t) * (1 + v.lam * v.t * v.Rs)},
+      Rs:   {tpl: "\\frac{@Rsb3\\imp\\exp\\left(@lam\\imp @t\\right)-1}{@lam\\imp @t}", fn: v => (v.Rsb3 * exp(v.lam * v.t) - 1) / (v.lam * v.t)}}},
+    {id: "b4", label: "MTTF modèle 3", main: "mttf3", solve: {
+      mttf3: {tpl: "\\frac{1+@Rs}{@lam}", fn: v => (1 + v.Rs) / v.lam},
+      Rs:    {tpl: "@lam\\imp @mttf3-1", fn: v => v.lam * v.mttf3 - 1},
+      lam:   {tpl: "\\frac{1+@Rs}{@mttf3}", fn: v => (1 + v.Rs) / v.mttf3}}},
+    {id: "b5", label: "Modèles 4–5 (différents, commutateur Rs)", main: "Rsb45", solve: {
+      Rsb45: {tpl: "\\exp\\left(-@lamA\\imp @t\\right)+\\frac{@lamA\\imp @Rs}{@lamB-@lamA}\\left[\\exp\\left(-@lamA\\imp @t\\right)-\\exp\\left(-@lamB\\imp @t\\right)\\right]", fn: v => exp(-v.lamA * v.t) + v.lamA * v.Rs / (v.lamB - v.lamA) * (exp(-v.lamA * v.t) - exp(-v.lamB * v.t))}}},
+    {id: "b6", label: "MTTF modèles 4–5", main: "mttf45", solve: {
+      mttf45: {tpl: "\\frac{1}{@lamA}+\\frac{@Rs}{@lamB}", fn: v => 1 / v.lamA + v.Rs / v.lamB},
+      Rs:     {tpl: "@lamB\\left(@mttf45-\\frac{1}{@lamA}\\right)", fn: v => v.lamB * (v.mttf45 - 1 / v.lamA)}}},
+    {id: "b7", label: "Modèle 6 (B peut défaillir en attente)", main: "Rsb6", solve: {
+      Rsb6: {tpl: "\\exp\\left(-@lamA\\imp @t\\right)+\\frac{@lamA}{@lamA+@lamBsb-@lamB}\\left[\\exp\\left(-@lamB\\imp @t\\right)-\\exp\\left(-\\left(@lamA+@lamBsb\\right)\\imp @t\\right)\\right]", fn: v => exp(-v.lamA * v.t) + v.lamA / (v.lamA + v.lamBsb - v.lamB) * (exp(-v.lamB * v.t) - exp(-(v.lamA + v.lamBsb) * v.t))}}}
+  ],
+  notes(val){
+    return [{type: "info", html: "Commutateur idéal : saisir <b>R<sub>S</sub> = 1</b> (modèles 1, 2, 4). Modèle 1 : n = 1 ; modèle 2 : n réserves."}];
+  }
+},
+{
+  id: "pont", ch: "M2", titre: "Système complexe en pont", sous: "Probabilité conditionnelle sur E (A–C en haut, B–D en bas, E au milieu)",
+  ref: {doc: "Topic 2/M2-Maths.pdf", page: 78, lib: "M2 diapos 77–83"},
+  mots: ["pont", "système complexe", "probabilité conditionnelle", "énumération des états", "bridge"],
+  vars: {
+    RA: V("R_{A}", "fiabilité de A", ["RA"], {lo: 0, hi: 1, lin: true}),
+    RB: V("R_{B}", "fiabilité de B", ["RB"], {lo: 0, hi: 1, lin: true}),
+    RC: V("R_{C}", "fiabilité de C", ["RC"], {lo: 0, hi: 1, lin: true}),
+    RD: V("R_{D}", "fiabilité de D", ["RD"], {lo: 0, hi: 1, lin: true}),
+    RE: V("R_{E}", "fiabilité de E (élément central)", ["RE"], {lo: 0, hi: 1, lin: true}),
+    R1: V("R_{1}", "E en marche : (A // B) en série avec (C // D)", ["R1"], {lo: 0, hi: 1, lin: true}),
+    R2: V("R_{2}", "E en panne : (A–C) en parallèle avec (B–D)", ["R2"], {lo: 0, hi: 1, lin: true}),
+    Rs: V("R_{S}", "fiabilité du système", ["système"], {lo: 0, hi: 1, lin: true}),
+    R:  V("R", "fiabilité commune (éléments identiques)", ["identiques"], {lo: 0, hi: 1, lin: true}),
+    Rsid: V("R_{S,id}", "système à éléments identiques", ["identiques"], {lo: 0, hi: 1, lin: true})
+  },
+  eqs: [
+    {id: "p1", label: "E en marche", main: "R1", oneWay: true, solve: {
+      R1: {tpl: "\\left[1-\\left(1-@RA\\right)\\left(1-@RB\\right)\\right]\\left[1-\\left(1-@RC\\right)\\left(1-@RD\\right)\\right]", fn: v => (1 - (1 - v.RA) * (1 - v.RB)) * (1 - (1 - v.RC) * (1 - v.RD))}}},
+    {id: "p2", label: "E en panne", main: "R2", oneWay: true, solve: {
+      R2: {tpl: "1-\\left(1-@RA\\imp @RC\\right)\\left(1-@RB\\imp @RD\\right)", fn: v => 1 - (1 - v.RA * v.RC) * (1 - v.RB * v.RD)}}},
+    {id: "p3", label: "Probabilité conditionnelle", main: "Rs", solve: {
+      Rs: {tpl: "@R1\\imp @RE+@R2\\left(1-@RE\\right)", fn: v => v.R1 * v.RE + v.R2 * (1 - v.RE)},
+      RE: {tpl: "\\frac{@Rs-@R2}{@R1-@R2}", fn: v => (v.Rs - v.R2) / (v.R1 - v.R2)}}},
+    {id: "p4", label: "Éléments identiques", main: "Rsid", solve: {
+      Rsid: {tpl: "2\\imp @R^{2}+2\\imp @R^{3}-5\\imp @R^{4}+2\\imp @R^{5}", fn: v => 2 * pow(v.R, 2) + 2 * pow(v.R, 3) - 5 * pow(v.R, 4) + 2 * pow(v.R, 5)}}}
+  ],
+  notes(){ return [{type: "info", html: "Autre montage : combinez <b>serie(…)</b> et <b>par(…)</b> dans un champ, ex. par(serie(RA; RC); serie(RB; RD))."}]; }
+},
+{
+  id: "reparable", ch: "M3", titre: "Élément réparable — disponibilité", sous: "Markov 2 états : A(t), A∞, maintenabilité M(t), MTTF, MTTR",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 23, lib: "M3 diapos 21–28"},
+  mots: ["disponibilité", "dispo", "availability", "réparable", "élément réparable", "taux de réparation", "mu", "mttr", "maintenabilité", "stationnaire", "asymptotique"],
+  vars: {
+    lam:  V("\\lambda", "taux de défaillance", ["lambda", "λ", "taux de défaillance"]),
+    mu:   V("\\mu", "taux de réparation", ["mu", "μ", "taux de réparation"]),
+    mttf: V("MTTF", "temps moyen de bon fonctionnement (MTBF)", ["mttf", "mtbf"]),
+    mttr: V("MTTR", "durée moyenne de réparation", ["mttr", "réparation"]),
+    t:    V("t", "temps", ["temps", "instant"]),
+    A:    V("A(t)", "disponibilité à l'instant t", ["disponibilité instantanée"], {lo: 0, hi: 1, lin: true}),
+    Ainf: V("A_{\\infty}", "disponibilité stationnaire", ["disponibilité stationnaire", "asymptotique", "A infini"], {lo: 0, hi: 1, lin: true}),
+    ID:   V("ID_{\\infty}", "indisponibilité stationnaire", ["indisponibilité"], {lo: 0, hi: 1, lin: true}),
+    R:    V("R(t)", "fiabilité", ["fiabilité"], {lo: 0, hi: 1, lin: true}),
+    Mt:   V("M(t)", "maintenabilité", ["maintenabilité"], {lo: 0, hi: 1, lin: true})
+  },
+  eqs: [
+    {id: "d1", label: "MTTF", main: "mttf", solve: {
+      mttf: {tpl: "\\frac{1}{@lam}", fn: v => 1 / v.lam},
+      lam:  {tpl: "\\frac{1}{@mttf}", fn: v => 1 / v.mttf}}},
+    {id: "d2", label: "MTTR", main: "mttr", solve: {
+      mttr: {tpl: "\\frac{1}{@mu}", fn: v => 1 / v.mu},
+      mu:   {tpl: "\\frac{1}{@mttr}", fn: v => 1 / v.mttr}}},
+    {id: "d3", label: "Disponibilité stationnaire", main: "Ainf", solve: {
+      Ainf: {tpl: "\\frac{@mu}{@lam+@mu}", fn: v => v.mu / (v.lam + v.mu)},
+      mu:   {tpl: "\\frac{@lam\\imp @Ainf}{1-@Ainf}", fn: v => v.lam * v.Ainf / (1 - v.Ainf)},
+      lam:  {tpl: "\\frac{@mu\\left(1-@Ainf\\right)}{@Ainf}", fn: v => v.mu * (1 - v.Ainf) / v.Ainf}}},
+    {id: "d4", label: "Disponibilité stationnaire (temps moyens)", main: "Ainf", solve: {
+      Ainf: {tpl: "\\frac{@mttf}{@mttf+@mttr}", fn: v => v.mttf / (v.mttf + v.mttr)},
+      mttf: {tpl: "\\frac{@Ainf\\imp @mttr}{1-@Ainf}", fn: v => v.Ainf * v.mttr / (1 - v.Ainf)},
+      mttr: {tpl: "\\frac{@mttf\\left(1-@Ainf\\right)}{@Ainf}", fn: v => v.mttf * (1 - v.Ainf) / v.Ainf}}},
+    {id: "d5", label: "Disponibilité A(t)", main: "A", solve: {
+      A: {tpl: "\\frac{@mu}{@lam+@mu}+\\frac{@lam}{@lam+@mu}\\exp\\left[-\\left(@lam+@mu\\right)\\imp @t\\right]", fn: v => v.mu / (v.lam + v.mu) + v.lam / (v.lam + v.mu) * exp(-(v.lam + v.mu) * v.t)},
+      t: {tpl: "\\frac{-1}{@lam+@mu}\\ln\\left[\\frac{\\left(@lam+@mu\\right)\\imp @A-@mu}{@lam}\\right]", fn: v => -ln(((v.lam + v.mu) * v.A - v.mu) / v.lam) / (v.lam + v.mu)}}},
+    {id: "d6", label: "Indisponibilité", main: "ID", solve: {
+      ID:   {tpl: "1-@Ainf", fn: v => 1 - v.Ainf},
+      Ainf: {tpl: "1-@ID", fn: v => 1 - v.ID}}},
+    {id: "d7", label: "Fiabilité", main: "R", solve: {
+      R:   {tpl: "\\exp\\left(-@lam\\imp @t\\right)", fn: v => exp(-v.lam * v.t)},
+      t:   {tpl: "\\frac{-\\ln @R}{@lam}", fn: v => -ln(v.R) / v.lam},
+      lam: {tpl: "\\frac{-\\ln @R}{@t}", fn: v => -ln(v.R) / v.t}}},
+    {id: "d8", label: "Maintenabilité", main: "Mt", solve: {
+      Mt: {tpl: "1-\\exp\\left(-@mu\\imp @t\\right)", fn: v => 1 - exp(-v.mu * v.t)},
+      t:  {tpl: "\\frac{-\\ln\\left(1-@Mt\\right)}{@mu}", fn: v => -ln(1 - v.Mt) / v.mu},
+      mu: {tpl: "\\frac{-\\ln\\left(1-@Mt\\right)}{@t}", fn: v => -ln(1 - v.Mt) / v.t}}}
+  ]
+},
+{
+  id: "temps", ch: "M3", titre: "Temps moyens MUT, MDT, MTBF", sous: "Disponibilité et indisponibilité asymptotiques",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 39, lib: "M3 diapos 36–39"},
+  mots: ["mut", "mdt", "mtbf", "temps moyens", "temps moyen entre pannes", "durée moyenne de panne", "temps d'arrêt", "mean down time", "mean up time", "indisponibilité"],
+  vars: {
+    MUT:  V("MUT", "durée moyenne de bon fonctionnement après réparation", ["mut", "mean up time"]),
+    MDT:  V("MDT", "durée moyenne d'indisponibilité (détection, attente, réparation, remise en service)", ["mdt", "mean down time", "temps d'arrêt"]),
+    MTBF: V("MTBF", "temps moyen entre deux défaillances", ["mtbf"]),
+    Ainf: V("A_{\\infty}", "disponibilité asymptotique", ["disponibilité"], {lo: 0, hi: 1, lin: true}),
+    ID:   V("ID_{\\infty}", "indisponibilité asymptotique", ["indisponibilité"], {lo: 0, hi: 1, lin: true})
+  },
+  eqs: [
+    {id: "m1", label: "Temps moyen entre défaillances", main: "MTBF", solve: {
+      MTBF: {tpl: "@MUT+@MDT", fn: v => v.MUT + v.MDT},
+      MUT:  {tpl: "@MTBF-@MDT", fn: v => v.MTBF - v.MDT},
+      MDT:  {tpl: "@MTBF-@MUT", fn: v => v.MTBF - v.MUT}}},
+    {id: "m2", label: "Disponibilité asymptotique", main: "Ainf", solve: {
+      Ainf: {tpl: "\\frac{@MUT}{@MTBF}", fn: v => v.MUT / v.MTBF},
+      MUT:  {tpl: "@Ainf\\imp @MTBF", fn: v => v.Ainf * v.MTBF},
+      MTBF: {tpl: "\\frac{@MUT}{@Ainf}", fn: v => v.MUT / v.Ainf}}},
+    {id: "m3", label: "Indisponibilité asymptotique", main: "ID", solve: {
+      ID:   {tpl: "\\frac{@MDT}{@MTBF}", fn: v => v.MDT / v.MTBF},
+      MDT:  {tpl: "@ID\\imp @MTBF", fn: v => v.ID * v.MTBF},
+      MTBF: {tpl: "\\frac{@MDT}{@ID}", fn: v => v.MDT / v.ID}}}
+  ]
+},
+{
+  id: "deuxpar", ch: "M3", titre: "Deux éléments réparables en parallèle", sous: "Éléments identiques, un réparateur par élément (exemple des deux pompes)",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 31, lib: "M3 diapos 30–35"},
+  mots: ["deux pompes", "deux éléments", "parallèle réparable", "réparable en parallèle", "réparateur", "redondance réparable"],
+  vars: {
+    lam:    V("\\lambda", "taux de défaillance d'un élément", ["lambda", "λ"]),
+    mu:     V("\\mu", "taux de réparation", ["mu", "μ"]),
+    mttf:   V("MTTF", "MTTF d'un élément", ["mttf"]),
+    mttr:   V("MTTR", "durée moyenne de réparation", ["mttr"]),
+    t:      V("t", "durée de la mission", ["temps", "mission"]),
+    Rps:    V("R_{ps}(t)", "fiabilité (approximation λ << μ)", ["fiabilité"], {lo: 0, hi: 1, lin: true}),
+    mttfps: V("MTTF_{ps}", "MTTF du système réparable", ["mttf système"]),
+    Apsinf: V("A_{ps}(\\infty)", "disponibilité stationnaire", ["disponibilité stationnaire"], {lo: 0, hi: 1, lin: true}),
+    Aps:    V("A_{ps}(t)", "disponibilité à l'instant t", ["disponibilité"], {lo: 0, hi: 1, lin: true}),
+    s1:     V("s_{1}", "racine s1 (Laplace)", ["s1"], {lo: -1e6, hi: 0, lin: true}),
+    s2:     V("s_{2}", "racine s2 (Laplace)", ["s2"], {lo: -1e6, hi: 0, lin: true}),
+    Rex:    V("R_{ps,exact}(t)", "fiabilité exacte (transformée de Laplace)", ["exacte"], {lo: 0, hi: 1, lin: true}),
+    Rnr:    V("R_{ps,nr}(t)", "même système NON réparable", ["non réparable"], {lo: 0, hi: 1, lin: true}),
+    mttfnr: V("MTTF_{ps,nr}", "MTTF du système non réparable", ["mttf non réparable"])
+  },
+  eqs: [
+    {id: "q1", label: "MTTF d'un élément", main: "mttf", solve: {
+      mttf: {tpl: "\\frac{1}{@lam}", fn: v => 1 / v.lam},
+      lam:  {tpl: "\\frac{1}{@mttf}", fn: v => 1 / v.mttf}}},
+    {id: "q2", label: "MTTR", main: "mttr", solve: {
+      mttr: {tpl: "\\frac{1}{@mu}", fn: v => 1 / v.mu},
+      mu:   {tpl: "\\frac{1}{@mttr}", fn: v => 1 / v.mttr}}},
+    {id: "q3", label: "Fiabilité (λ << μ)", main: "Rps", solve: {
+      Rps: {tpl: "\\exp\\left(-\\frac{2\\imp @lam^{2}}{@mu+3\\imp @lam}\\imp @t\\right)", fn: v => exp(-2 * v.lam * v.lam / (v.mu + 3 * v.lam) * v.t)},
+      t:   {tpl: "\\frac{-\\ln @Rps\\left(@mu+3\\imp @lam\\right)}{2\\imp @lam^{2}}", fn: v => -ln(v.Rps) * (v.mu + 3 * v.lam) / (2 * v.lam * v.lam)}}},
+    {id: "q4", label: "MTTF du système", main: "mttfps", solve: {
+      mttfps: {tpl: "\\frac{@mu+3\\imp @lam}{2\\imp @lam^{2}}", fn: v => (v.mu + 3 * v.lam) / (2 * v.lam * v.lam)},
+      mu:     {tpl: "2\\imp @lam^{2}\\imp @mttfps-3\\imp @lam", fn: v => 2 * v.lam * v.lam * v.mttfps - 3 * v.lam}}},
+    {id: "q5", label: "Disponibilité stationnaire", main: "Apsinf", solve: {
+      Apsinf: {tpl: "1-\\left(\\frac{@lam}{@lam+@mu}\\right)^{2}", fn: v => 1 - pow(v.lam / (v.lam + v.mu), 2)},
+      mu:     {tpl: "\\frac{@lam}{\\sqrt{1-@Apsinf}}-@lam", fn: v => v.lam / sqrt(1 - v.Apsinf) - v.lam}}},
+    {id: "q6", label: "Disponibilité A(t)", main: "Aps", oneWay: true, solve: {
+      Aps: {tpl: "1-\\left[\\frac{@lam}{@lam+@mu}-\\frac{@lam}{@lam+@mu}\\exp\\left(-\\left(@lam+@mu\\right)\\imp @t\\right)\\right]^{2}", fn: v => 1 - pow(v.lam / (v.lam + v.mu) * (1 - exp(-(v.lam + v.mu) * v.t)), 2)}}},
+    {id: "q7", label: "Racine s1", main: "s1", oneWay: true, solve: {
+      s1: {tpl: "\\frac{-\\left(3\\imp @lam+@mu\\right)+\\sqrt{\\left(3\\imp @lam+@mu\\right)^{2}-8\\imp @lam^{2}}}{2}", fn: v => (-(3 * v.lam + v.mu) + sqrt(pow(3 * v.lam + v.mu, 2) - 8 * v.lam * v.lam)) / 2}}},
+    {id: "q8", label: "Racine s2", main: "s2", oneWay: true, solve: {
+      s2: {tpl: "\\frac{-\\left(3\\imp @lam+@mu\\right)-\\sqrt{\\left(3\\imp @lam+@mu\\right)^{2}-8\\imp @lam^{2}}}{2}", fn: v => (-(3 * v.lam + v.mu) - sqrt(pow(3 * v.lam + v.mu, 2) - 8 * v.lam * v.lam)) / 2}}},
+    {id: "q9", label: "Fiabilité exacte (Laplace)", main: "Rex", oneWay: true, solve: {
+      Rex: {tpl: "\\frac{@s1+3\\imp @lam+@mu}{@s1-@s2}\\exp\\left(@s1\\imp @t\\right)+\\frac{@s2+3\\imp @lam+@mu}{@s2-@s1}\\exp\\left(@s2\\imp @t\\right)", fn: v => (v.s1 + 3 * v.lam + v.mu) / (v.s1 - v.s2) * exp(v.s1 * v.t) + (v.s2 + 3 * v.lam + v.mu) / (v.s2 - v.s1) * exp(v.s2 * v.t)}}},
+    {id: "q10", label: "Non réparable : fiabilité", main: "Rnr", solve: {
+      Rnr: {tpl: "1-\\left[1-\\exp\\left(-@lam\\imp @t\\right)\\right]^{2}", fn: v => 1 - pow(1 - exp(-v.lam * v.t), 2)},
+      t:   {tpl: "\\frac{-\\ln\\left(1-\\sqrt{1-@Rnr}\\right)}{@lam}", fn: v => -ln(1 - sqrt(1 - v.Rnr)) / v.lam}}},
+    {id: "q11", label: "Non réparable : MTTF", main: "mttfnr", solve: {
+      mttfnr: {tpl: "@mttf\\left(1+\\frac{1}{2}\\right)", fn: v => 1.5 * v.mttf},
+      mttf:   {tpl: "\\frac{@mttfnr}{1,5}", fn: v => v.mttfnr / 1.5}}}
+  ]
+},
+{
+  id: "preventive", ch: "M3", titre: "Maintenance préventive systématique", sous: "n maintenances idéales sur (0, T), période θ = T/(n+1) ; λ(t) = a + b·t ou Weibull",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 59, lib: "M3 diapos 58–60 + corrigé"},
+  mots: ["maintenance préventive", "préventive", "systématique", "n maintenances", "nombre de maintenances", "fréquence", "taux linéaire", "a + b t", "maintenance idéale"],
+  vars: {
+    a:    V("a", "λ(t) = a + b·t : terme constant", ["a"], {lo: -1e3, hi: 1e3, lin: true}),
+    bb:   V("b", "λ(t) = a + b·t : pente", ["b", "pente"], {lo: -1e3, hi: 1e3, lin: true}),
+    T:    V("T", "durée totale", ["T", "durée", "mission"]),
+    n:    V("n", "nombre de maintenances sur (0, T)", ["n", "nombre de maintenances"], {entier: true, lo: 0, hi: 1e6}),
+    th:   V("\\theta", "période de maintenance", ["theta", "θ", "période"]),
+    R0:   V("R(T)", "fiabilité sans maintenance", ["sans maintenance"], {lo: 0, hi: 1, lin: true}),
+    Rm:   V("R_{m}(T)", "fiabilité avec n maintenances", ["avec maintenance"], {lo: 0, hi: 1, lin: true}),
+    Rlim: V("R_{m,\\infty}", "limite quand n → ∞", ["limite"], {lo: 0, hi: 1, lin: true}),
+    Rc:   V("R_{min}", "fiabilité minimale exigée", ["cible", "exigée", "minimale"], {lo: 0, hi: 1, lin: true}),
+    nmin: V("n_{min}", "nombre minimal de maintenances", ["n minimal"]),
+    beta: V("\\beta", "Weibull : forme", ["beta", "β"], {lo: 0.02, hi: 50}),
+    eta:  V("\\eta", "Weibull : échelle", ["eta", "η"]),
+    Rw0:  V("R_{W}(T)", "Weibull, sans maintenance", [], {lo: 0, hi: 1, lin: true}),
+    Rwm:  V("R_{W,m}(T)", "Weibull, avec n maintenances", [], {lo: 0, hi: 1, lin: true})
+  },
+  eqs: [
+    {id: "v1", label: "Période de maintenance", main: "th", solve: {
+      th: {tpl: "\\frac{@T}{@n+1}", fn: v => v.T / (v.n + 1)},
+      T:  {tpl: "@th\\left(@n+1\\right)", fn: v => v.th * (v.n + 1)}}},
+    {id: "v2", label: "Sans maintenance", main: "R0", solve: {
+      R0: {tpl: "\\exp\\left[-\\left(@a\\imp @T+\\frac{@bb\\imp @T^{2}}{2}\\right)\\right]", fn: v => exp(-(v.a * v.T + v.bb * v.T * v.T / 2))},
+      a:  {tpl: "\\frac{-\\ln @R0}{@T}-\\frac{@bb\\imp @T}{2}", fn: v => -ln(v.R0) / v.T - v.bb * v.T / 2},
+      bb: {tpl: "\\frac{2\\left(-\\ln @R0-@a\\imp @T\\right)}{@T^{2}}", fn: v => 2 * (-ln(v.R0) - v.a * v.T) / (v.T * v.T)}}},
+    {id: "v3", label: "Avec n maintenances", main: "Rm", solve: {
+      Rm: {tpl: "\\exp\\left[-\\left(@n+1\\right)\\left(@a\\imp @th+\\frac{@bb\\imp @th^{2}}{2}\\right)\\right]", fn: v => exp(-(v.n + 1) * (v.a * v.th + v.bb * v.th * v.th / 2))}}},
+    {id: "v4", label: "Limite n → ∞", main: "Rlim", solve: {
+      Rlim: {tpl: "\\exp\\left(-@a\\imp @T\\right)", fn: v => exp(-v.a * v.T)},
+      a:    {tpl: "\\frac{-\\ln @Rlim}{@T}", fn: v => -ln(v.Rlim) / v.T}}},
+    {id: "v5", label: "Nombre minimal de maintenances", main: "nmin", oneWay: true, solve: {
+      nmin: {tpl: "\\min\\left\\{n : \\exp\\left[-\\left(n+1\\right)\\left(@a\\frac{@T}{n+1}+\\frac{@bb}{2}\\left(\\frac{@T}{n+1}\\right)^{2}\\right)\\right]\\geq @Rc\\right\\}", fn: v => {
+        for (let k = 0; k <= 100000; k++){ const th = v.T / (k + 1); if (exp(-(k + 1) * (v.a * th + v.bb * th * th / 2)) >= v.Rc) return k; }
+        return NaN; }}}},
+    {id: "v6", label: "Weibull sans maintenance", main: "Rw0", solve: {
+      Rw0: {tpl: "\\exp\\left[-\\left(\\frac{@T}{@eta}\\right)^{@beta}\\right]", fn: v => exp(-pow(v.T / v.eta, v.beta))}}},
+    {id: "v7", label: "Weibull avec n maintenances", main: "Rwm", solve: {
+      Rwm: {tpl: "\\exp\\left[-\\left(@n+1\\right)\\left(\\frac{@th}{@eta}\\right)^{@beta}\\right]", fn: v => exp(-(v.n + 1) * pow(v.th / v.eta, v.beta))}}}
+  ],
+  notes(val){
+    const n = [];
+    if ("Rlim" in val && "Rc" in val && val.Rlim < val.Rc) n.push({type: "bad", html: "Impossible : même avec n → ∞, la fiabilité n'atteint pas la valeur exigée."});
+    if ("bb" in val && val.bb <= 0) n.push({type: "warn", html: "b ≤ 0 : taux non croissant → maintenance préventive inutile ou nuisible."});
+    if ("beta" in val && val.beta <= 1) n.push({type: "warn", html: "β ≤ 1 : maintenance préventive inutile (β = 1) ou nuisible (β &lt; 1)."});
+    return n;
+  }
+},
+{
+  id: "remplacement", ch: "M3", titre: "Période optimale de remplacement", sous: "Coût total moyen annuel minimal (investissement + croissance des coûts)",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 65, lib: "M3 diapos 65–66"},
+  mots: ["remplacement", "période optimale", "période de remplacement", "renouvellement", "investissement", "coût total annuel", "ice", "icm"],
+  vars: {
+    CI:     V("C_{I}", "coût moyen de l'investissement", ["investissement", "CI"]),
+    ice:    V("i_{ce}", "croissance annuelle du coût d'exploitation", ["ice", "exploitation"]),
+    icm:    V("i_{cm}", "croissance annuelle du coût de maintenance", ["icm", "maintenance"]),
+    isum:   V("i_{ce}+i_{cm}", "somme des croissances", ["somme"]),
+    tstar:  V("t^{*}", "période optimale de remplacement", ["période optimale", "tstar"]),
+    k1:     V("k_{1}", "coût d'exploitation la 1re année", ["k1"], {lo: -1e12, hi: 1e12, lin: true}),
+    k2:     V("k_{2}", "coût de maintenance la 1re année", ["k2"], {lo: -1e12, hi: 1e12, lin: true}),
+    CTstar: V("CT^{*}", "coût total annuel minimal", ["coût minimal"], {lo: -1e12, hi: 1e12, lin: true}),
+    t:      V("t", "durée d'utilisation (années)", ["années"]),
+    CT:     V("CT(t)", "coût total moyen annuel pour t années", ["coût total"], {lo: -1e12, hi: 1e12, lin: true})
+  },
+  eqs: [
+    {id: "o1", label: "Somme des croissances", main: "isum", cache: true, solve: {
+      isum: {tpl: "@ice+@icm", fn: v => v.ice + v.icm},
+      ice:  {tpl: "@isum-@icm", fn: v => v.isum - v.icm},
+      icm:  {tpl: "@isum-@ice", fn: v => v.isum - v.ice}}},
+    {id: "o2", label: "Période optimale", main: "tstar", solve: {
+      tstar: {tpl: "\\sqrt{\\frac{2\\imp @CI}{@isum}}", fn: v => sqrt(2 * v.CI / v.isum)},
+      CI:    {tpl: "\\frac{@tstar^{2}\\imp @isum}{2}", fn: v => v.tstar * v.tstar * v.isum / 2},
+      isum:  {tpl: "\\frac{2\\imp @CI}{@tstar^{2}}", fn: v => 2 * v.CI / (v.tstar * v.tstar)}}},
+    {id: "o3", label: "Coût total minimal", main: "CTstar", solve: {
+      CTstar: {tpl: "@k1+@k2-\\frac{@isum}{2}+\\sqrt{2\\imp @CI\\imp @isum}", fn: v => v.k1 + v.k2 - v.isum / 2 + sqrt(2 * v.CI * v.isum)},
+      k1:     {tpl: "@CTstar-@k2+\\frac{@isum}{2}-\\sqrt{2\\imp @CI\\imp @isum}", fn: v => v.CTstar - v.k2 + v.isum / 2 - sqrt(2 * v.CI * v.isum)},
+      k2:     {tpl: "@CTstar-@k1+\\frac{@isum}{2}-\\sqrt{2\\imp @CI\\imp @isum}", fn: v => v.CTstar - v.k1 + v.isum / 2 - sqrt(2 * v.CI * v.isum)}}},
+    {id: "o4", label: "Coût total pour t années", main: "CT", solve: {
+      CT: {tpl: "@k1+@k2+\\frac{@CI}{@t}+\\frac{@t-1}{2}\\left(@isum\\right)", fn: v => v.k1 + v.k2 + v.CI / v.t + (v.t - 1) / 2 * v.isum}}}
+  ]
+},
+{
+  id: "agefixe", ch: "M3", titre: "Remplacement préventif à âge fixé", sous: "Weibull : coût moyen C(θ) par unité de temps et âge optimal θ*",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 62, lib: "M3 diapos 61–64"},
+  mots: ["remplacement préventif", "âge fixé", "age fixe", "remplacement à âge", "cp", "cd", "coût préventif", "coût de défaillance", "âge optimal"],
+  vars: {
+    beta:   V("\\beta", "forme (Weibull)", ["beta", "β", "b"], {lo: 0.02, hi: 50}),
+    eta:    V("\\eta", "échelle (Weibull)", ["eta", "η"]),
+    Cp:     V("C_{p}", "coût d'un remplacement préventif", ["cp", "préventif"]),
+    Cd:     V("C_{d}", "coût d'un remplacement après défaillance", ["cd", "défaillance"]),
+    th:     V("\\theta", "âge de remplacement", ["âge", "theta", "θ"]),
+    R:      V("R(\\theta)", "fiabilité à l'âge θ", [], {lo: 0, hi: 1, lin: true}),
+    mth:    V("\\int_{0}^{\\theta}R\\,dt", "durée moyenne d'utilisation", ["intégrale"]),
+    C:      V("C(\\theta)", "coût moyen par unité de temps", ["coût moyen"]),
+    mttf:   V("MTTF", "durée moyenne de bon fonctionnement", ["mttf"]),
+    Ccor:   V("C(\\infty)", "maintenance corrective seule : Cd/MTTF", ["corrective"]),
+    thstar: V("\\theta^{*}", "âge optimal de remplacement", ["âge optimal"]),
+    Cstar:  V("C(\\theta^{*})", "coût moyen minimal", ["coût minimal"]),
+    gain:   V("\\frac{C(\\theta^{*})}{C(\\infty)}", "rapport coût optimal / corrective", ["gain"])
+  },
+  eqs: [
+    {id: "g1", label: "Fiabilité à l'âge θ", main: "R", solve: {
+      R:  {tpl: "\\exp\\left[-\\left(\\frac{@th}{@eta}\\right)^{@beta}\\right]", fn: v => RW(v.th, v.beta, v.eta)},
+      th: {tpl: "@eta\\left(-\\ln @R\\right)^{\\frac{1}{@beta}}", fn: v => v.eta * pow(-ln(v.R), 1 / v.beta)}}},
+    {id: "g2", label: "Durée moyenne d'utilisation", main: "mth", oneWay: true, solve: {
+      mth: {tpl: "\\int_{0}^{@th}\\exp\\left[-\\left(\\frac{t}{@eta}\\right)^{@beta}\\right]dt", fn: v => simpson(t => RW(t, v.beta, v.eta), 0, v.th, 400)}}},
+    {id: "g3", label: "Coût moyen C(θ)", main: "C", solve: {
+      C:  {tpl: "\\frac{@Cp\\imp @R+@Cd\\left(1-@R\\right)}{@mth}", fn: v => (v.Cp * v.R + v.Cd * (1 - v.R)) / v.mth},
+      Cp: {tpl: "\\frac{@C\\imp @mth-@Cd\\left(1-@R\\right)}{@R}", fn: v => (v.C * v.mth - v.Cd * (1 - v.R)) / v.R},
+      Cd: {tpl: "\\frac{@C\\imp @mth-@Cp\\imp @R}{1-@R}", fn: v => (v.C * v.mth - v.Cp * v.R) / (1 - v.R)}}},
+    {id: "g4", label: "MTTF", main: "mttf", solve: {
+      mttf: {tpl: "@eta\\imp\\Gamma\\left(1+\\frac{1}{@beta}\\right)", fn: v => v.eta * M.gamma(1 + 1 / v.beta)},
+      eta:  {tpl: "\\frac{@mttf}{\\Gamma\\left(1+\\frac{1}{@beta}\\right)}", fn: v => v.mttf / M.gamma(1 + 1 / v.beta)}}},
+    {id: "g5", label: "Corrective seule", main: "Ccor", solve: {
+      Ccor: {tpl: "\\frac{@Cd}{@mttf}", fn: v => v.Cd / v.mttf}}},
+    {id: "g6", label: "Âge optimal (dC/dθ = 0)", main: "thstar", oneWay: true, solve: {
+      thstar: {tpl: "\\text{θ minimisant }\\frac{@Cp\\imp R+@Cd\\left(1-R\\right)}{\\int_{0}^{\\theta}R\\,dt},\\; R=\\exp\\left[-\\left(\\frac{t}{@eta}\\right)^{@beta}\\right]", fn: v => thetaOpt(v)}}},
+    {id: "g7", label: "Coût minimal", main: "Cstar", oneWay: true, solve: {
+      Cstar: {tpl: "C\\left(@thstar\\right),\\; \\text{avec }@Cp,\\;@Cd,\\;@beta,\\;@eta", fn: v => coutAge(v.thstar, v)}}},
+    {id: "g8", label: "Gain par rapport à la corrective", main: "gain", solve: {
+      gain: {tpl: "\\frac{@Cstar}{@Ccor}", fn: v => v.Cstar / v.Ccor}}}
+  ],
+  notes(val){
+    const n = [];
+    if ("beta" in val && val.beta <= 1) n.push({type: "warn", html: "β ≤ 1 : le remplacement préventif n'est pas rentable (taux non croissant)."});
+    if ("gain" in val) n.push({type: val.gain < 0.999 ? "info" : "warn", html: val.gain < 0.999 ? `Remplacement préventif rentable : coût réduit de <b>${fmt((1 - val.gain) * 100)} %</b>.` : "Pas de gain : rester en maintenance corrective."});
+    return n;
+  }
+},
+{
+  id: "abaque", ch: "M3", titre: "Période d'intervention systématique (abaque Weibull)", sous: "Minimum de C2(x)/C1 calculé exactement : remplace la lecture de l'abaque",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 72, lib: "M3 diapos 67–77"},
+  mots: ["abaque", "c2/c1", "criticité économique", "x0", "période systématique", "intervention systématique", "optimisation weibull", "maintenance systématique"],
+  vars: {
+    beta:  V("\\beta", "forme (Weibull)", ["beta", "β"], {lo: 0.02, hi: 50}),
+    eta:   V("\\eta", "échelle (Weibull)", ["eta", "η"]),
+    P:     V("P", "coût indirect de la défaillance", ["coût indirect"]),
+    p:     V("p", "coût direct de l'intervention", ["coût direct"]),
+    r:     V("r", "criticité économique r = P/p", ["criticité"]),
+    x0:    V("x_{0}", "abscisse du minimum (x = θ/η)", ["x0"]),
+    ratio: V("\\frac{C_{2}(x_{0})}{C_{1}}", "valeur minimale de C2/C1", ["c2/c1", "rapport"]),
+    th0:   V("\\theta_{0}", "période optimale d'intervention", ["période optimale", "theta0"]),
+    mtbf:  V("m_{\\infty}", "MTBF = η·Γ(1+1/β)", ["mtbf"])
+  },
+  eqs: [
+    {id: "k1", label: "Criticité économique", main: "r", solve: {
+      r: {tpl: "\\frac{@P}{@p}", fn: v => v.P / v.p},
+      P: {tpl: "@r\\imp @p", fn: v => v.r * v.p},
+      p: {tpl: "\\frac{@P}{@r}", fn: v => v.P / v.r}}},
+    {id: "k2", label: "Minimum de C2(x)/C1", main: "x0", oneWay: true, solve: {
+      x0: {tpl: "\\text{x minimisant }\\frac{1+\\left(1-e^{-x^{@beta}}\\right)\\imp @r}{\\int_{0}^{x}e^{-t^{@beta}}dt}\\cdot\\frac{\\Gamma\\left(1+\\frac{1}{@beta}\\right)}{1+@r}", fn: v => x0Abaque(v.beta, v.r)}}},
+    {id: "k3", label: "Valeur du rapport au minimum", main: "ratio", oneWay: true, solve: {
+      ratio: {tpl: "\\frac{1+\\left(1-e^{-@x0^{@beta}}\\right)\\imp @r}{\\int_{0}^{@x0}e^{-t^{@beta}}dt}\\cdot\\frac{\\Gamma\\left(1+\\frac{1}{@beta}\\right)}{1+@r}", fn: v => ratioAbaque(v.x0, v.beta, v.r)}}},
+    {id: "k4", label: "Période optimale", main: "th0", solve: {
+      th0: {tpl: "@eta\\imp @x0", fn: v => v.eta * v.x0},
+      eta: {tpl: "\\frac{@th0}{@x0}", fn: v => v.th0 / v.x0}}},
+    {id: "k5", label: "MTBF", main: "mtbf", solve: {
+      mtbf: {tpl: "@eta\\imp\\Gamma\\left(1+\\frac{1}{@beta}\\right)", fn: v => v.eta * M.gamma(1 + 1 / v.beta)},
+      eta:  {tpl: "\\frac{@mtbf}{\\Gamma\\left(1+\\frac{1}{@beta}\\right)}", fn: v => v.mtbf / M.gamma(1 + 1 / v.beta)}}}
+  ],
+  notes(val){
+    const n = [];
+    if ("ratio" in val) n.push(val.ratio < 1 ? {type: "info", html: `C2/C1 &lt; 1 : la maintenance systématique est rentable (gain de <b>${fmt((1 - val.ratio) * 100)} %</b>).`} : {type: "warn", html: "C2/C1 ≥ 1 : pas de solution, rester en maintenance corrective."});
+    if ("r" in val && (val.r < 2 || val.r > 100)) n.push({type: "warn", html: "r hors du domaine de validité de l'abaque (2 &lt; r &lt; 100)."});
+    return n;
+  }
+},
+{
+  id: "markov", ch: "M3", titre: "Chaîne de Markov", sous: "Graphe d'états quelconque : P(t), disponibilité A(t), fiabilité R(t), MTTF, A∞",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 19, lib: "M3 diapos 9–35"},
+  mots: ["markov", "chaîne de markov", "graphe d'états", "états", "transition", "processeurs", "sources d'énergie", "équations différentielles"],
+  vars: {}, eqs: [], custom: true,
+  exemples: [
+    {nom: "Élément réparable (λ = 0,001 ; μ = 0,1)", vals: {tr: "1 0 0,001\n0 1 0,1", init: "1", pannes: "0", t: "10; 100; 1000"}},
+    {nom: "2 pompes en parallèle (λ = 0,002 ; μ = 0,125)", vals: {tr: "2 1 2*0,002\n1 2 0,125\n1 0 0,002\n0 1 2*0,125", init: "2", pannes: "0", t: "150"}},
+    {nom: "3 processeurs / 2 sources (λ1 = 0,001 ; λ2 = 0,002)", vals: {tr: "3,2 2,2 3*0,001\n2,2 1,2 2*0,001\n1,2 F1 0,001\n3,1 2,1 3*0,001\n2,1 1,1 2*0,001\n1,1 F1 0,001\n3,2 3,1 2*0,002\n2,2 2,1 2*0,002\n1,2 1,1 2*0,002\n3,1 F2 0,002\n2,1 F2 0,002\n1,1 F2 0,002", init: "3,2", pannes: "F1 F2", t: "100; 1000"}}
+  ],
+  html(v){
+    return `<section class="feuille"><div class="fh">Données <span class="hint">— une transition par ligne : ÉTAT_DÉPART ÉTAT_ARRIVÉE TAUX (ex. 2 1 2*0,002). Taux = λ (défaillance) ou μ (réparation).</span></div>
+      <div class="cu-grid">
+        <label>Transitions<textarea data-cu="tr" rows="7" spellcheck="false">${esc(v.tr || "")}</textarea></label>
+        <div>
+          <label>État initial<input data-cu="init" value="${esc(v.init || "")}" spellcheck="false"></label>
+          <label>États de panne (séparés par des espaces)<input data-cu="pannes" value="${esc(v.pannes || "")}" spellcheck="false"></label>
+          <label>Temps t (plusieurs : séparés par ;)<input data-cu="t" value="${esc(v.t || "")}" spellcheck="false"></label>
+          <div class="small" style="margin-top:4px">Exemples : ${this.exemples.map((e, i) => `<button class="btn" data-cuex="${i}">${esc(e.nom)}</button>`).join(" ")}</div>
+        </div>
+      </div></section>
+      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Équations de Markov</span></div><div class="bcalc" id="cu-eqs"></div></div>
+      <aside class="panneau" id="cu-res"></aside></div>`;
+  },
+  update(v){
+    const eqs = document.getElementById("cu-eqs"), out = document.getElementById("cu-res");
+    if (!eqs || !out) return;
+    if (!String(v.tr || "").trim()){ eqs.innerHTML = '<div class="manque">Saisissez les transitions ou choisissez un exemple.</div>'; out.innerHTML = ""; return; }
+    let mk;
+    try {
+      const ts = String(v.t || "").split(";").map(s => s.trim()).filter(Boolean).map(s => evalExpr(s, memEnv()));
+      mk = markovCalc(String(v.tr).split("\n"), String(v.init || "").trim(), String(v.pannes || "").trim().split(/\s+/).filter(Boolean), ts);
+    } catch (e){ eqs.innerHTML = ""; out.innerHTML = `<div class="note bad">${esc(e)}</div>`; return; }
+    const P = e => `<msub><mi>P</mi><mtext>${esc(e)}</mtext></msub>`;
+    eqs.innerHTML = mk.etats.map(e => {
+      const sortant = mk.trans.filter(t => t.a === e).reduce((s, t) => s + t.r, 0);
+      const entrants = mk.trans.filter(t => t.b === e);
+      let d = sortant ? `<mo>−</mo>${numML(sortant)}<mo>·</mo>${P(e)}` : "";
+      d += entrants.map(t => `<mo>+</mo>${numML(t.r)}<mo>·</mo>${P(t.a)}`).join("");
+      const html = `<mfrac><mrow><mi mathvariant="normal">d</mi>${P(e)}</mrow><mrow><mi mathvariant="normal">d</mi><mi>t</mi></mrow></mfrac><mo>=</mo>${d || "<mn>0</mn>"}`;
+      return ligne({html, a: html, b: ""});
+    }).join("");
+    let h = `<h2>Résultats — départ en ${esc(v.init)}</h2>`;
+    if (mk.res.length){
+      h += `<table class="tab"><tr><th>État</th>${mk.res.map(x => `<th>t = ${fmt(x.t)}</th>`).join("")}</tr>`;
+      h += mk.etats.map(e => `<tr><td>P<sub>${esc(e)}</sub>${mk.marche.includes(e) ? "" : " (panne)"}</td>${mk.res.map(x => `<td>${fmt(x.P[mk.idx[e]])}</td>`).join("")}</tr>`).join("");
+      h += `<tr class="tot"><td>Disponibilité A(t)</td>${mk.res.map(x => `<td>${fmt(x.A)}</td>`).join("")}</tr>`;
+      h += `<tr class="tot"><td>Fiabilité R(t)</td>${mk.res.map(x => `<td>${fmt(x.R)}</td>`).join("")}</tr></table>`;
+    }
+    if (isFinite(mk.mttf)) h += `<div class="res-line"><math displaystyle="true"><mi>MTTF</mi><mo>=</mo><mrow class="resv">${numML(mk.mttf)}</mrow></math></div>`;
+    if (isFinite(mk.Ainf)) h += `<div class="res-line"><math displaystyle="true"><msub><mi>A</mi><mi>∞</mi></msub><mo>=</mo><mrow class="resv">${numML(mk.Ainf)}</mrow></math></div>`;
+    h += `<div class="note info">A(t) : réparations permises (somme des états de marche). R(t) : états de panne rendus absorbants. MTTF : temps moyen avant la 1re panne.</div>`;
+    out.innerHTML = h;
+  }
+},
+{
+  id: "abc", ch: "M3", titre: "Analyse ABC (Pareto)", sous: "Priorité des interventions : classement des machines par coût des pannes",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 92, lib: "M3 diapos 91–95"},
+  mots: ["abc", "analyse abc", "pareto", "priorité", "priorités", "heures d'arrêt", "classement", "80/20"],
+  vars: {}, eqs: [], custom: true,
+  exemples: [
+    {nom: "Exemple du cours (14 machines)", vals: {d: "1 100 4\n2 32 14\n3 50 4\n4 19 15\n5 4 3\n6 30 8\n7 40 12\n8 80 2\n9 55 3\n10 150 5\n11 160 4\n12 5 3\n13 10 8\n14 20 8", sa: "80", sb: "95"}}
+  ],
+  html(v){
+    return `<section class="feuille"><div class="fh">Données <span class="hint">— une machine par ligne : N° COÛT (ou heures d'arrêt) NOMBRE_DE_PANNES</span></div>
+      <div class="cu-grid">
+        <label>Machines<textarea data-cu="d" rows="7" spellcheck="false">${esc(v.d || "")}</textarea></label>
+        <div>
+          <label>Limite classe A (% des coûts)<input data-cu="sa" value="${esc(v.sa ?? "80")}"></label>
+          <label>Limite classe B (% des coûts)<input data-cu="sb" value="${esc(v.sb ?? "95")}"></label>
+          <div class="small" style="margin-top:4px">Exemple : ${this.exemples.map((e, i) => `<button class="btn" data-cuex="${i}">${esc(e.nom)}</button>`).join(" ")}</div>
+        </div>
+      </div></section>
+      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Tableau ABC (ordre décroissant des coûts)</span></div><div id="cu-tab"></div></div>
+      <aside class="panneau" id="cu-res"></aside></div>`;
+  },
+  update(v){
+    const tab = document.getElementById("cu-tab"), out = document.getElementById("cu-res");
+    if (!tab || !out) return;
+    if (!String(v.d || "").trim()){ tab.innerHTML = '<div class="manque">Saisissez les machines ou chargez l\'exemple.</div>'; out.innerHTML = ""; return; }
+    let ab;
+    try { ab = abcCalc(String(v.d).split("\n"), evalExpr(v.sa ?? "80"), evalExpr(v.sb ?? "95")); }
+    catch (e){ tab.innerHTML = ""; out.innerHTML = `<div class="note bad">${esc(e)}</div>`; return; }
+    tab.innerHTML = `<table class="tab"><tr><th>N°</th><th>C<sub>i</sub></th><th>ΣC<sub>i</sub></th><th>ΣC<sub>i</sub>/CT %</th><th>N<sub>pi</sub></th><th>ΣN<sub>pi</sub></th><th>ΣN<sub>pi</sub>/NPT %</th><th>Classe</th></tr>` +
+      ab.rows.map(x => `<tr><td>${esc(x.n)}</td><td>${fmt(x.c)}</td><td>${fmt(x.sc)}</td><td>${x.pc.toFixed(1).replace(".", ",")}</td><td>${fmt(x.p)}</td><td>${fmt(x.sp)}</td><td>${x.pn.toFixed(1).replace(".", ",")}</td><td class="cl-${x.cl}">${x.cl}</td></tr>`).join("") + "</table>";
+    const W = 380, H = 240, px = x => 40 + x / 100 * (W - 55), py = y => H - 30 - y / 100 * (H - 45);
+    const pts = [[0, 0], ...ab.rows.map(x => [x.pn, x.pc])].map(([a, b]) => `${px(a).toFixed(1)},${py(b).toFixed(1)}`).join(" ");
+    const cl = c => ab.rows.filter(x => x.cl === c).map(x => x.n).join(", ") || "—";
+    out.innerHTML = `<h2>Courbe ABC</h2>
+      <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Courbe ABC">
+        <line x1="40" y1="${H - 30}" x2="${W - 10}" y2="${H - 30}" stroke="#9aa3ae"/><line x1="40" y1="15" x2="40" y2="${H - 30}" stroke="#9aa3ae"/>
+        ${[0, 25, 50, 75, 100].map(g => `<text x="${px(g)}" y="${H - 14}" font-size="10" text-anchor="middle" fill="#5f6b7a">${g} %</text><text x="34" y="${py(g) + 3}" font-size="10" text-anchor="end" fill="#5f6b7a">${g}</text>`).join("")}
+        <polyline points="${pts}" fill="none" stroke="#2457d6" stroke-width="2.5"/>
+        ${ab.rows.map(x => `<circle cx="${px(x.pn)}" cy="${py(x.pc)}" r="3" fill="${x.cl === "A" ? "#b42318" : x.cl === "B" ? "#8a5200" : "#0f7b5f"}"/>`).join("")}
+        <text x="${(W + 40) / 2}" y="${H - 2}" font-size="10" text-anchor="middle" fill="#5f6b7a">pannes cumulées (%)</text>
+      </svg>
+      <div class="note info">Coût total CT = <b>${fmt(ab.CT)}</b> ; nombre total de pannes NPT = <b>${fmt(ab.NPT)}</b></div>
+      <div class="note bad"><b>Classe A</b> (priorité) : ${esc(cl("A"))}</div>
+      <div class="note warn"><b>Classe B</b> : ${esc(cl("B"))}</div>
+      <div class="note info"><b>Classe C</b> : ${esc(cl("C"))}</div>`;
+  }
 }
 ];
 
 /* Sujets indexés pour la recherche, fiches à venir dans la version complète */
 const A_VENIR = [
-  {ch: "M2", titre: "Loi exponentielle", mots: ["exponentielle", "lambda constant", "taux constant", "mttf 1/lambda", "poisson"]},
-  {ch: "M2", titre: "Loi normale", mots: ["normale", "gauss", "gaussienne", "tableau n1", "u = (t-m)/sigma", "écart-type"]},
-  {ch: "M2", titre: "Loi log-normale", mots: ["log-normale", "lognormale", "sigma y", "mu y"]},
-  {ch: "M2", titre: "Probabilité de défaillance dans Δt", mots: ["intervalle", "delta t", "conditionnelle", "sachant", "t1 t2"]},
-  {ch: "M2", titre: "Systèmes série / parallèle", mots: ["série", "parallèle", "redondance", "fiabilité structurale", "diagramme de fiabilité"]},
-  {ch: "M2", titre: "Redondance r/m", mots: ["r/m", "r parmi m", "vote", "k sur n", "au moins"]},
-  {ch: "M2", titre: "Système avec réserve (stand-by)", mots: ["stand-by", "standby", "réserve", "commutateur", "secours", "passif"]},
-  {ch: "M2", titre: "Système complexe (pont)", mots: ["pont", "système complexe", "probabilité conditionnelle", "énumération des états", "chemins"]},
-  {ch: "M3", titre: "Élément réparable — disponibilité", mots: ["disponibilité", "dispo", "availability", "réparable", "mu", "taux de réparation", "mttr", "maintenabilité", "A(t)"]},
-  {ch: "M3", titre: "Temps moyens MUT / MDT / MTBF", mots: ["mtbf", "mut", "mdt", "temps moyen entre pannes", "indisponibilité", "durée moyenne de panne", "temps d'arrêt"]},
-  {ch: "M3", titre: "Deux éléments réparables en parallèle", mots: ["deux pompes", "parallèle réparable", "réparateur"]},
-  {ch: "M3", titre: "Chaîne de Markov", mots: ["markov", "graphe d'états", "états", "transition", "processeurs sources d'énergie"]},
-  {ch: "M3", titre: "Maintenance préventive systématique", mots: ["préventive", "systématique", "n maintenances", "a + b t", "fréquence", "intervalle de maintenance"]},
-  {ch: "M3", titre: "Période optimale de remplacement", mots: ["remplacement", "période optimale", "investissement", "ice icm", "coût total annuel", "âge fixé"]},
-  {ch: "M3", titre: "Abaque — période systématique (Weibull)", mots: ["abaque", "c2/c1", "criticité économique", "r = P/p", "x0"]},
-  {ch: "M3", titre: "Analyse ABC (Pareto)", mots: ["abc", "pareto", "priorité", "heures d'arrêt", "classement"]},
   {ch: "M4", titre: "Contrainte–résistance", mots: ["contrainte", "résistance", "interférence", "stress strength", "coefficient de sécurité"]},
   {ch: "M5", titre: "Arbre de défaillance / d'événements", mots: ["arbre de défaillance", "fta", "coupes minimales", "porte et ou", "arbre d'événements", "événement redouté"]}
 ];
@@ -692,7 +1645,90 @@ function numSolve(g, lo, hi, lin){
   return NaN;
 }
 
-function resoudre(f, connues, cible, eqPref, opts){
+/* ---------- systèmes : n équations couplées à n inconnues (Newton) ---------- */
+function* combinaisons(arr, n, i0, acc){
+  i0 = i0 || 0; acc = acc || [];
+  if (acc.length === n){ yield acc.slice(); return; }
+  for (let i = i0; i < arr.length; i++){ acc.push(arr[i]); yield* combinaisons(arr, n, i + 1, acc); acc.pop(); }
+}
+function gauss(A, b){
+  const n = A.length, Mx = A.map((l, i) => [...l, b[i]]);
+  for (let c = 0; c < n; c++){
+    let p = c; for (let i = c + 1; i < n; i++) if (Math.abs(Mx[i][c]) > Math.abs(Mx[p][c])) p = i;
+    if (!(Math.abs(Mx[p][c]) > 1e-300)) throw "singulier";
+    [Mx[c], Mx[p]] = [Mx[p], Mx[c]];
+    for (let i = 0; i < n; i++) if (i !== c){ const q = Mx[i][c] / Mx[c][c]; for (let j = c; j <= n; j++) Mx[i][j] -= q * Mx[c][j]; }
+  }
+  return Mx.map((l, i) => l[n] / l[i]);
+}
+function newtonSys(f, eqs, U, val){
+  const n = U.length;
+  const bornes = U.map(k => { const d = f.vars[k]; return {lo: d.lo ?? 1e-9, hi: d.hi ?? 1e12, lin: !!d.lin}; });
+  const logv = bornes.map(b => !b.lin && b.lo > 0);
+  const versX = y => y.map((v, i) => logv[i] ? Math.exp(v) : v);
+  const res = y => {
+    const w = Object.assign({}, val), x = versX(y);
+    U.forEach((k, i) => w[k] = x[i]);
+    return eqs.map(e => { const a = w[e.main], b = e.solve[e.main].fn(w); return (a - b) / (Math.abs(a) + Math.abs(b) + 1e-300); });
+  };
+  const norme = r => Math.max(...r.map(Math.abs));
+  const connus = Object.values(val).map(Math.abs).filter(v => v > 0 && isFinite(v));
+  const candidats = bornes.map((b, i) => {
+    let l;
+    if (logv[i]) l = [1, 10, 0.1, 1000, 100, ...connus, 1e4, 0.01];
+    else if (b.hi - b.lo <= 100) l = [0.5, 0.25, 0.75, 0.1, 0.9].map(q => b.lo + (b.hi - b.lo) * q);
+    else l = [0, 1, -1, 10, ...connus, 100, 1000];
+    l = [...new Set(l)].filter(v => v >= b.lo && v <= b.hi);
+    return l.slice(0, Math.max(3, Math.floor(Math.pow(400, 1 / n)))).map(v => logv[i] ? Math.log(v) : v);
+  });
+  const departs = [[]];
+  for (const l of candidats){ const nv = []; for (const d of departs) for (const v of l) nv.push([...d, v]); departs.splice(0, departs.length, ...nv); }
+  const sols = [];
+  for (const y0 of departs){
+    let y = y0.slice(), r = res(y);
+    if (!r.every(isFinite)) continue;
+    for (let it = 0; it < 80 && norme(r) >= 1e-14; it++){
+      const J = Array.from({length: n}, () => []);
+      for (let j = 0; j < n; j++){
+        const h = 1e-7 * Math.max(1, Math.abs(y[j])), y2 = y.slice(); y2[j] += h;
+        const r2 = res(y2); for (let i = 0; i < n; i++) J[i][j] = (r2[i] - r[i]) / h;
+      }
+      let dy; try { dy = gauss(J, r.map(v => -v)); } catch (e){ break; }
+      if (!dy.every(isFinite)) break;
+      let pas = 1, ok = false;
+      for (let k = 0; k < 40; k++){
+        const y2 = y.map((v, i) => v + pas * dy[i]), r2 = res(y2);
+        if (r2.every(isFinite) && norme(r2) < norme(r)){ y = y2; r = r2; ok = true; break; }
+        pas /= 2;
+      }
+      if (!ok) break;
+    }
+    if (norme(r) < 1e-10){
+      const x = versX(y);
+      const dansBornes = x.every((v, i) => isFinite(v) && v >= bornes[i].lo - 1e-12 && v <= bornes[i].hi + 1e-12);
+      if (dansBornes && !sols.some(s => s.every((v, i) => Math.abs(v - x[i]) <= 1e-6 * Math.max(1, Math.abs(v))))) sols.push(x);
+      if (sols.length >= 3) break;
+    }
+  }
+  if (!sols.length) return null;
+  const obj = s => Object.fromEntries(U.map((k, i) => [k, s[i]]));
+  return {sol: obj(sols[0]), autres: sols.slice(1).map(obj)};
+}
+function chercherSysteme(f, val){
+  const actives = f.eqs.filter(e => !e.oneWay && e.vars.some(k => !(k in val)));
+  const inc = e => e.vars.filter(k => !(k in val));
+  for (let n = 2; n <= 3; n++){
+    for (const combo of combinaisons(actives, n)){
+      const U = [...new Set(combo.flatMap(inc))];
+      if (U.length !== n || U.some(k => f.vars[k].entier)) continue;
+      const s = newtonSys(f, combo, U, val);
+      if (s) return {eqs: combo, vars: U, sol: s.sol, autres: s.autres};
+    }
+  }
+  return null;
+}
+
+function resoudre(f, connues, cible, eqPref, opts, simple){
   const val = {}, how = {};
   for (const k in connues) if (k !== cible && isFinite(connues[k])) val[k] = connues[k];
   const inconnue = e => { const u = e.vars.filter(k => !(k in val)); return u.length === 1 ? u[0] : null; };
@@ -700,7 +1736,7 @@ function resoudre(f, connues, cible, eqPref, opts){
     const s = e.solve[x]; let v, numeric = false;
     if (s) v = s.fn(val);
     else {
-      if (e.oneWay) return false;
+      if (e.oneWay || f.vars[x].entier) return false;
       const fm = e.solve[e.main].fn, d = f.vars[x];
       const g = y => { const w = Object.assign({}, val); w[x] = y; return val[e.main] - fm(w); };
       v = numSolve(g, d.lo ?? 1e-9, d.hi ?? 1e12, d.lin); numeric = true;
@@ -723,6 +1759,17 @@ function resoudre(f, connues, cible, eqPref, opts){
     for (const e of cands) if (calc(e, cible)) break;
     propager(null);
   }
+  const systemes = [];
+  if (!simple){
+    for (let tour = 0; tour < 6; tour++){
+      const sys = chercherSysteme(f, val);
+      if (!sys) break;
+      sys.id = "sys" + (systemes.length + 1); systemes.push(sys);
+      const entrees = [...new Set(sys.eqs.flatMap(e => e.vars))].filter(k => !sys.vars.includes(k));
+      for (const x of sys.vars){ val[x] = sys.sol[x]; how[x] = {eq: {id: sys.id, label: `système de ${sys.eqs.length} équations`}, numeric: true, systeme: sys, inputs: entrees}; }
+      propager(null);
+    }
+  }
   const alertes = [];
   for (const e of f.eqs){
     if (!e.vars.every(k => k in val)) continue;
@@ -730,7 +1777,7 @@ function resoudre(f, connues, cible, eqPref, opts){
     const r = val[e.main] - e.solve[e.main].fn(val);
     if (Math.abs(r) > 1e-4 * Math.max(1, Math.abs(val[e.main]))) alertes.push(e);
   }
-  return {val, how, alertes};
+  return {val, how, alertes, systemes};
 }
 
 function trace(res, x, acc, vu){
@@ -782,7 +1829,26 @@ const INDEX = [
     vtoks: Object.fromEntries(Object.keys(f.vars).map(k => [k, tokens([f.vars[k].nom, symTxt(f, k), ...f.vars[k].syn].join(" "))]))})),
   ...A_VENIR.map(a => ({type: "avenir", titre: a.titre, ch: a.ch, toks: tokens([a.titre, ...a.mots].join(" "))}))
 ];
+/* notation d'énoncé : N(10;2) t=5 · W(2;1000) t=500 · Exp(0,001) t=1000 */
+function notation(q){
+  const m = /^\s*(N|W|E|Exp|Expo)\s*\(\s*([^)]*)\)\s*(.*)$/i.exec(q);
+  if (!m) return null;
+  const nom = m[1].toLowerCase(), args = m[2].split(/\s*;\s*|,\s+/).map(a => a.trim()).filter(Boolean);
+  let id, vals;
+  if (nom === "n" && args.length === 2){ id = "normale"; vals = {m: args[0], sig: args[1]}; }
+  else if (nom === "w" && args.length === 2){ id = "weibull"; vals = {b: args[0], th: args[1]}; }
+  else if (nom.startsWith("e") && args.length === 1){ id = "expo"; vals = {lam: args[0]}; }
+  else return null;
+  const f = FICHES.find(x => x.id === id), al = aliases(f);
+  for (const p of m[3].matchAll(/([A-Za-z\u00c0-\u024f\u0370-\u03ff][\w\u0370-\u03ff]*)\s*=\s*([^\s;]+)/g)){
+    const k = al[p[1]] || al[p[1].toLowerCase()]; if (k) vals[k] = p[2];
+  }
+  for (const k in vals){ try { if (!isFinite(evalExpr(vals[k]))) return null; } catch (e){ return null; } }
+  return {f, vals};
+}
 function chercher(q){
+  const no = notation(q);
+  if (no) return [{it: {type: "nota", f: no.f, titre: no.f.titre, ch: no.f.ch}, s: 999, vals: no.vals}];
   const qt = tokens(q).filter(t => !STOP.has(t));
   if (!qt.length) return [];
   const out = [];
@@ -823,6 +1889,125 @@ const valsOf = f => S.vals[f.id] || (S.vals[f.id] = {});
 const optsOf = f => { const o = {}; for (const op of f.options || []) o[op.key] = (S.opts[f.id] || {})[op.key] ?? op.def; return o; };
 const eqOf = f => f.eqs.find(e => e.id === S.eq[f.id]) || f.eqs[0];
 const memEnv = () => Object.fromEntries(S.mem.map((m, i) => ["m" + (i + 1), m.v]));
+/* noms utilisables dans un champ : clé, symbole ou synonyme de la variable (ex. MTTF, θ, theta, lambda) */
+function aliases(f){
+  const a = {}, ident = /^[A-Za-z\u0370-\u03ff][A-Za-z0-9\u0370-\u03ff]*$/;
+  for (const k in f.vars) a[k] = k;
+  for (const k in f.vars){
+    const s = symTxt(f, k); if (ident.test(s) && !(s in a)) a[s] = k;
+    for (const y of f.vars[k].syn) if (ident.test(y) && !(y in a)) a[y] = k;
+  }
+  for (const n of Object.keys(a)){ const l = n.toLowerCase(); if (!(l in a)) a[l] = a[n]; }
+  return a;
+}
+function envFiche(f, val){
+  const e = Object.assign({}, memEnv()), al = aliases(f);
+  for (const n in al) if (al[n] in val) e[n] = val[al[n]];
+  return e;
+}
+/* variables de la fiche citées dans une expression saisie */
+function varsCitees(f, expr){
+  const al = aliases(f), mem = memEnv(), out = new Set(), inconnus = [];
+  for (const m of String(expr).match(/[A-Za-z_\u0370-\u03ff][A-Za-z0-9_\u0370-\u03ff]*/g) || []){
+    const l = m.toLowerCase();
+    if (FUNCS[l] || l in CONSTS || l in mem) continue;
+    if (m in al) out.add(al[m]); else if (l in al) out.add(al[l]); else inconnus.push(m);
+  }
+  return {vars: [...out], inconnus};
+}
+/* données saisies : nombres, calculs, et relations algébriques entre variables (t = MTTF, R = F, MTTF = 1/λ…) */
+function donnees(f, cible, extra){
+  const raw = valsOf(f), K = Object.assign({}, extra || {}), liens = {}, attente = {}, resolus = {}, rel = {};
+  let pend = [], alg = null;
+  for (const k in raw){
+    if (k === cible || (extra && k in extra)) continue;
+    const s = String(raw[k] ?? "").trim(); if (!s) continue;
+    try { const v = evalExpr(s, memEnv()); if (isFinite(v)) K[k] = v; else attente[k] = "saisie invalide"; }
+    catch (e){
+      const vc = varsCitees(f, s);
+      if (vc.inconnus.length) attente[k] = "inconnu : " + vc.inconnus.join(", ");
+      else pend.push({k, expr: s, vars: vc.vars.filter(x => x !== k)});
+    }
+  }
+  const opts = optsOf(f), eq = eqOf(f);
+  const evalLien = (p, val) => { const env = envFiche(f, val); delete env[p.k]; return evalExpr(p.expr, env); };
+  const residu = (p, val) => { if (!(p.k in val) || !p.vars.every(x => x in val)) return NaN; try { return val[p.k] - evalLien(p, val); } catch (e){ return NaN; } };
+  let r = resoudre(f, K, cible, eq, opts);
+  for (let it = 0; it < 12 && pend.length; it++){
+    let prog = false;
+    /* 1. relation dont toutes les variables sont connues : on calcule directement */
+    for (const p of [...pend]){
+      if (!p.vars.every(x => x in r.val)) continue;
+      try { const v = evalLien(p, r.val); if (isFinite(v)){ K[p.k] = v; liens[p.k] = p.expr; pend = pend.filter(q => q !== p); prog = true; } } catch (e){}
+    }
+    if (prog){ r = resoudre(f, K, cible, eq, opts); continue; }
+    /* 2. une seule inconnue dans la relation : on la cherche (algèbre) */
+    for (const p of [...pend]){
+      if (!(p.k in r.val)) continue;
+      const unk = p.vars.filter(x => !(x in r.val)); if (unk.length !== 1 || f.vars[unk[0]].entier) continue;
+      const y = unk[0], d = f.vars[y];
+      const g = x => residu(p, Object.assign({}, r.val, {[y]: x}));
+      const x = numSolve(g, d.lo ?? 1e-9, d.hi ?? 1e12, d.lin);
+      if (isFinite(x)){
+        if (y === cible){ alg = {k: y, v: x, rel: p}; pend = pend.filter(q => q !== p); }
+        else { K[y] = x; resolus[y] = p; }
+        rel[p.k] = p;
+        prog = true; break;
+      }
+    }
+    if (prog){ r = alg ? resoudre(f, Object.assign({}, K, {[cible]: alg.v}), null, eq, opts) : resoudre(f, K, cible, eq, opts); continue; }
+    /* 3. relation couplée aux formules (ex. R = F) : on cherche la variable qui la vérifie */
+    const pivots = [cible, ...Object.keys(f.vars).filter(x => x !== cible && !(x in r.val))].filter(x => x && !f.vars[x].entier);
+    for (const piv of pivots){
+      const d = f.vars[piv];
+      const g = x => { const r2 = resoudre(f, Object.assign({}, K, {[piv]: x}), null, eq, opts, true); for (const p of pend){ const e = residu(p, r2.val); if (isFinite(e)) return e; } return NaN; };
+      /* relation toujours vraie (déjà une formule du cours) : rien à résoudre avec ce pivot */
+      const essais = (d.lin ? [d.lo + (d.hi - d.lo) * 0.37, d.lo + (d.hi - d.lo) * 0.61] : [1e-3, 7.3, 912]).map(g).filter(isFinite);
+      if (essais.length >= 2 && essais.every(e => Math.abs(e) < 1e-9)) continue;
+      const x = numSolve(g, d.lo ?? 1e-9, d.hi ?? 1e12, d.lin);
+      if (isFinite(x) && Math.abs(g(x * 1.37 + 0.1)) > 1e-9){
+        const r2 = resoudre(f, Object.assign({}, K, {[piv]: x}), null, eq, opts);
+        const p = pend.find(q => isFinite(residu(q, r2.val)));
+        if (piv === cible){ alg = {k: piv, v: x, rel: p}; }
+        else { K[piv] = x; resolus[piv] = p; }
+        if (p) rel[p.k] = p;
+        pend = pend.filter(q => q !== p); prog = true; break;
+      }
+    }
+    if (!prog) break;
+    r = alg ? resoudre(f, Object.assign({}, K, {[cible]: alg.v}), null, eq, opts) : resoudre(f, K, cible, eq, opts);
+  }
+  if (alg){ r = resoudre(f, Object.assign({}, K, {[cible]: alg.v}), null, eq, opts); r.alg = alg; }
+  for (const p of pend) attente[p.k] = "en attente de " + p.vars.filter(x => !(x in r.val)).map(x => symTxt(f, x)).join(", ");
+  const D = {K, r, liens, attente, resolus, rel};
+  /* valeurs déterminées même si une variable reste inconnue (ex. R(t = MTTF) = e⁻¹ quel que soit λ) :
+     on essaie plusieurs valeurs de la variable manquante et on garde ce qui ne change pas */
+  if (!extra && pend.length){
+    const libres = Object.keys(f.vars).filter(x => !(x in r.val) && !(x in K) && !f.vars[x].entier);
+    const cite = x => pend.some(p => p.vars.includes(x)) ? 1 : 0;
+    libres.sort((a, b) => cite(b) - cite(a));
+    const egal = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a));
+    for (const p of libres.slice(0, 4)){
+      const d = f.vars[p], lo = d.lo ?? 1e-9, hi = d.hi ?? 1e12;
+      const essais = (d.lin ? [0.13, 0.37, 0.61, 0.83].map(q => lo + (hi - lo) * q) : [0.0137, 0.73, 19.1, 523]).filter(v => v >= lo && v <= hi);
+      if (essais.length < 3) continue;
+      const runs = essais.map(v => donnees(f, null, {[p]: v}));
+      const base = runs[0].r;
+      const nouveaux = Object.keys(base.val).filter(k => k !== p && !(k in r.val) && runs.every(R2 => k in R2.r.val && isFinite(R2.r.val[k]) && egal(R2.r.val[k], base.val[k])));
+      if (!nouveaux.length) continue;
+      for (const k of nouveaux){ r.val[k] = base.val[k]; r.how[k] = base.how[k] || {eq: {id: "inv", label: "relations saisies"}, inputs: []}; }
+      D.invariant = {p, vars: nouveaux};
+      D.pendRel = pend;
+      for (const q of pend) attente[q.k] = `= ${q.expr} (${symTxt(f, p)} quelconque)`;
+      break;
+    }
+  }  return D;
+}function dependances(r, x, vu){
+  vu = vu || new Set();
+  const h = r.how[x]; if (!h) return vu;
+  for (const k of h.inputs) if (!vu.has(k)){ vu.add(k); dependances(r, k, vu); }
+  return vu;
+}
 function connues(f){
   const o = {}, raw = valsOf(f);
   for (const k in raw){
@@ -863,6 +2048,8 @@ function renderNav(){
 }
 
 function renderMem(){
+  $("#nb-mem").textContent = S.mem.length ? S.mem.length : "";
+  $("#nb-mem").style.display = S.mem.length ? "" : "none";
   $("#mems").innerHTML = S.mem.map((m, i) =>
     `<button class="mem" data-mem="${i}" title="Coller dans le champ actif"><b>M${i + 1}</b> ${esc(m.nom)} = ${fmt(m.v)}<span class="x" data-memx="${i}" title="Supprimer">✕</span></button>`
   ).join("") || '<div class="small">Aucune valeur épinglée.</div>';
@@ -870,70 +2057,120 @@ function renderMem(){
 function epingler(nom, v){ S.mem.push({nom, v}); save(); renderMem(); toast(`Épinglé M${S.mem.length} : ${nom} = ${fmt(v)}`); }
 
 function renderFiche(){
-  const f = F(), eq = eqOf(f);
-  if (!S.cible[f.id]) S.cible[f.id] = eq.main;
-  const c = S.cible[f.id], vars = f.vars, raw = valsOf(f), o = optsOf(f);
-  const ctxRow = e => ({ph: (k, x) => `<mrow class="v ${k === c ? "tgt" : ""}" data-var="${k}" data-eqv="${e.id}" title="${esc(vars[k].nom)}">${symML(f, k, x)}</mrow>`});
-  let h = `<div class="card">
-    <div class="fhead"><div><div class="ch">${f.ch}</div><h1>${esc(f.titre)}</h1><div class="sous">${esc(f.sous)}</div></div>
+  const f = F();
+  if (f.custom){
+    $("#main").innerHTML = `<div class="fbar"><div><span class="ch">${f.ch}</span><h1>${esc(f.titre)}</h1><span class="sous">${esc(f.sous)}</span></div>
       <div class="acts"><a class="btn" href="${encodeURI(f.ref.doc)}#page=${f.ref.page}" target="_blank" title="Ouvrir la diapositive du cours">📄 ${esc(f.ref.lib)}</a>
-      <button class="btn" id="btn-clear">Effacer les données</button></div></div>`;
-  if (f.options) h += `<div class="opts">` + f.options.map(op => `<label><input type="checkbox" data-opt="${op.key}" ${o[op.key] ? "checked" : ""}> ${esc(op.label)}</label>`).join(" ") + `</div>`;
-  h += `<div class="step"><div class="sh"><span class="n">1</span>Formule <span class="hint">— cliquez sur une variable de la formule pour la choisir comme inconnue</span></div><div class="eqs">`;
+      <button class="btn" id="btn-clear">Effacer les données</button></div></div>` + f.html(valsOf(f));
+    renderNav(); f.update(valsOf(f)); ajuster();
+    return;
+  }
+  const eq = eqOf(f);
+  if (S.cible[f.id] === undefined) S.cible[f.id] = eq.main;
+  const c = S.cible[f.id] || null, vars = f.vars, raw = valsOf(f), o = optsOf(f);
+  const ctxRow = e => ({ph: (k, x) => `<mrow class="v ${k === c ? "tgt" : ""}" data-var="${k}" data-eqv="${e.id}" title="${esc(vars[k].nom)}">${symML(f, k, x)}</mrow>`});
+  let h = `<div class="fbar"><div><span class="ch">${f.ch}</span><h1>${esc(f.titre)}</h1><span class="sous">${esc(f.sous)}</span></div>
+    <div class="acts">`;
+  if (f.options) h += `<span class="opts">` + f.options.map(op => `<label><input type="checkbox" data-opt="${op.key}" ${o[op.key] ? "checked" : ""}> ${esc(op.label)}</label>`).join(" ") + `</span>`;
+  h += `<a class="btn" href="${encodeURI(f.ref.doc)}#page=${f.ref.page}" target="_blank" title="Ouvrir la diapositive du cours">📄 ${esc(f.ref.lib)}</a>
+      <button class="btn" id="btn-clear">Effacer les données</button></div></div>
+    <section class="feuille"><div class="fh">Données <span class="hint">— saisissez une valeur, un calcul ou une variable (ex. MTTF) · 🎯 = inconnue · les valeurs calculées s'affichent en vert</span></div><div class="vars">`;
+  for (const k in vars){
+    h += `<div class="vc ${k === c ? "tgt" : ""}" data-row="${k}" title="${esc(vars[k].nom)}">
+      <div class="vt"><button class="tb" data-cible="${k}" title="Chercher cette variable">🎯</button>${mathSym(f, k)}<span class="nom">${esc(vars[k].nom)}</span></div>
+      <input data-k="${k}" value="${k === c ? "" : esc(raw[k] ?? "")}" ${k === c ? "readonly" : ""} autocomplete="off" spellcheck="false">
+      <div class="etat" id="etat-${k}"></div></div>`;
+  }
+  h += `</div></section>
+    <div class="work"><div class="blocs">`;
   for (const e of f.eqs){
     if (e.cache) continue;
     const cx = ctxRow(e);
-    h += `<div class="eq ${e === eq ? "on" : ""}" data-eq="${e.id}"><span class="el">${esc(e.label)}</span>
-      <span><math displaystyle="true">${cx.ph(e.main, false)}<mo>=</mo>${ml(parseTex(e.solve[e.main].tpl), cx)}</math></span></div>`;
+    h += `<div class="bloc ${e === eq && c ? "on" : ""}" data-eq="${e.id}"><div class="bh"><span class="bt">${esc(e.label)}</span><span class="bb" id="bb-${e.id}"></span></div>
+      <div class="bf"><math displaystyle="true">${cx.ph(e.main, false)}<mo>=</mo>${ml(parseTex(e.solve[e.main].tpl), cx)}</math></div>
+      <div class="bcalc" id="bc-${e.id}"></div></div>`;
   }
-  h += `</div></div>
-    <div class="step"><div class="sh"><span class="n">2</span>Variable cherchée</div><div class="chips">`;
-  for (const k of eq.vars) h += `<button class="chip ${k === c ? "on" : ""}" data-cible="${k}">${mathSym(f, k)}<small>${esc(vars[k].nom)}</small></button>`;
-  h += `</div></div>
-    <div class="step"><div class="sh"><span class="n">3</span>Résolution <span class="hint">— cliquez sur une variable encadrée en pointillé pour saisir sa valeur (Entrée = suivante)</span></div><div class="sol" id="sol"></div></div>
-    <div class="step"><div class="sh"><span class="n">4</span>Toutes les variables <span class="hint">— 🎯 pour changer d'inconnue ; les valeurs calculées se réutilisent automatiquement</span></div>
-    <table class="grid">`;
-  for (const k in vars){
-    h += `<tr data-row="${k}" class="${k === c ? "tgt" : ""}">
-      <td style="width:28px"><button class="tb" data-cible="${k}" title="Chercher cette variable">🎯</button></td>
-      <td class="sym">${mathSym(f, k)}</td><td class="nom">${esc(vars[k].nom)}</td>
-      <td><input data-k="${k}" value="${k === c ? "" : esc(raw[k] ?? "")}" ${k === c ? "readonly" : ""} autocomplete="off" spellcheck="false"></td>
-      <td class="etat" id="etat-${k}"></td></tr>`;
-  }
-  h += `</table></div></div>`;
+  h += `</div>
+    <aside class="panneau">
+      <h2>${c ? "Inconnue — " + esc(eq.label) : "Aucune inconnue sélectionnée"}</h2>
+      <div class="chips">`;
+  for (const k of eq.vars) h += `<button class="chip ${k === c ? "on" : ""}" data-cible="${k}" title="${esc(vars[k].nom)}">${mathSym(f, k)}</button>`;
+  h += `</div>
+      <div id="sol"></div>
+    </aside></div>`;
   $("#main").innerHTML = h;
   renderNav();
   update();
 }
 
 /* une ligne de calcul : symbole = formule = nombres = résultat */
+/* affichage d'un système : les équations avec les nombres, puis la solution */
+function sysEq(f, r, e, sys){
+  const inc = x => sys.vars.includes(x);
+  const cx = {num: true, ph: (x, ex, nu) => inc(x) ? symML(f, x, ex) : nu ? numML(r.val[x]) : numMLp(r.val[x])};
+  const ct = {num: true, ph: (x, ex, nu) => inc(x) ? symTxt(f, x, ex) : nu ? fmt(r.val[x]) : numTxtp(r.val[x])};
+  const tree = parseTex(e.solve[e.main].tpl);
+  return {html: (inc(e.main) ? symML(f, e.main) : numMLp(r.val[e.main])) + "<mo>=</mo>" + ml(tree, cx),
+          texte: (inc(e.main) ? symTxt(f, e.main) : numTxtp(r.val[e.main])) + " = " + tx(tree, ct)};
+}
+const sysVisibles = sys => sys.vars.filter(x => !sys.eqs.some(e => e.cache && e.main === x));
+function sysSol(f, r, sys){
+  return {html: sysVisibles(sys).map(x => symML(f, x) + `<mo>=</mo><mrow class="resv">${numML(r.val[x])}</mrow>`).join("<mtext>&#160;;&#160;&#160;</mtext>"),
+          texte: sysVisibles(sys).map(x => symTxt(f, x) + " = " + fmt(r.val[x])).join(" ; ")};
+}
+function sysStep(f, r, sys){
+  const eqs = sys.eqs.filter(e => !e.cache).map(e => sysEq(f, r, e, sys)), sol = sysSol(f, r, sys);
+  const a = `<mrow><mo stretchy="true">{</mo><mtable columnalign="left">${eqs.map(q => `<mtr><mtd>${q.html}</mtd></mtr>`).join("")}</mtable></mrow>`;
+  const b = "<mo>⇒</mo>" + sol.html + `<mtext>&#160;&#160;(système ${eqs.length}×${eqs.length})</mtext>`;
+  return {html: a + b, a, b, texte: `Système de ${eqs.length} équations : ` + eqs.map(q => q.texte).join(" ; ") + " ⇒ " + sol.texte};
+}
+
 function stepLine(f, r, k, final){
+  if (r.how[k] && r.how[k].systeme) return sysStep(f, r, r.how[k].systeme);
+  if (r.how[k] && r.how[k].inputs.some(x => !(x in r.val)) && r.how[k].eq.solve[k]){
+    /* résultat indépendant d'une variable non déterminée : formule symbolique puis valeur */
+    const tr = parseTex(r.how[k].eq.solve[k].tpl);
+    const a = symML(f, k) + "<mo>=</mo>" + ml(tr, {ph: (x, ex) => symML(f, x, ex)});
+    const b = `<mo>=</mo><mrow class="resv">${numML(r.val[k])}</mrow>`;
+    return {html: a + b, a, b, texte: `${symTxt(f, k)} = ${tx(tr, {ph: (x, ex) => symTxt(f, x, ex)})} = ${fmt(r.val[k])}`};
+  }
   const h = r.how[k], e = h.eq, s = e.solve[k];
   const res = `<mrow class="resv">${numML(r.val[k])}</mrow>`;
   const ctxSym = {ph: (x, ex) => symML(f, x, ex)};
-  const ctxNum = {ph: (x) => numMLp(r.val[x])};
+  const ctxNum = {num: true, ph: (x, ex, nu) => nu ? numML(r.val[x]) : numMLp(r.val[x])};
   const tSym = {ph: (x, ex) => symTxt(f, x, ex)};
-  const tNum = {ph: (x) => numTxtp(r.val[x])};
+  const tNum = {num: true, ph: (x, ex, nu) => nu ? fmt(r.val[x]) : numTxtp(r.val[x])};
   const arr = h.arrondi ? "<mtext>&#160;(arrondi)</mtext>" : "";
   const arrT = h.arrondi ? " (arrondi)" : "";
   if (s && !h.numeric){
     const tree = parseTex(s.tpl);
     const html = symML(f, k) + "<mo>=</mo>" + (final ? "" : ml(tree, ctxSym) + "<mo>=</mo>") + ml(tree, ctxNum) + "<mo>=</mo>" + res + arr;
     const texte = `${symTxt(f, k)} = ${tx(tree, tSym)} = ${tx(tree, tNum)} = ${fmt(r.val[k])}${arrT}`;
-    return {html, texte};
+    const a = symML(f, k) + "<mo>=</mo>" + ml(tree, ctxSym);
+    const b = "<mo>=</mo>" + ml(tree, ctxNum) + "<mo>=</mo>" + res + arr;
+    return {html, texte, a, b};
   }
   const tree = parseTex(e.solve[e.main].tpl);
-  const ctxMix = {ph: (x, ex) => x === k ? symML(f, x, ex) : numMLp(r.val[x])};
-  const tMix = {ph: (x, ex) => x === k ? symTxt(f, x, ex) : numTxtp(r.val[x])};
+  const ctxMix = {num: true, ph: (x, ex, nu) => x === k ? symML(f, x, ex) : nu ? numML(r.val[x]) : numMLp(r.val[x])};
+  const tMix = {num: true, ph: (x, ex, nu) => x === k ? symTxt(f, x, ex) : nu ? fmt(r.val[x]) : numTxtp(r.val[x])};
   const html = numMLp(r.val[e.main]) + "<mo>=</mo>" + ml(tree, ctxMix) + "<mo>⇒</mo>" + symML(f, k) + "<mo>=</mo>" + res + "<mtext>&#160;(résolu numériquement)</mtext>";
   const texte = `${numTxtp(r.val[e.main])} = ${tx(tree, tMix)} ⇒ ${symTxt(f, k)} = ${fmt(r.val[k])} (résolu numériquement)`;
-  return {html, texte};
+  const a = numMLp(r.val[e.main]) + "<mo>=</mo>" + ml(tree, ctxMix);
+  const b = "<mo>⇒</mo>" + symML(f, k) + "<mo>=</mo>" + res + "<mtext>&#160;(numérique)</mtext>";
+  return {html, texte, a, b};
+}
+
+/* une ligne de calcul qui passe sur deux lignes si elle ne tient pas lisiblement */
+function ligne(sl, avant){
+  return `<div class="lc">${avant || ""}<div class="un"><math displaystyle="true">${sl.html}</math></div>` +
+    `<div class="deux" hidden><div class="p"><math displaystyle="true">${sl.a}</math></div><div class="p b"><math displaystyle="true">${sl.b}</math></div></div></div>`;
 }
 
 function update(){
-  const f = F(), c = S.cible[f.id], eq = eqOf(f), vars = f.vars, raw = valsOf(f);
-  const K = connues(f);
-  res = resoudre(f, K, c, eq, optsOf(f));
+  if (F().custom){ F().update(valsOf(F())); ajuster(); return; }
+  const f = F(), c = S.cible[f.id] || null, eq = eqOf(f), vars = f.vars, raw = valsOf(f);
+  const D = donnees(f, c), K = D.K;
+  res = D.r;
   const r = res;
 
   /* tableau des variables */
@@ -944,6 +2181,18 @@ function update(){
     if (k === c){
       inp.value = k in r.val ? fmt(r.val[k]) : ""; inp.placeholder = "inconnue";
       cell.innerHTML = k in r.val ? `<span class="calc">résultat</span> <button class="pin" data-pin="${k}" title="Épingler">📌</button>` : '<span class="muted">à calculer</span>';
+    } else if (D.resolus[k]){
+      inp.placeholder = "";
+      cell.innerHTML = `<span class="calc">= ${fmt(K[k])}</span> <span class="muted">(par ${esc(symTxt(f, D.resolus[k].k))} = ${esc(D.resolus[k].expr)})</span>`;
+    } else if (D.rel[k] && !(k in K)){
+      inp.placeholder = "";
+      cell.innerHTML = `<span class="muted">relation ✓</span> <span class="calc">= ${fmt(r.val[k])}</span>`;
+    } else if (k in D.liens){
+      inp.placeholder = "";
+      cell.innerHTML = k in K ? `<span class="muted">${esc(D.liens[k])} = </span><span class="calc">${fmt(K[k])}</span>` : `<span class="muted">= ${esc(D.liens[k])} (${esc(symTxt(f, D.invariant.p))} quelconque)</span>`;
+    } else if (D.attente[k]){
+      inp.placeholder = "";
+      cell.innerHTML = /quelconque/.test(D.attente[k]) ? `<span class="muted">${esc(D.attente[k])}</span>` : /invalide|inconnu/.test(D.attente[k]) ? `<span class="bad">${esc(D.attente[k])}</span>` : `<span class="muted">${esc(D.attente[k])}</span>`;
     } else if (k in K){
       inp.placeholder = "";
       const e = String(raw[k]).trim();
@@ -953,7 +2202,8 @@ function update(){
     } else if (k in r.val){
       const h = r.how[k];
       inp.placeholder = "";
-      cell.innerHTML = `<span class="calc">= ${fmt(r.val[k])}</span> <span class="muted">(${esc(h.eq.label)}${h.numeric ? ", numérique" : ""})</span> <button class="pin" data-pin="${k}" title="Épingler">📌</button>`;
+      const voir = h.systeme ? (h.systeme.eqs.find(e => !e.cache) || h.systeme.eqs[0]).id : h.eq.id;
+      cell.innerHTML = `<span class="calc" data-voir="${voir}" title="calculé par « ${esc(h.eq.label)} »${h.numeric ? " (numérique)" : ""} — cliquer pour voir le bloc">= ${fmt(r.val[k])}</span> <button class="pin" data-pin="${k}" title="Épingler">📌</button>`;
     } else { inp.placeholder = ""; cell.innerHTML = ""; }
   }
 
@@ -966,18 +2216,45 @@ function update(){
   };
   const tgt = k => `<mrow class="tgt">${symML(f, k)}</mrow>`;
   let h;
-  if (s) h = `<div class="solf"><math displaystyle="true">${tgt(c)}<mo>=</mo>${ml(parseTex(s.tpl), {ph: pill})}</math></div>`;
+  if (!c) h = `<div class="miss">Cliquez une variable dans une formule, un bouton ci-dessus ou 🎯 dans la feuille de données pour choisir l'inconnue. Les valeurs déjà calculables s'affichent dans les blocs et la feuille.</div>`;
+  else if (s) h = `<div class="solf"><math displaystyle="true">${tgt(c)}<mo>=</mo>${ml(parseTex(s.tpl), {ph: pill})}</math></div>`;
   else h = `<div class="solf"><math displaystyle="true">${pill(eq.main)}<mo>=</mo>${ml(parseTex(eq.solve[eq.main].tpl), {ph: (k, ex) => k === c ? tgt(k) : pill(k, ex)})}</math></div>
     <div class="hint">Pas de forme explicite pour ${mathSym(f, c)} dans cette formule : la valeur sera trouvée numériquement.</div>`;
 
-  if (c in r.val){
+  if (!c){}
+  else if (c in r.val){
     const inter = trace(r, c).filter(k => k !== c);
-    const lignes = inter.map(k => stepLine(f, r, k, false));
-    const fin = stepLine(f, r, c, true);
-    if (lignes.length) h += `<div class="inter"><div class="il">Calculs intermédiaires</div>${lignes.map(l => `<div class="l"><math displaystyle="true">${l.html}</math></div>`).join("")}</div>`;
+    const dep = dependances(r, c);
+    const liensSym = D.invariant && D.invariant.vars.includes(c) ? D.pendRel.map(q => {
+      const html = `${symML(f, q.k)}<mo>=</mo><mtext>${esc(q.expr)}</mtext>`;
+      return {html, a: html, b: "", texte: `${symTxt(f, q.k)} = ${q.expr}`};
+    }) : [];
+    const liensL = liensSym.length ? liensSym : Object.keys(D.liens).filter(k => (dep.has(k) || eq.vars.includes(k)) && k in K).map(k => {
+      const html = `${symML(f, k)}<mo>=</mo><mtext>${esc(D.liens[k])}</mtext><mo>=</mo><mrow class="resv">${numML(K[k])}</mrow>`;
+      return {html, a: html, b: "", texte: `${symTxt(f, k)} = ${D.liens[k]} = ${fmt(K[k])}`};
+    });
+    const algL = Object.keys(D.resolus).map(k => {
+      const p = D.resolus[k];
+      const html = `${symML(f, k)}<mtext>&#160;tel que&#160;</mtext>${symML(f, p.k)}<mo>=</mo><mtext>${esc(p.expr)}</mtext><mo>⇒</mo>${symML(f, k)}<mo>=</mo><mrow class="resv">${numML(K[k])}</mrow>`;
+      return {html, a: html, b: "", texte: `${symTxt(f, k)} tel que ${symTxt(f, p.k)} = ${p.expr} ⇒ ${symTxt(f, k)} = ${fmt(K[k])}`};
+    });
+    const vusSys = new Set(), interL = [];
+    for (const k of inter){
+      const h = r.how[k];
+      if (h.systeme){ if (vusSys.has(h.systeme) || h.systeme.vars.includes(c)) continue; vusSys.add(h.systeme); }
+      interL.push(stepLine(f, r, k, false));
+    }
+    const lignes = [...liensL, ...algL, ...interL];
+    let fin;
+    if (r.alg && r.alg.k === c){
+      const p = r.alg.rel;
+      const html = `${symML(f, c)}<mtext>&#160;tel que&#160;</mtext>${symML(f, p.k)}<mo>=</mo><mtext>${esc(p.expr)}</mtext><mo>⇒</mo>${symML(f, c)}<mo>=</mo><mrow class="resv">${numML(r.val[c])}</mrow>`;
+      fin = {html, a: html, b: "", texte: `${symTxt(f, c)} tel que ${symTxt(f, p.k)} = ${p.expr} ⇒ ${symTxt(f, c)} = ${fmt(r.val[c])}`};
+    } else fin = stepLine(f, r, c, true);
+    if (lignes.length) h += `<div class="inter"><div class="il">Calculs intermédiaires</div>${lignes.map(l => ligne(l)).join("")}</div>`;
     res.texteTout = [...lignes.map(l => l.texte), fin.texte].join("\n");
     res.texteFin = fin.texte;
-    h += `<div class="res-line"><math displaystyle="true">${fin.html}</math>
+    h += `<div class="res-line">${ligne(fin)}
       <span class="acts"><button class="btn" data-copy="1" title="Copier la ligne de résultat">📋 Copier</button><button class="btn" data-copyall="1" title="Copier tout le calcul">📋 Tout</button><button class="btn" data-pin="${c}">📌 Épingler</button></span></div>`;
   } else {
     const manque = autres.filter(k => !(k in r.val));
@@ -986,13 +2263,83 @@ function update(){
       const m = e.vars.filter(k => k !== c && !(k in r.val));
       return `« ${esc(e.label)} » (manque ${m.map(k => mathSym(f, k)).join(", ") || "rien"})`;
     });
-    if (alt.length) h += `<div class="hint">Autres formules contenant ${mathSym(f, c)} : ${alt.join(" · ")} — ou saisissez des données dans le tableau ci-dessous.</div>`;
+    if (alt.length) h += `<div class="hint">Autres formules contenant ${mathSym(f, c)} : ${alt.join(" · ")} — ou complétez la feuille de données en haut.</div>`;
     h += `</div>`;
   }
+  if (D.invariant) h += `<div class="note info">${esc(D.invariant.vars.map(x => symTxt(f, x)).join(", "))} <b>ne dépend${D.invariant.vars.length > 1 ? "ent" : ""} pas de ${esc(symTxt(f, D.invariant.p))}</b> : il est identique quelle que soit sa valeur (vérifié pour plusieurs valeurs).</div>`;
   for (const n of (f.notes ? f.notes(r.val) : [])) h += `<div class="note ${n.type}">${n.html}</div>`;
+  for (const s of (r.systemes || [])) if (s.autres.length) h += `<div class="note warn">Le système a plusieurs solutions. Autre(s) solution(s) : ${s.autres.map(o => s.vars.map(x => symTxt(f, x) + " = " + fmt(o[x])).join(" ; ")).join(" | ")} — vérifiez laquelle a un sens physique.</div>`;
   for (const e of r.alertes) h += `<div class="note bad">Données incohérentes avec la formule « ${esc(e.label)} » : vérifiez les valeurs saisies (trop de données ?).</div>`;
   $("#sol").innerHTML = h;
+
+  /* chaque bloc affiche le calcul qu'il permet avec les données */
+  const faits = {};
+  for (const x in r.how) (faits[r.how[x].eq.id] = faits[r.how[x].eq.id] || []).push(x);
+  for (const e of f.eqs){
+    if (e.cache) continue;
+    const bloc = document.querySelector(`.bloc[data-eq="${e.id}"]`), bc = document.getElementById("bc-" + e.id), bb = document.getElementById("bb-" + e.id);
+    if (!bloc || !bc) continue;
+    bloc.classList.remove("fait", "incoh");
+    let html = "", badge = "";
+    const sysE = (r.systemes || []).find(s => s.eqs.includes(e));
+    if (sysE){
+      bloc.classList.add("fait"); badge = "✓ système";
+      const q = sysEq(f, r, e, sysE), s = sysSol(f, r, sysE);
+      html = ligne({html: q.html + "<mo>⇒</mo>" + s.html, a: q.html, b: "<mo>⇒</mo>" + s.html, texte: q.texte});
+    } else if (r.alertes.includes(e)){
+      bloc.classList.add("incoh"); badge = "✗ incohérent";
+      html = `<div class="manque">Les valeurs saisies ne vérifient pas cette formule.</div>`;
+    } else if (faits[e.id]){
+      bloc.classList.add("fait"); badge = "✓ calculé";
+      html = faits[e.id].map(x => ligne(stepLine(f, r, x, false), `<button class="pin" data-pin="${x}" title="Épingler">📌</button>`)).join("");
+    } else {
+      const manque = e.vars.filter(k => !(k in r.val));
+      if (manque.length && manque.length < e.vars.length)
+        html = `<div class="manque">il manque : ${manque.map(k => mathSym(f, k)).join(", ")}</div>`;
+    }
+    bc.innerHTML = html; bb.textContent = badge;
+  }
+  ajuster();
 }
+
+/* chaque formule est réduite juste assez pour tenir entière dans son cadre */
+function ajuster(){
+  const LISIBLE = 13;
+  const caser = box => {
+    const m = box.querySelector("math"); if (!m) return 99;
+    m.style.fontSize = "";
+    const cs = getComputedStyle(box);
+    const dispo = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2;
+    let taille = parseFloat(getComputedStyle(m).fontSize);
+    for (let i = 0; i < 5; i++){
+      const w = m.getBoundingClientRect().width;
+      if (w <= dispo || taille <= 8) break;
+      taille = Math.max(8, taille * dispo / w * 0.98);
+      m.style.fontSize = taille + "px";
+    }
+    return taille;
+  };
+  document.querySelectorAll("#main .lc").forEach(lc => {
+    const un = lc.querySelector(".un"), deux = lc.querySelector(".deux");
+    un.hidden = false; deux.hidden = true;
+    if (caser(un) < LISIBLE){ un.hidden = true; deux.hidden = false; deux.querySelectorAll(".p").forEach(caser); }
+  });
+  document.querySelectorAll("#main .bf, #main .solf, #main .rm").forEach(box => {
+    const m = box.querySelector("math"); if (!m) return;
+    m.style.fontSize = "";
+    const cs = getComputedStyle(box);
+    const dispo = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2;
+    let taille = parseFloat(getComputedStyle(m).fontSize);
+    for (let i = 0; i < 5; i++){
+      const w = m.getBoundingClientRect().width;
+      if (w <= dispo || taille <= 8) break;
+      taille = Math.max(8, taille * dispo / w * 0.98);
+      m.style.fontSize = taille + "px";
+    }
+  });
+}
+let _ajt = 0;
+window.addEventListener("resize", () => { cancelAnimationFrame(_ajt); _ajt = requestAnimationFrame(ajuster); });
 
 /* ---- saisie par clic sur une variable (fenêtre flottante) ---- */
 function ouvrirSaisie(k, ancre){
@@ -1009,8 +2356,8 @@ function ouvrirSaisie(k, ancre){
 function fermerSaisie(){ $("#pop").style.display = "none"; }
 function majPop(){
   const inp = $("#pop-in"), ev = $("#pop-ev"), t = inp.value.trim();
-  if (!t){ ev.textContent = "Vide = donnée inconnue. Échap pour fermer."; ev.className = "pe"; return; }
-  try { ev.textContent = "= " + fmt(evalExpr(t, memEnv())); ev.className = "pe"; }
+  if (!t){ ev.textContent = "Nombre, calcul ou variable (ex. MTTF, 2*MTTF). Vide = inconnue."; ev.className = "pe"; return; }
+  try { ev.textContent = "= " + fmt(evalExpr(t, envFiche(F(), res ? res.val : {}))); ev.className = "pe"; }
   catch (e){ ev.textContent = "⚠ " + e; ev.className = "pe bad"; }
 }
 function saisir(k, texte){
@@ -1027,6 +2374,7 @@ function afficherResultats(){
   sel = Math.min(sel, Math.max(0, trouves.length - 1));
   box.innerHTML = trouves.length ? trouves.map((x, i) => {
     const it = x.it, off = it.type === "avenir";
+    if (it.type === "nota") return `<div class="res ${i === sel ? "sel" : ""}" data-i="${i}"><span class="t">${esc(it.titre)}</span><span class="tag cible">préremplir</span><span class="s">${Object.keys(x.vals).map(k => esc(symTxt(it.f, k)) + " = " + esc(x.vals[k])).join(" ; ")}</span><span class="r"><span class="tag">${it.ch}</span></span></div>`;
     const cib = x.cible ? `<span class="tag cible">inconnue : ${esc(symTxt(it.f, x.cible))}</span>` : "";
     const sous = off ? "Fiche prévue dans la version complète" : esc(it.f.sous);
     return `<div class="res ${i === sel ? "sel" : ""} ${off ? "off" : ""}" data-i="${i}"><span class="t">${esc(it.titre)}</span>${cib}<span class="s">${sous}</span><span class="r"><span class="tag">${it.ch}${off ? " · à venir" : ""}</span></span></div>`;
@@ -1034,6 +2382,12 @@ function afficherResultats(){
   box.style.display = "block";
 }
 function ouvrir(x){
+  if (x && x.it.type === "nota"){
+    S.fiche = x.it.f.id; S.vals[S.fiche] = Object.assign({}, x.vals);
+    save(); $("#q").value = ""; $("#results").style.display = "none"; $("#q").blur();
+    renderFiche(); toast("Données préremplies : " + Object.keys(x.vals).map(k => symTxt(x.it.f, k) + " = " + x.vals[k]).join(" ; "));
+    return;
+  }
   if (!x || x.it.type !== "fiche"){ toast("Cette fiche arrive dans la version complète."); return; }
   S.fiche = x.it.f.id;
   if (x.cible) choisirCible(x.it.f, x.cible);
@@ -1059,13 +2413,36 @@ function brancher(){
     else if (ev.key === "Enter"){ ev.preventDefault(); ouvrir(trouves[sel]); }
   });
   $("#results").addEventListener("mousedown", ev => { const d = ev.target.closest("[data-i]"); if (d){ ev.preventDefault(); ouvrir(trouves[+att(d, "i")]); } });
-  $("#nav").addEventListener("click", ev => { const a = ev.target.closest("[data-f]"); if (a){ S.fiche = att(a, "f"); save(); fermerSaisie(); renderFiche(); } });
+  const tiroir = on => { $("#drawer").classList.toggle("on", on); $("#voile").classList.toggle("on", on); };
+  $("#btn-fiches").addEventListener("click", () => tiroir(!$("#drawer").classList.contains("on")));
+  $("#btn-fermer").addEventListener("click", () => tiroir(false));
+  $("#voile").addEventListener("click", () => tiroir(false));
+  document.addEventListener("keydown", ev => {
+    if (ev.ctrlKey && ev.key.toLowerCase() === "b"){ ev.preventDefault(); tiroir(!$("#drawer").classList.contains("on")); }
+    else if (ev.key === "Escape") tiroir(false);
+  });
+  /* clic dans le vide = plus d'inconnue sélectionnée */
+  const deselect = () => { const f = F(); if (S.cible[f.id]){ S.cible[f.id] = null; save(); fermerSaisie(); renderFiche(); } };
+  document.addEventListener("click", ev => {
+    if (ev.target.closest(".bloc, .vc, .panneau, header, #outils, #pop, #drawer, #voile, button, input, a, label, #results, .fbar")) return;
+    deselect();
+  });
+  document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !/INPUT/.test(document.activeElement.tagName) && $("#pop").style.display !== "block") deselect(); });
+  $("#ot").addEventListener("click", () => { const o = $("#outils"); o.classList.toggle("on"); $("#ot-fl").textContent = o.classList.contains("on") ? "▼" : "▲"; });
+  $("#nav").addEventListener("click", ev => { const a = ev.target.closest("[data-f]"); if (a){ S.fiche = att(a, "f"); save(); fermerSaisie(); tiroir(false); renderFiche(); } });
 
   const main = $("#main");
   main.addEventListener("click", ev => {
     const f = F(), t = ev.target;
     let d;
+    if ((d = t.closest("[data-cuex]"))){ S.vals[f.id] = Object.assign({}, f.exemples[+att(d, "cuex")].vals); save(); renderFiche(); return; }
     if ((d = t.closest("[data-edit]"))){ ouvrirSaisie(att(d, "edit"), d); return; }
+    if ((d = t.closest("[data-pin]"))){ const k = att(d, "pin"); if (k in res.val) epingler(`${symTxt(f, k)} (${f.titre.split(" —")[0]})`, res.val[k]); return; }
+    if ((d = t.closest("[data-voir]"))){
+      const b = document.querySelector(`.bloc[data-eq="${att(d, "voir")}"]`);
+      if (b){ b.scrollIntoView({block: "nearest", behavior: "smooth"}); b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); }
+      return;
+    }
     if ((d = t.closest("[data-var]"))){ S.eq[f.id] = att(d, "eqv"); S.cible[f.id] = att(d, "var"); save(); fermerSaisie(); renderFiche(); return; }
     if ((d = t.closest("[data-cible]"))){ choisirCible(f, att(d, "cible")); save(); fermerSaisie(); renderFiche(); return; }
     if ((d = t.closest("[data-eq]"))){
@@ -1083,6 +2460,8 @@ function brancher(){
     if (cb){ const f = F(); (S.opts[f.id] = S.opts[f.id] || {})[att(cb, "opt")] = cb.checked; save(); update(); }
   });
   main.addEventListener("input", ev => {
+    const cu = ev.target.closest("[data-cu]");
+    if (cu){ valsOf(F())[att(cu, "cu")] = cu.value; save(); update(); return; }
     const inp = ev.target.closest("input[data-k]");
     if (inp && !inp.readOnly){ valsOf(F())[att(inp, "k")] = inp.value; save(); update(); }
   });
@@ -1133,10 +2512,11 @@ function brancher(){
 function autotest(){
   const T = [], chk = (nom, got, exp, tol) => T.push({nom, got, exp, ok: typeof got === "number" && Math.abs(got - exp) <= tol});
   const ok = (nom, cond) => T.push({nom, got: !!cond, exp: true, ok: !!cond});
-  const [W, C, St] = FICHES;
+  const fi = id => FICHES.find(f => f.id === id);
+  const W = fi("weibull"), Nm = fi("normale"), C = fi("corrective"), St = fi("stock"), Ex = fi("expo");
   chk("Γ(2,5) — diapo M2-38", M.gamma(2.5), 1.3293, 1e-4);
   chk("F(u=1,2) — diapo M2-34", M.phi(1.2), 0.8849, 1e-4);
-  chk("u(p=0,975)", M.phiinv(0.975), 1.95996, 1e-4);
+  chk("u(p=0,975)", M.quantile(0.975), 1.95996, 1e-4);
   chk("saisie 1/500", evalExpr("1/500"), 0.002, 1e-15);
   chk("saisie 0,994", evalExpr("0,994"), 0.994, 1e-15);
   chk("saisie 5e-4", evalExpr("5e-4"), 5e-4, 1e-18);
@@ -1159,7 +2539,47 @@ function autotest(){
   chk("Weibull b depuis MTTF (numérique)", r.val.b, 0.5, 1e-6);
   r = resoudre(W, {R: Math.exp(-0.25), t: 500, th: 1000}, "b", null, {});
   chk("Weibull b depuis R", r.val.b, 2, 1e-9);
-  r = resoudre(C, {Ap: 0.994, Cmvp: 200, mttf: 27000, c: 5}, "Cmv", null, {arrondiA: true});
+  r = resoudre(Ex, {mttf: 100, t: 100}, "F", null, {});
+  chk("Expo F(t = MTTF) — diapo M2-27", r.val.F, 0.6321, 1e-4);
+  r = resoudre(Ex, {mttf: 100, t: 200}, "R", null, {});
+  chk("Expo R(2·MTTF) — diapo M2-27", r.val.R, 0.1353, 1e-4);
+  r = resoudre(Ex, {mttf: 100, t: 10}, "F", null, {});
+  chk("Expo F(0,1·MTTF) — diapo M2-27", r.val.F, 0.0952, 1e-4);
+  r = resoudre(Ex, {mttf: 100, t: 1}, "R", null, {});
+  chk("Expo R(0,01·MTTF) = 0,99005", r.val.R, 0.99005, 1e-5);
+  r = resoudre(Ex, {lam: 1e-4, t1: 500, t2: 700}, "FDt", null, {});
+  chk("Expo F(Δt) — diapo M2-48", r.val.FDt, 0.0198, 1e-4);
+  chk("Expo R(Δt) — diapo M2-48", r.val.RDt, 0.9802, 1e-4);
+  r = resoudre(Ex, {lam: 0.001, R: 0.9}, "t", null, {});
+  chk("Expo t pour R = 0,9", r.val.t, -Math.log(0.9) / 0.001, 1e-9);
+  r = resoudre(Ex, {t: 150, R: Math.exp(-0.3)}, "mttf", null, {});
+  chk("Expo MTTF depuis R et t (enchaînement)", r.val.mttf, 500, 1e-6);
+  r = resoudre(Ex, {lam: 0.001, t: 500, x: 1}, "Px", null, {});
+  chk("Expo P1(t) = λt·e^(−λt)", r.val.Px, 0.5 * Math.exp(-0.5), 1e-12);
+  ok("recherche « expo » → loi exponentielle", (chercher("expo")[0] || {it: {}}).it.f?.id === "expo");
+  ok("recherche « taux constant » → loi exponentielle", (chercher("taux constant")[0] || {it: {}}).it.f?.id === "expo");
+  r = resoudre(Nm, {m: 100, sig: 50, t: 100}, "F", null, {});  chk("Normale F(t=MTTF) — diapo M2-34 cas 1", r.val.F, 0.5, 1e-9);
+  r = resoudre(Nm, {m: 100, sig: 50, t: 160}, "F", null, {});
+  chk("Normale F(160) — diapo M2-34 cas 2", r.val.F, 0.8849, 1e-4);
+  r = resoudre(Nm, {m: 100, sig: 50, t: 40}, "F", null, {});
+  chk("Normale F(40) — diapo M2-34 cas 3", r.val.F, 0.1151, 1e-4);
+  r = resoudre(Nm, {m: 10, sig: 2, t: 5}, "R", null, {});
+  chk("Normale R(5), N(10;2) — diapo M2-47", r.val.R, 0.9938, 1e-4);
+  chk("Normale u = −2,5", r.val.u, -2.5, 1e-12);
+  r = resoudre(Nm, {m: 100, sig: 50, F: 0.8849303}, "t", null, {});
+  chk("Normale t inverse depuis F", r.val.t, 160, 1e-3);
+  r = resoudre(Nm, {m: 100, t: 160, R: 1 - 0.8849303}, "sig", null, {});
+  chk("Normale σ inverse depuis R", r.val.sig, 50, 1e-3);
+  r = resoudre(Nm, {m: 100, sig: 50, t1: 100, t2: 160}, "FDt", null, {});
+  chk("Normale R(Δt) = R(t2)/R(t1)", r.val.RDt, 0.1150697 / 0.5, 1e-5);
+  chk("Normale F(Δt)", r.val.FDt, 1 - 0.1150697 / 0.5, 1e-5);
+  r = resoudre(Nm, {m: 100, sig: 50, t1: 100, t2: 160}, "P12", null, {});
+  chk("Normale P(t1 < T ≤ t2)", r.val.P12, 0.3849303, 1e-5);
+  r = resoudre(Nm, {m: 100, sig: 50, t: 100}, "lam", null, {});
+  chk("Normale λ(t) = f/R", r.val.lam, (1 / (50 * Math.sqrt(2 * Math.PI))) / 0.5, 1e-9);
+  ok("recherche « gauss » → loi normale", (chercher("gauss")[0] || {it: {}}).it.f?.id === "normale");
+  ok("recherche « ecart type » → loi normale, inconnue σ", chercher("ecart type")[0]?.cible === "sig");
+  r = resoudre(C,{Ap: 0.994, Cmvp: 200, mttf: 27000, c: 5}, "Cmv", null, {arrondiA: true});
   chk("Corrective K1", r.val.K1, 1.2072, 1e-4);
   chk("Corrective Å∞ arrondi", r.val.Ao, 0.997, 1e-12);
   chk("Corrective Cmv — corrigé 401 $", r.val.Cmv, 401.2, 0.05);
@@ -1177,7 +2597,11 @@ function autotest(){
   r = resoudre(St, {lam: 0.0007, T: 3000, SN: 4.940258}, "p0", null, {});
   chk("Stock p0 inverse", r.val.p0, 0.975, 1e-4);
   r = resoudre(St, {u: 1.96, SN: 4.94, lam: 0.0007}, "T", null, {});
-  chk("Stock T inverse (via λT)", r.val.T, 3000, 1);
+  chk("Stock T inverse", r.val.T, 3000, 1);
+  r = resoudre(St, {u: 1.96, SN: 4.94, T: 3000}, "lam", null, {});
+  chk("Stock λ inverse", r.val.lam, 0.0007, 1e-6);
+  ok("λ et T sont deux variables distinctes", "lam" in St.vars && "T" in St.vars && !("m" in St.vars));
+  ok("produit affiché λ·T en numérique", /0,0007·3000/.test(tx(parseTex(St.eqs[0].solve.SN.tpl), {num: true, ph: k => ({lam: "0,0007", T: "3000", u: "1,96"})[k]})));
   const top = q => (chercher(q)[0] || {it: {}}).it;
   ok("recherche « pieces de rechange » → stock", top("pieces de rechange").f?.id === "stock");
   ok("recherche « weibul » (faute) → Weibull", top("weibul").f?.id === "weibull");
@@ -1192,18 +2616,197 @@ function autotest(){
   ok("toutes les formules s'analysent" + (erreurs.length ? " — " + erreurs.join(" ; ") : ""), erreurs.length === 0);
   ok("texte copié : fiabilité Weibull", tx(parseTex(W.eqs[0].solve.R.tpl), {ph: k => symTxt(W, k)}) === "exp[−(t/θ)^b]");
   ok("texte copié : Å∞", symTxt(C, "Ao") === "Å∞");
+  ok("produit 2·σ² affiché avec un point", /2·2\^/.test(tx(parseTex(Nm.eqs.find(e => e.id === "n4").solve.f.tpl), {num: true, ph: k => ({sig: "2", t: "5", m: "10"})[k]})));
+  ok("pas de double parenthèse : F(−2,5)", tx(parseTex("F\\left(@u\\right)"), {num: true, ph: (x, ex, nu) => nu ? fmt(-2.5) : numTxtp(-2.5)}) === "F(−2,5)");
   for (const f of FICHES){
-    S.fiche = f.id; S.vals[f.id] = {}; S.cible[f.id] = null; S.eq[f.id] = null;
+    S.fiche = f.id; S.vals[f.id] = {}; delete S.cible[f.id]; S.eq[f.id] = null;
     renderFiche();
-    ok("interface : fiche " + f.id + " s'affiche", document.querySelectorAll("#sol .pill").length > 0);
+    ok("interface : fiche " + f.id + " s'affiche", f.custom ? !!document.querySelector("#main .feuille") : document.querySelectorAll("#sol .pill").length > 0);
   }
+  const deborde = [];
+  for (const f of FICHES){
+    S.fiche = f.id; renderFiche();
+    document.querySelectorAll("#main .bf, #main .solf, #main .rm, #main .un, #main .p").forEach(b => {
+      const m = b.querySelector("math"); if (m && m.getBoundingClientRect().width > b.clientWidth + 1) deborde.push(f.id + " : " + b.textContent.slice(0, 30));
+    });
+  }
+  ok("aucune formule ne déborde de son cadre" + (deborde.length ? " — " + deborde.join(" | ") : ""), deborde.length === 0);
+  S.fiche = "weibull"; renderFiche();
   const mathEl = document.querySelector("#main math");
   ok("formules en MathML", mathEl && mathEl.namespaceURI === "http://www.w3.org/1998/Math/MathML");
   const fr = document.querySelector("#main mfrac"), mi = document.querySelector("#main mi");
   ok("fractions empilées (rendu MathML actif)", fr && mi && fr.getBoundingClientRect().height > 1.6 * mi.getBoundingClientRect().height);
   S.fiche = "corrective"; S.vals.corrective = {Ap: "0,994", Cmvp: "200", mttf: "27000", c: "5"}; S.cible.corrective = "Cmv"; S.eq.corrective = "c5";
   renderFiche();
+  ok("blocs : chaque formule utilisée affiche son calcul", document.querySelectorAll(".bloc.fait").length >= 8 && /200·/.test(document.getElementById("bc-c1").textContent));
+  S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "th"; S.eq.weibull = "w1"; renderFiche();
+  ok("blocs Weibull calculés (fiabilité, répartition, taux, MTTF)", ["w1", "w2", "w3", "w4"].every(id => document.querySelector(`.bloc[data-eq="${id}"]`).classList.contains("fait")));
+  ok("bloc fiabilité : θ calculé avec les nombres", /500/.test(document.getElementById("bc-w1").textContent) && /999,998/.test(document.getElementById("bc-w1").textContent));
+  S.vals.weibull = {t: "500"}; renderFiche();
+  ok("bloc presque calculable : « il manque »", /il manque/.test(document.getElementById("bc-w1").textContent));
+  S.vals.weibull = {t: "500", th: "1000", b: "2", R: "0,5"}; S.cible.weibull = "F"; S.eq.weibull = "w2"; renderFiche();
+  ok("bloc incohérent signalé", document.querySelector(`.bloc[data-eq="w1"]`).classList.contains("incoh"));
+  S.fiche = "weibull"; S.vals.weibull = {b: "3,5", th: "1", t: "MTTF"}; S.cible.weibull = "F"; S.eq.weibull = "w2"; renderFiche();
+  chk("Weibull t = MTTF saisi tel quel — diapo M2-40", res.val.F, 1 - Math.exp(-Math.pow(M.gamma(1 + 1 / 3.5), 3.5)), 1e-9);
+  ok("lien affiché : t = MTTF", /MTTF/.test($("#sol .inter").textContent));
+  S.fiche = "expo"; S.vals.expo = {mttf: "100", t: "2*MTTF"}; S.cible.expo = "R"; S.eq.expo = "e1"; renderFiche();
+  chk("Expo t = 2*MTTF — diapo M2-27", res.val.R, Math.exp(-2), 1e-12);
+  S.vals.expo = {lam: "0,01", t: "0,1·mttf"}; renderFiche();
+  chk("Expo t = 0,1·MTTF (MTTF calculée depuis λ)", res.val.R, Math.exp(-0.1), 1e-12);
+  S.vals.expo = {t: "MTTF"}; renderFiche();
+  chk("seul t = MTTF (expo) ⇒ R = e⁻¹ — diapo M2-27", res.val.R, Math.exp(-1), 1e-12);
+  ok("t = MTTF affiché avec λ quelconque", /quelconque/.test(document.getElementById("etat-t").textContent));
+  S.fiche = "expo"; S.vals.expo = {lam: "0,001", R: "F"}; S.cible.expo = "t"; S.eq.expo = "e1"; renderFiche();
+  chk("Algèbre : t tel que R = F (expo) = ln2/λ", res.val.t, Math.log(2) / 0.001, 1e-4);
+  S.vals.expo = {lam: "0,002", t: "1/lambda"}; S.cible.expo = "R"; renderFiche();
+  chk("Algèbre : t = 1/λ ⇒ R = e⁻¹", res.val.R, Math.exp(-1), 1e-12);
+  S.vals.expo = {R: "0,9", mttf: "1/λ"}; S.cible.expo = "t"; renderFiche();
+  ok("Algèbre : MTTF = 1/λ sans λ connu → en attente (pas d'erreur)", !/invalide|inconnu/.test(document.getElementById("etat-mttf").textContent));
+  S.vals.expo = {mttf: "500", t: "2*MTTF"}; S.cible.expo = "lam"; renderFiche();
+  chk("Algèbre : λ = 1/MTTF avec t lié", res.val.lam, 0.002, 1e-12);
+  S.vals.expo = {lam: "1/Z"}; S.cible.expo = "R"; renderFiche();
+  ok("Algèbre : nom inconnu signalé clairement", /inconnu : Z/.test(document.getElementById("etat-lam").textContent));
+  S.vals.expo = {x: "2", Px: "1/X", t: "1000"}; S.cible.expo = "lam"; renderFiche();
+  ok("Algèbre : 1/X accepté (X = nombre de défaillances)", !/invalide|inconnu/.test(document.getElementById("etat-Px").textContent));
+  S.fiche = "weibull"; S.vals.weibull = {b: "2", th: "1000", R: "F"}; S.cible.weibull = "t"; S.eq.weibull = "w1"; renderFiche();
+  chk("Algèbre : Weibull t tel que R = F", res.val.t, 1000 * Math.pow(Math.log(2), 0.5), 1e-3);
+  ok("Algèbre : ligne « tel que » affichée", /tel que/.test($("#sol").textContent));
+  ok("Algèbre : champ de la relation marqué ✓ (pas « invalide »)", /relation/.test(document.getElementById("etat-R").textContent));
+  S.fiche = "normale"; S.vals.normale = {m: "100", sig: "50", t: "m + 2*sigma"}; S.cible.normale = "F"; S.eq.normale = "n2"; renderFiche();
+  chk("Algèbre : t = m + 2σ ⇒ F = F(2)", res.val.F, M.phi(2), 1e-12);
+  r = resoudre(W, {mttf: M.gamma(1.5) * 1000, t: 500, R: Math.exp(-0.25)}, "b", null, {});
+  chk("Système Weibull : b depuis MTTF, t, R", r.val.b, 2, 1e-6);
+  chk("Système Weibull : θ depuis MTTF, t, R", r.val.th, 1000, 1e-3);
+  r = resoudre(Nm, {t: 160, F: M.phi(1.2), t1: 40, R1: 1 - M.phi(-1.2)}, "sig", null, {});
+  chk("Système normale : σ depuis deux points", r.val.sig, 50, 1e-6);
+  chk("Système normale : m depuis deux points", r.val.m, 100, 1e-6);
+  r = resoudre(St, {SN: 4.94, u: 1.96}, "lam", null, {});
+  ok("Système : pas de solution inventée si une donnée manque (λ et T)", !("lam" in r.val));
+  S.fiche = "weibull"; S.vals.weibull = {mttf: String(M.gamma(1.5) * 1000), t: "500", R: String(Math.exp(-0.25))}; S.cible.weibull = "b"; S.eq.weibull = "w1"; renderFiche();
+  ok("Système affiché dans le panneau et les blocs", /système/.test($("#sol").textContent) && document.querySelector(`.bloc[data-eq="w1"]`).classList.contains("fait"));
+  S.fiche = "expo"; S.vals.expo = {t: "MTTF", mttf: "1/λ"}; S.cible.expo = "R"; S.eq.expo = "e1"; renderFiche();
+  chk("t = MTTF et MTTF = 1/λ ⇒ R = e⁻¹ sans λ", res.val.R, Math.exp(-1), 1e-12);
+  ok("λ non affiché (quelconque)", !("lam" in res.val) && /ne dépend/.test($("#sol").textContent));
+  S.cible.expo = "F"; S.eq.expo = "e2"; renderFiche();
+  chk("… et F = 1 − e⁻¹ = 0,6321 — diapo M2-27", res.val.F, 1 - Math.exp(-1), 1e-12);
+  S.fiche = "weibull"; S.vals.weibull = {t: "MTTF", b: "2"}; S.cible.weibull = "R"; S.eq.weibull = "w1"; renderFiche();
+  S.fiche = "expo"; S.vals.expo = {t: "MTTF"}; S.cible.expo = "lam"; S.eq.expo = "e3"; renderFiche();
+  chk("sans cliquer : R et F calculés même si l'inconnue est λ", res.val.R, Math.exp(-1), 1e-12);
+  ok("… et le bloc « Fonction fiabilité » affiche son calcul", document.querySelector(`.bloc[data-eq="e1"]`).classList.contains("fait"));
+  S.cible.expo = null; renderFiche();
+  ok("désélection : aucune inconnue, résultats toujours affichés", !document.querySelector(".chip.on, .vc.tgt, .bloc.on") && /Aucune inconnue/.test($(".panneau").textContent) && document.querySelector(`.bloc[data-eq="e1"]`).classList.contains("fait"));
+  document.querySelector(".wrap").dispatchEvent(new MouseEvent("click", {bubbles: true}));
+  S.cible.expo = "R"; renderFiche();
+  document.querySelector(".wrap").dispatchEvent(new MouseEvent("click", {bubbles: true}));
+  ok("clic dans le vide désélectionne", S.cible.expo === null);
+  ok("notation N(10;2) t=5 reconnue", (() => { const n = notation("N(10;2) t=5"); return n && n.f.id === "normale" && n.vals.m === "10" && n.vals.sig === "2" && n.vals.t === "5"; })());
+  ok("notation N(100, 50) reconnue", (() => { const n = notation("N(100, 50)"); return n && n.vals.m === "100" && n.vals.sig === "50"; })());
+  ok("notation N(0,5;0,1) (virgules décimales)", (() => { const n = notation("N(0,5;0,1)"); return n && n.vals.m === "0,5" && n.vals.sig === "0,1"; })());
+  ouvrir(chercher("N(10;2) t=5")[0]);
+  chk("N(10;2) t=5 ⇒ R(5) = 0,9938 — diapo M2-47", res.val.R, 1 - M.phi(-2.5), 1e-12);
+  ouvrir(chercher("W(2;1000) t=500")[0]);
+  chk("W(2;1000) t=500 ⇒ R = e^(−0,25)", res.val.R, Math.exp(-0.25), 1e-12);
+  ouvrir(chercher("Exp(0,001) t=1000")[0]);
+  chk("Exp(0,001) t=1000 ⇒ R = e⁻¹", res.val.R, Math.exp(-1), 1e-12);
+  ok("notation invalide ignorée : N(10)", notation("N(10)") === null);
+  S.fiche = "weibull"; S.vals.weibull = {t: "MTTF", b: "2"}; S.cible.weibull = "R"; S.eq.weibull = "w1"; renderFiche();
+  chk("Weibull t = MTTF, b = 2 ⇒ R indépendant de θ", res.val.R, Math.exp(-Math.pow(M.gamma(1.5), 2)), 1e-9);
+  /* ---- fiches ajoutées : exemples du cours ---- */
+  const Ln = fi("lognormale"), Sy = fi("systemes"), Rm_ = fi("rm"), Sb = fi("standby"), Po = fi("pont"), Rp = fi("reparable"),
+        Tm = fi("temps"), Dp = fi("deuxpar"), Pv = fi("preventive"), Rr = fi("remplacement"), Ag = fi("agefixe"), Ab = fi("abaque");
+  r = resoudre(Ln, {mu: 10, sig: 2, t: 5}, "R", null, {});
+  chk("Log-normale σy — diapo M2-47", r.val.sy, 0.198, 5e-4);
+  chk("Log-normale μy — diapo M2-47", r.val.my, 2.283, 5e-4);
+  chk("Log-normale R(5) = 0,99966 — diapo M2-47", r.val.R, 0.99966, 5e-5);
+  r = resoudre(W, {t1: 1000, t2: 1100, b: 1.7, th: 2000}, "FDt", null, {});
+  chk("Weibull F(Δt) = 0,0527 — diapo M2-49", r.val.FDt, 0.0527, 1e-4);
+  r = resoudre(Sy, {R: 0.9, k: 3}, "Rss", null, {});
+  chk("Série R^k", r.val.Rss, 0.729, 1e-12);
+  chk("Parallèle 1 − (1 − R)^k", r.val.Rps, 0.999, 1e-12);
+  r = resoudre(Sy, {mttf: 500, k: 2}, "mttfps", null, {});
+  chk("Parallèle exponentiel MTTF = 750", r.val.mttfps, 750, 1e-9);
+  chk("Série exponentielle MTTF = MTTF/k", r.val.mttfss, 250, 1e-9);
+  r = resoudre(Rm_, {R: 0.9, r: 2, m: 3}, "Rrm", null, {});
+  chk("Redondance 2/3", r.val.Rrm, 0.972, 1e-12);
+  r = resoudre(Rm_, {R: 0.9, r: 3, m: 3}, "Rrm", null, {});
+  chk("r = m → série", r.val.Rrm, 0.729, 1e-12);
+  r = resoudre(Rm_, {mttf: 1000, r: 2, m: 3}, "mttfrm", null, {});
+  chk("MTTF 2/3 = MTTF(1/2 + 1/3)", r.val.mttfrm, 1000 * (1 / 2 + 1 / 3), 1e-9);
+  r = resoudre(Sb, {lam: 0.001, t: 500, n: 1}, "Rsb1", null, {});
+  chk("Stand-by modèle 1 : e^(−λt)(1 + λt)", r.val.Rsb1, Math.exp(-0.5) * 1.5, 1e-12);
+  chk("Stand-by modèle 1 : MTTF = 2/λ", r.val.mttf1, 2000, 1e-9);
+  r = resoudre(Sb, {lam: 0.001, n: 2}, "mttf1", null, {});
+  chk("Stand-by modèle 2 : MTTF = (n+1)/λ", r.val.mttf1, 3000, 1e-9);
+  r = resoudre(Sb, {lam: 0.001, Rs: 0.9}, "mttf3", null, {});
+  chk("Stand-by modèle 3 : MTTF = (1 + Rs)/λ", r.val.mttf3, 1900, 1e-9);
+  r = resoudre(Sb, {lamA: 0.001, lamB: 0.002, Rs: 1}, "mttf45", null, {});
+  chk("Stand-by modèle 4 : MTTF = 1/λA + 1/λB", r.val.mttf45, 1500, 1e-9);
+  r = resoudre(Po, {RA: 0.99, RB: 0.99, RC: 0.99, RD: 0.99, RE: 0.99}, "Rs", null, {});
+  chk("Pont (probabilité conditionnelle) — diapo M2-80", r.val.Rs, 0.9997981, 1e-7);
+  r = resoudre(Po, {R: 0.99}, "Rsid", null, {});
+  chk("Pont identiques 2R² + 2R³ − 5R⁴ + 2R⁵", r.val.Rsid, 0.9997981, 1e-7);
+  chk("fonction pont(…)", FUNCS.pont(0.99, 0.99, 0.99, 0.99, 0.99), 0.9997980498, 1e-9);
+  chk("fonctions serie(…; par(…)) imbriquées", evalExpr("serie(0,9; par(0,8; 0,8))"), 0.864, 1e-12);
+  chk("fonction rm(2;3;0,9)", evalExpr("rm(2; 3; 0,9)"), 0.972, 1e-12);
+  r = resoudre(Rp, {mttf: 27400, mttr: 160}, "Ainf", null, {});
+  chk("A∞ = MTBF/(MTBF + MTTR) — diapo M3-24", r.val.Ainf, 27400 / 27560, 1e-12);
+  r = resoudre(Rp, {mttf: 27400, mttr: 160, t: 0}, "A", null, {});
+  chk("A(0) = 1", r.val.A, 1, 1e-12);
+  r = resoudre(Tm, {MUT: 500, MDT: 10}, "Ainf", null, {});
+  chk("A∞ = MUT/MTBF — diapo M3-39", r.val.Ainf, 500 / 510, 1e-12);
+  r = resoudre(Dp, {mttf: 500, mttr: 8, t: 150}, "Rps", null, {});
+  chk("2 pompes : R(150) = 0,9909 (corrigé)", r.val.Rps, 0.9909, 1e-4);
+  chk("2 pompes : MTTF = 16375 h (corrigé)", r.val.mttfps, 16375, 1e-6);
+  chk("2 pompes : A(150) = 0,9997 (corrigé)", r.val.Aps, 0.99975, 1e-4);
+  chk("2 pompes : A∞ = 0,9997 (corrigé)", r.val.Apsinf, 0.99975, 1e-4);
+  chk("2 pompes : R exacte (Laplace)", r.val.Rex, 0.99134, 1e-4);
+  chk("2 pompes non réparables : R = 0,9328 (corrigé)", r.val.Rnr, 0.9328, 1e-4);
+  chk("2 pompes non réparables : MTTF = 750 h", r.val.mttfnr, 750, 1e-9);
+  r = resoudre(Pv, {a: 5e-4, bb: 5e-5, T: 100, n: 2, Rc: 0.9}, "Rm", null, {});
+  chk("Préventive sans maintenance 0,7408 (corrigé)", r.val.R0, 0.7408, 1e-4);
+  chk("Préventive n = 2 : 0,8752 (corrigé)", r.val.Rm, 0.8752, 1e-4);
+  chk("Préventive n minimal pour R ≥ 0,9 : 4 (corrigé)", r.val.nmin, 4, 0);
+  chk("Préventive limite exp(−aT)", r.val.Rlim, Math.exp(-0.05), 1e-12);
+  r = resoudre(Rr, {CI: 10000, ice: 400, icm: 200}, "tstar", null, {});
+  chk("Période optimale de remplacement 5,8 ans (corrigé)", r.val.tstar, Math.sqrt(20000 / 600), 1e-12);
+  r = resoudre(Ab, {beta: 2, eta: 15000, r: 20}, "th0", null, {});
+  chk("Abaque β=2, r=20 : x0 ≈ 0,23 — diapo M3-77", r.val.x0, 0.2245, 5e-3);
+  chk("Abaque β=2, r=20 : C2/C1 ≈ 0,38 — diapo M3-77", r.val.ratio, 0.379, 5e-3);
+  r = resoudre(Ab, {beta: 2, eta: 15000, r: 5}, "th0", null, {});
+  chk("Abaque β=2, r=5 : x0 ≈ 0,46 — diapo M3-77", r.val.x0, 0.455, 5e-3);
+  chk("Abaque β=2, r=5 : C2/C1 ≈ 0,67 — diapo M3-77", r.val.ratio, 0.672, 5e-3);
+  r = resoudre(Ab, {beta: 3, eta: 10, r: 10}, "th0", null, {});
+  chk("Abaque β=3, r=10 : x0 ≈ 0,35 — diapo M3-73", r.val.x0, 0.35, 0.02);
+  chk("Abaque β=3, r=10 : C2/C1 ≈ 0,36 (lecture graphique) — diapo M3-73", r.val.ratio, 0.36, 0.05);
+  r = resoudre(Ag, {beta: 3, eta: 1000, Cp: 100, Cd: 1000}, "Cstar", null, {});
+  ok("Âge fixé : C(θ*) < Cd/MTTF (préventif rentable)", r.val.Cstar < r.val.Ccor && r.val.gain < 1);
+  const mk = markovCalc(["2 1 2*0,002", "1 2 0,125", "1 0 0,002", "0 1 2*0,125"], "2", ["0"], [150]);
+  chk("Markov 2 pompes : MTTF = 16375", mk.mttf, 16375, 1e-6);
+  chk("Markov 2 pompes : A∞", mk.Ainf, 1 - Math.pow(0.002 / 0.127, 2), 1e-9);
+  const l1 = 1e-3, l2 = 2e-3;
+  const mk2 = markovCalc([`3,2 2,2 ${3 * l1}`, `2,2 1,2 ${2 * l1}`, `1,2 F1 ${l1}`, `3,1 2,1 ${3 * l1}`, `2,1 1,1 ${2 * l1}`, `1,1 F1 ${l1}`,
+    `3,2 3,1 ${2 * l2}`, `2,2 2,1 ${2 * l2}`, `1,2 1,1 ${2 * l2}`, `3,1 F2 ${l2}`, `2,1 F2 ${l2}`, `1,1 F2 ${l2}`], "3,2", ["F1", "F2"], [100]);
+  chk("Markov 3 processeurs / 2 sources : R(100)", mk2.res[0].R, (1 - Math.pow(1 - Math.exp(-l1 * 100), 3)) * (1 - Math.pow(1 - Math.exp(-l2 * 100), 2)), 1e-9);
+  const mk3 = markovCalc(["1 0 0,001", "0 1 0,1"], "1", ["0"], [100]);
+  chk("Markov 2 états : A(t) = formule du cours", mk3.res[0].A, 0.1 / 0.101 + 0.001 / 0.101 * Math.exp(-0.101 * 100), 1e-9);
+  const ab = abcCalc(fi("abc").exemples[0].vals.d.split("\n"), 80, 95);
+  ok("ABC : 1re machine n° 11, 21,2 % — diapo M3-94", ab.rows[0].n === "11" && Math.abs(ab.rows[0].pc - 21.19) < 0.05);
+  chk("ABC : 6e ligne 78,8 % — diapo M3-94", ab.rows[5].pc, 78.8, 0.05);
+  chk("ABC : coût total 755 — diapo M3-94", ab.CT, 755, 0);
+  S.fiche = "markov"; S.vals.markov = Object.assign({}, fi("markov").exemples[1].vals); renderFiche();
+  ok("interface Markov : équations et MTTF affichés", /16375/.test($("#cu-res").textContent) && document.querySelectorAll("#cu-eqs .lc").length === 3);
+  S.fiche = "abc"; S.vals.abc = Object.assign({}, fi("abc").exemples[0].vals); renderFiche();
+  ok("interface ABC : tableau et courbe affichés", document.querySelectorAll("#cu-tab tr").length === 15 && !!document.querySelector("#cu-res svg"));
+  S.fiche = "corrective"; renderFiche();
   ok("interface : résultat Cmv affiché", /401,207/.test($("#sol").textContent));
+  const deb2 = [...document.querySelectorAll("#main .bf, #main .solf, #main .rm, #main .un, #main .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1; });
+  ok("aucune formule ne déborde (calcul complet affiché)", deb2.length === 0);
+  const deb3 = [...document.querySelectorAll("#main .bcalc .un, #main .bcalc .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1; });
+  ok("aucun calcul de bloc ne déborde", deb3.length === 0);
+  const fe = document.querySelector(".feuille");
+  ok("feuille de données sans barre de défilement", fe && fe.scrollWidth <= fe.clientWidth + 1 && fe.scrollHeight <= fe.clientHeight + 1 && [...fe.querySelectorAll(".vc")].every(v => v.scrollWidth <= v.clientWidth + 1));
+  const petits = [...document.querySelectorAll("#main .un:not([hidden]) math, #main .deux:not([hidden]) .p math")].filter(m => parseFloat(getComputedStyle(m).fontSize) < 12.9 && parseFloat(getComputedStyle(m).fontSize) > 8.1);
+  ok("calculs lisibles (taille ≥ 13 px sauf dernier recours)", petits.length === 0);
   ok("texte copié du résultat", /^Cmv = /.test(res.texteFin) && /401,207/.test(res.texteFin));
   return T;
 }
@@ -1211,6 +2814,40 @@ function autotest(){
 /* ---- démarrage ---- */
 if (location.hash === "#demo"){
   S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "th"; S.eq.weibull = "w1";
+}
+/* ouverture directe : #f=deuxpar&mttf=500&mttr=8&t=150 ou #f=markov&ex=1 */
+if (location.hash.startsWith("#f=")){
+  const q = new URLSearchParams(location.hash.slice(1)), fid = q.get("f"), fo = FICHES.find(x => x.id === fid);
+  if (fo){
+    S.fiche = fid;
+    if (fo.custom && q.has("ex")) S.vals[fid] = Object.assign({}, fo.exemples[+q.get("ex")].vals);
+    else { const v = {}; for (const [k, x] of q) if (k !== "f" && k !== "cible") v[k] = x; if (Object.keys(v).length) S.vals[fid] = v; }
+    if (q.has("cible")) choisirCible(fo, q.get("cible"));
+  }
+}
+if (location.hash === "#demo10"){
+  S.fiche = "expo"; S.vals.expo = {t: "MTTF"}; S.cible.expo = "lam"; S.eq.expo = "e3";
+}
+if (location.hash === "#demo9"){
+  S.fiche = "expo"; S.vals.expo = {t: "MTTF", mttf: "1/λ"}; S.cible.expo = "R"; S.eq.expo = "e1";
+}
+if (location.hash === "#demo8"){
+  S.fiche = "weibull"; S.vals.weibull = {mttf: "886,227", t: "500", R: "0,7788"}; S.cible.weibull = "b"; S.eq.weibull = "w1";
+}
+if (location.hash === "#demo7"){
+  S.fiche = "expo"; S.vals.expo = {lam: "0,001", R: "F"}; S.cible.expo = "t"; S.eq.expo = "e1";
+}
+if (location.hash === "#demo6"){
+  S.fiche = "weibull"; S.vals.weibull = {b: "3,5", th: "1", t: "MTTF"}; S.cible.weibull = "F"; S.eq.weibull = "w2";
+}
+if (location.hash === "#demo5"){
+  S.fiche = "expo"; S.vals.expo = {lam: "1e-4", t1: "500", t2: "700"}; S.cible.expo = "FDt"; S.eq.expo = "e6";
+}
+if (location.hash === "#demo4"){
+  S.fiche = "normale"; S.vals.normale = {m: "10", sig: "2", t: "5"}; S.cible.normale = "R"; S.eq.normale = "n3";
+}
+if (location.hash === "#demo3"){
+  S.fiche = "stock"; S.vals.stock = {lam: "0,0007", T: "3000", p0: "0,975"}; S.cible.stock = "SN"; S.eq.stock = "s3";
 }
 if (location.hash === "#demo2"){
   S.fiche = "corrective"; S.vals.corrective = {Ap: "0,994", Cmvp: "200", mttf: "27000", c: "5"}; S.cible.corrective = "Cmv"; S.eq.corrective = "c5";
