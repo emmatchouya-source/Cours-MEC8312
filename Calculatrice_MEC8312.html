@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculatrice MEC8312</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --ink:#1d2330; --muted:#5f6b7a; --line:#dde2e8;
+  --accent:#2457d6; --accent-soft:#e8eefc; --ok:#0f7b5f; --ok-soft:#e3f5ee;
+  --warn:#8a5200; --warn-soft:#fff4e0; --bad:#b42318; --bad-soft:#fdecea;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",system-ui,sans-serif}
+button{font:inherit}
+math{font-family:"Cambria Math","STIX Two Math",math}
+header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;padding:10px 20px}
+.brand{font-weight:700;white-space:nowrap}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.search{position:relative;flex:1;max-width:780px}
+.search input{width:100%;font:16px "Segoe UI",sans-serif;padding:10px 70px 10px 38px;border:1.5px solid var(--line);border-radius:10px;background:#fbfcfd;color:var(--ink)}
+.search input:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px var(--accent-soft)}
+.search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%)}
+kbd{font:12px "Segoe UI",sans-serif;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:#fff;color:var(--muted)}
+#results{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(20,30,50,.14);max-height:70vh;overflow:auto;display:none}
+.res{padding:9px 14px;cursor:pointer;border-bottom:1px solid #f0f2f5;display:flex;gap:10px;align-items:baseline}
+.res:last-child{border-bottom:0}
+.res.sel{background:var(--accent-soft)}
+.res .t{font-weight:600}
+.res .s{color:var(--muted);font-size:13px}
+.res .r{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+.res.off{opacity:.55;cursor:default}
+.res.vide{color:var(--muted);cursor:default}
+.tag{font-size:11px;border-radius:99px;padding:1px 8px;background:#eef0f3;color:var(--muted);white-space:nowrap}
+.tag.cible{background:var(--ok-soft);color:var(--ok)}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;padding:20px;max-width:1400px;margin:0 auto}
+aside .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:16px}
+aside h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.nav a{display:block;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;cursor:pointer;font-size:14px}
+.nav a:hover{background:#f0f3f7}
+.nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav a.off{color:#9aa3ae;cursor:default}
+.nav a.off:hover{background:none}
+.nav .grp{font-size:11px;color:var(--muted);margin:10px 8px 2px;text-transform:uppercase;letter-spacing:.05em}
+.nav .grp:first-child{margin-top:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px}
+.fhead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:14px}
+.fhead h1{margin:2px 0;font-size:24px}
+.ch{font-size:12px;color:var(--accent);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.sous{color:var(--muted)}
+.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn{font-size:13px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--ink);text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:#b8c2cf;background:#f8f9fb}
+.opts{margin-top:10px;font-size:14px}
+.opts label{cursor:pointer}
+.step{margin-top:20px}
+.sh{font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sh .n{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;display:inline-grid;place-items:center}
+.hint{color:var(--muted);font-size:13px;font-weight:400}
+.eqs{display:grid;gap:6px}
+.eq{display:grid;grid-template-columns:200px minmax(0,1fr);align-items:center;gap:12px;padding:6px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:#fff;min-height:54px}
+.eq:hover{border-color:#b8c2cf}
+.eq.on{border-color:var(--accent);background:var(--accent-soft)}
+.eq .el{font-size:13px;color:var(--muted)}
+.eq.on .el{color:var(--accent);font-weight:600}
+.eq math{font-size:21px}
+mrow.v{cursor:pointer;border-radius:4px;padding:0 1px}
+mrow.v:hover{background:#fff;color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+mrow.tgt{color:var(--ok);background:var(--ok-soft);border-radius:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:3px 12px;cursor:pointer;display:flex;gap:8px;align-items:center;color:var(--ink)}
+.chip:hover{border-color:var(--ok)}
+.chip math{font-size:18px}
+.chip small{color:var(--muted)}
+.chip.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.chip.on small{color:#d7f3e9}
+.sol{border:1.5px solid var(--line);border-radius:12px;padding:14px 18px;background:#fcfdfe}
+.solf{padding:6px 0}
+.solf math{font-size:28px}
+mrow.pill{cursor:pointer;border:1.5px dashed #8fa8e6;background:#f3f6ff;color:var(--accent);border-radius:6px;padding:2px 5px;margin:0 2px}
+mrow.pill.have{border-style:solid;border-color:#c9d3e3;background:#fff;color:var(--ink)}
+mrow.pill:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+mtext.pv{font-family:"Segoe UI",sans-serif;font-size:12px;color:var(--accent);font-style:normal}
+mrow.pill.have mtext.pv{color:var(--ink);font-weight:600}
+mrow.pill.calc mtext.pv{color:var(--ok)}
+mrow.resv{color:var(--ok);font-weight:700}
+.res-line{margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--ok-soft);display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.res-line math{font-size:24px}
+.res-line .acts{margin-left:auto}
+.inter{margin-top:10px;padding:6px 12px;border-left:3px solid var(--line)}
+.inter .il{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.inter div.l{margin:6px 0}
+.inter math{font-size:19px}
+.miss{margin-top:8px;color:var(--muted);line-height:2.6}
+.miss math{font-size:22px}
+.note{margin-top:8px;padding:7px 12px;border-radius:8px;font-size:14px}
+.note.info{background:var(--accent-soft)}
+.note.warn{background:var(--warn-soft);color:var(--warn)}
+.note.bad{background:var(--bad-soft);color:var(--bad)}
+table.grid{width:100%;border-collapse:collapse}
+.grid td{padding:5px 8px;border-bottom:1px solid #eef1f4;vertical-align:middle}
+.grid tr.tgt td{background:var(--ok-soft)}
+.grid .sym{width:150px;white-space:nowrap}
+.grid .sym math{font-size:19px}
+.grid .nom{color:var(--muted);font-size:13px}
+.grid input{width:160px;font:15px "Segoe UI",sans-serif;padding:5px 8px;border:1px solid var(--line);border-radius:7px;color:var(--ink)}
+.grid input::placeholder{color:#b3bcc7;font-style:italic}
+.grid input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.grid input[readonly]{background:#fff;border-color:var(--ok);color:var(--ok);font-weight:700}
+.grid .etat{font-size:13px}
+.calc{color:var(--ok);font-weight:600}
+.muted{color:var(--muted)}
+.bad{color:var(--bad)}
+.tb{border:0;background:none;cursor:pointer;font-size:15px;opacity:.3;padding:2px}
+.tb:hover,tr.tgt .tb{opacity:1}
+.pin{border:0;background:none;cursor:pointer;opacity:.5;padding:0 3px}
+.pin:hover{opacity:1}
+#pop{position:absolute;z-index:30;display:none;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(20,30,50,.18);padding:10px;width:270px}
+#pop input{width:100%;font:17px "Segoe UI",sans-serif;padding:7px 10px;border:1.5px solid var(--accent);border-radius:8px;outline:none}
+#pop .pl{font-size:13px;margin-bottom:6px}
+#pop .pl math{font-size:18px}
+#pop .pe{font-size:12px;color:var(--muted);margin-top:5px;min-height:16px}
+.mems{display:flex;flex-direction:column;gap:5px}
+.mem{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;background:#fff;text-align:left;color:var(--ink)}
+.mem:hover{border-color:var(--accent)}
+.mem b{color:var(--accent)}
+.mem .x{margin-left:auto;color:var(--muted);padding:0 4px}
+.mem .x:hover{color:var(--bad)}
+#calc-in{width:100%;font:15px "Segoe UI",sans-serif;padding:6px 8px;border:1px solid var(--line);border-radius:7px}
+#calc-in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+#calc-out{margin-top:5px;font-weight:600;min-height:20px}
+.small{font-size:12px;color:var(--muted)}
+footer{max-width:1400px;margin:0 auto;padding:0 20px 24px;font-size:12px;color:var(--muted)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:7px 14px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:.92}
+@media (max-width:900px){.layout{grid-template-columns:1fr}.eq{grid-template-columns:1fr}header{flex-wrap:wrap}.grid .nom{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Calculatrice MEC8312<small>Fiabilité et sécurité — hors ligne</small></div>
+  <div class="search">
+    <span class="ico">🔍</span>
+    <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Chercher une formule : weibull, pièces de rechange, dispo optimale, échelle, MTBF…">
+    <kbd>Ctrl K</kbd>
+    <div id="results"></div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="box"><h3>Fiches</h3><div class="nav" id="nav"></div></div>
+    <div class="box">
+      <h3>Mémoire</h3>
+      <div class="mems" id="mems"></div>
+      <div class="small" style="margin-top:6px">📌 épingle un résultat. Clic sur une mémoire = la coller dans le champ actif. Utilisable aussi comme M1, M2… dans un calcul.</div>
+    </div>
+    <div class="box">
+      <h3>Calcul libre</h3>
+      <input id="calc-in" type="text" autocomplete="off" spellcheck="false" placeholder="ex. 1 - (1 - 0,95)^2">
+      <div id="calc-out"></div>
+      <div class="small">Fonctions : sqrt ln log exp gamma phi phiinv · √ ^ · M1, M2… · Entrée = épingler</div>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+<footer>Maquette — 3 fiches actives (Weibull, maintenance corrective, stock). Saisie : 0,994 · 1/500 · 5e-4 · sqrt(2) · gamma(1,5). <a href="#test" id="lien-test">Autotest</a></footer>
+
+<div id="pop">
+  <div class="pl" id="pop-lab"></div>
+  <input id="pop-in" type="text" autocomplete="off" spellcheck="false">
+  <div class="pe" id="pop-ev"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   1. MATHÉMATIQUES
+   ===================================================================== */
+const M = {
+  gamma(x){
+    if (x < 0.5) return Math.PI / (Math.sin(Math.PI * x) * M.gamma(1 - x));
+    x -= 1;
+    const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+      -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    let a = c[0]; const t = x + 7.5;
+    for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+    return Math.sqrt(2 * Math.PI) * Math.pow(t, x + 0.5) * Math.exp(-t) * a;
+  },
+  erfc(x){
+    const z = Math.abs(x), t = 1 / (1 + 0.5 * z);
+    const r = t * Math.exp(-z*z - 1.26551223 + t*(1.00002368 + t*(0.37409196 + t*(0.09678418 + t*(-0.18628806 +
+      t*(0.27886807 + t*(-1.13520398 + t*(1.48851587 + t*(-0.82215223 + t*0.17087277)))))))));
+    return x >= 0 ? r : 2 - r;
+  },
+  phi(u){ return 0.5 * M.erfc(-u / Math.SQRT2); },
+  phiinv(p){
+    if (!(p > 0 && p < 1)) return NaN;
+    const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+    const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+    const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+    const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+    const pl = 0.02425;
+    if (p < pl){ const q = Math.sqrt(-2*Math.log(p));
+      return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+    if (p > 1 - pl){ const q = Math.sqrt(-2*Math.log(1-p));
+      return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+    const q = p - 0.5, r = q*q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  }
+};
+
+/* Saisie : 0,994 · 1/500 · 5e-4 · 2^3 · √2 · sqrt(2) · gamma(1,5) · M1 */
+const FUNCS = {sqrt:Math.sqrt, racine:Math.sqrt, ln:Math.log, log:Math.log10, exp:Math.exp,
+  gamma:x=>M.gamma(x), "γ":x=>M.gamma(x), phi:x=>M.phi(x), "φ":x=>M.phi(x), phiinv:p=>M.phiinv(p),
+  abs:Math.abs, sin:Math.sin, cos:Math.cos, tan:Math.tan};
+const CONSTS = {pi:Math.PI, "π":Math.PI, e:Math.E};
+
+function evalExpr(str, env){
+  const s = String(str).replace(/\s+/g, "").replace(/[×·]/g, "*").replace(/÷/g, "/").replace(/[−–]/g, "-");
+  if (!s) throw "vide";
+  let i = 0;
+  const num = () => {
+    const m = /^(\d+(?:[.,]\d*)?|[.,]\d+)(?:[eE][-+]?\d+)?/.exec(s.slice(i));
+    if (!m) return null;
+    i += m[0].length; return parseFloat(m[0].replace(",", "."));
+  };
+  const primary = () => {
+    if (s[i] === "("){ i++; const v = expr(); if (s[i] !== ")") throw "parenthèse manquante"; i++; return v; }
+    const n = num(); if (n !== null) return n;
+    const m = /^[A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ]*/.exec(s.slice(i));
+    if (m){
+      i += m[0].length; const nom = m[0].toLowerCase();
+      if (FUNCS[nom]){
+        if (s[i] !== "(") return FUNCS[nom](unary());
+        i++; const args = [expr()];
+        while (s[i] === ";"){ i++; args.push(expr()); }
+        if (s[i] !== ")") throw "parenthèse manquante"; i++;
+        return FUNCS[nom](...args);
+      }
+      if (nom in CONSTS) return CONSTS[nom];
+      if (env && nom in env) return env[nom];
+      throw "inconnu : " + m[0];
+    }
+    throw s[i] ? "caractère inattendu « " + s[i] + " »" : "expression incomplète";
+  };
+  const power = () => {
+    const b = primary();
+    if (s[i] === "^"){ i++; return Math.pow(b, unary()); }
+    if (s[i] === "*" && s[i+1] === "*"){ i += 2; return Math.pow(b, unary()); }
+    return b;
+  };
+  const unary = () => {
+    if (s[i] === "-"){ i++; return -unary(); }
+    if (s[i] === "+"){ i++; return unary(); }
+    if (s[i] === "√"){ i++; return Math.sqrt(unary()); }
+    return power();
+  };
+  const term = () => {
+    let v = unary();
+    for (;;){
+      if ((s[i] === "*" && s[i+1] !== "*") || s[i] === "/"){ const op = s[i++]; const r = unary(); v = op === "*" ? v * r : v / r; }
+      else if (s[i] && /[A-Za-z(Ͱ-Ͽ√]/.test(s[i])) v *= unary();
+      else return v;
+    }
+  };
+  const expr = () => {
+    let v = term();
+    while (s[i] === "+" || s[i] === "-"){ const op = s[i++]; const r = term(); v = op === "+" ? v + r : v - r; }
+    return v;
+  };
+  const v = expr();
+  if (i < s.length) throw "caractère inattendu « " + s[i] + " »";
+  return v;
+}
+
+/* Nombres à la française */
+const SUP = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
+const plain = n => String(n).replace(".", ",").replace("-", "−");
+function sci(x){
+  const a = Math.abs(x);
+  if (!isFinite(x) || a === 0 || (Number.isInteger(x) && a < 1e9) || (a < 1e7 && a >= 1e-4)) return null;
+  let e = Math.floor(Math.log10(a)), m = +(x / Math.pow(10, e)).toPrecision(6);
+  if (Math.abs(m) >= 10){ m /= 10; e++; }
+  return {m, e};
+}
+function fmt(x){
+  if (x === undefined || x === null || Number.isNaN(x)) return "?";
+  if (!isFinite(x)) return x > 0 ? "∞" : "−∞";
+  const s = sci(x);
+  if (s) return plain(s.m) + "×10" + String(s.e).split("").map(c => SUP[c]).join("");
+  return Number.isInteger(x) ? plain(x) : plain(+x.toPrecision(6));
+}
+function numStr(v){ return String(+v.toPrecision(12)).replace(".", ","); }
+function esc(s){ return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function txt(html){ return String(html).replace(/<[^>]*>/g, ""); }
+
+/* =====================================================================
+   2. FORMULES : mini-LaTeX → MathML (affichage) et → texte (copie)
+      @var = variable ; \frac{}{} \sqrt{} ^{} _{} \left( \right) \sum \overset{}{}
+   ===================================================================== */
+const TEX_ID = {Gamma:"Γ", Phi:"Φ", lambda:"λ", theta:"θ", eta:"η", beta:"β", mu:"μ", kappa:"κ", sigma:"σ", Delta:"Δ", infty:"∞"};
+const TEX_OP = {cdot:"·", times:"×", geq:"≥", leq:"≤", lceil:"⌈", rceil:"⌉", "{":"{", "}":"}", Rightarrow:"⇒", ":":":"};
+const TEX_FN = new Set(["exp", "ln", "min", "max", "log"]);
+const _cacheTex = new Map();
+function parseTex(src){
+  if (_cacheTex.has(src)) return _cacheTex.get(src);
+  let i = 0;
+  const blanc = () => { while (src[i] === " ") i++; };
+  const cmd = () => { const m = /^\\([A-Za-z]+|.)/.exec(src.slice(i)); i += m[0].length; return m[1]; };
+  const delim = () => { blanc(); if (src[i] === "\\"){ const c = cmd(); return c === "." ? "" : (TEX_OP[c] || c); } return src[i++]; };
+  const atom = () => {
+    blanc();
+    const ch = src[i];
+    if (ch === undefined || ch === "}") return null;
+    if (ch === "{"){ i++; const r = seq("}"); i++; return {t: "row", items: r}; }
+    if (ch === "@"){ const m = /^@(\w+)/.exec(src.slice(i)); i += m[0].length; return {t: "ph", k: m[1]}; }
+    if (ch === "\\"){
+      const c = cmd();
+      if (c === "frac"){ const a = atom(), b = atom(); return {t: "frac", a, b}; }
+      if (c === "sqrt") return {t: "sqrt", a: atom()};
+      if (c === "overset"){ const o = atom(), b = atom(); return {t: "over", o, b}; }
+      if (c === "text"){ i++; const j = src.indexOf("}", i); const v = src.slice(i, j); i = j + 1; return {t: "text", v}; }
+      if (c === "left"){ const open = delim(); const items = seq("\\right"); i += 6; const close = delim(); return {t: "fence", open, close, items}; }
+      if (c === "sum") return {t: "sum"};
+      if (c === ",") return {t: "sp"};
+      if (TEX_FN.has(c)) return {t: "fn", v: c};
+      if (TEX_ID[c]) return {t: "id", v: TEX_ID[c]};
+      if (TEX_OP[c]) return {t: "op", v: TEX_OP[c]};
+      throw "commande inconnue \\" + c;
+    }
+    if (/[0-9]/.test(ch)){ const m = /^\d+(?:[.,]\d+)?/.exec(src.slice(i)); i += m[0].length; return {t: "num", v: m[0].replace(".", ",")}; }
+    if (/[A-Za-z]/.test(ch)){
+      const m = /^[A-Za-z]+/.exec(src.slice(i)); i += m[0].length;
+      let v = m[0]; if (src[i] === "'" || src[i] === "′"){ i++; v += "′"; }
+      return {t: "id", v};
+    }
+    if (/[À-ɏͰ-Ͽ]/.test(ch)){
+      i++; let v = ch; if (src[i] === "'" || src[i] === "′"){ i++; v += "′"; }
+      return {t: "id", v};
+    }
+    i++;
+    return {t: "op", v: ch === "-" ? "−" : ch};
+  };
+  const scripts = base => {
+    for (;;){
+      blanc();
+      if (src[i] === "^"){ i++; base = Object.assign({t: "script", base}, base.t === "script" ? {base: base.base, sub: base.sub} : {}, {sup: atom()}); }
+      else if (src[i] === "_"){ i++; base = Object.assign({t: "script", base}, base.t === "script" ? {base: base.base, sup: base.sup} : {}, {sub: atom()}); }
+      else return base;
+    }
+  };
+  const seq = end => {
+    const items = [];
+    for (;;){
+      blanc();
+      if (i >= src.length) break;
+      if (end === "\\right" && src.startsWith("\\right", i)) break;
+      const a = atom(); if (!a) break;
+      items.push(scripts(a));
+    }
+    return items;
+  };
+  const r = seq(null);
+  _cacheTex.set(src, r);
+  return r;
+}
+
+/* rendu MathML ; ctx.ph(k, enExposant) fournit le rendu d'une variable */
+function ml(nodes, ctx){
+  return nodes.map((n, i) => {
+    const p = nodes[i - 1];
+    if (n.t === "op" && n.v === "−" && (!p || p.t === "op"))   /* moins unaire : pas d'espace */
+      return '<mo form="prefix" lspace="0" rspace="0">−</mo>';
+    return ml1(n, ctx);
+  }).join("");
+}
+function miML(v){
+  const prime = v.endsWith("′"), base = prime ? v.slice(0, -1) : v;
+  const mi = /^[ΓΔΘΛΞΠΣΦΨΩ]$/.test(base) ? '<mi mathvariant="normal">' + base + "</mi>" : "<mi>" + esc(base) + "</mi>";
+  return prime ? "<msup>" + mi + "<mo>′</mo></msup>" : mi;
+}
+function grp(n, ctx){ return "<mrow>" + (n ? (n.t === "row" ? ml(n.items, ctx) : ml1(n, ctx)) : "") + "</mrow>"; }
+function ml1(n, ctx){
+  switch (n.t){
+    case "row": return "<mrow>" + ml(n.items, ctx) + "</mrow>";
+    case "ph": return ctx.ph(n.k, false);
+    case "num": return "<mn>" + n.v + "</mn>";
+    case "id": return miML(n.v);
+    case "fn": return "<mi>" + n.v + '</mi><mo>&#x2061;</mo><mspace width="0.17em"></mspace>';
+    case "op": return "<mo>" + esc(n.v) + "</mo>";
+    case "sp": return '<mspace width="0.17em"></mspace>';
+    case "text": return "<mtext>" + esc(n.v) + "</mtext>";
+    case "sum": return '<mo largeop="true">∑</mo>';
+    case "frac": return "<mfrac>" + grp(n.a, ctx) + grp(n.b, ctx) + "</mfrac>";
+    case "sqrt": return "<msqrt>" + grp(n.a, ctx) + "</msqrt>";
+    case "over": return "<mover>" + grp(n.b, ctx) + grp(n.o, ctx) + "</mover>";
+    case "fence": return "<mrow>" + (n.open ? '<mo fence="true" stretchy="true">' + esc(n.open) + "</mo>" : "") + ml(n.items, ctx) + (n.close ? '<mo fence="true" stretchy="true">' + esc(n.close) + "</mo>" : "") + "</mrow>";
+    case "script": {
+      const b = n.base.t === "ph" ? ctx.ph(n.base.k, true) : grp(n.base, ctx);
+      if (n.base.t === "sum") return '<munderover><mo largeop="true" movablelimits="false">∑</mo>' + grp(n.sub, ctx) + grp(n.sup, ctx) + "</munderover>";
+      if (n.sup && n.sub) return "<msubsup>" + b + grp(n.sub, ctx) + grp(n.sup, ctx) + "</msubsup>";
+      if (n.sup) return "<msup>" + b + grp(n.sup, ctx) + "</msup>";
+      return "<msub>" + b + grp(n.sub, ctx) + "</msub>";
+    }
+  }
+  return "";
+}
+
+/* rendu texte (pour copier) */
+const simple = s => /^[\w,′∞À-ɏͰ-Ͽ]+$/.test(s);
+const par = s => simple(s) ? s : "(" + s + ")";
+function tx(nodes, ctx){
+  return nodes.map(n => tx1(n, ctx)).join("").replace(/\s+/g, " ")
+    .replace(/([\[({]) /g, "$1").replace(/ ([\])}])/g, "$1").replace(/^ − /, "−").trim().normalize("NFC");
+}
+function tx1(n, ctx){
+  switch (n.t){
+    case "row": return tx(n.items, ctx);
+    case "ph": return ctx.ph(n.k, false);
+    case "num": case "id": case "text": return n.v;
+    case "fn": return n.v;
+    case "op": return ["=", "+", "−", "≥", "≤", ":", "⇒"].includes(n.v) ? " " + n.v + " " : n.v;
+    case "sp": return " ";
+    case "sum": return "Σ";
+    case "frac": return par(tx1(n.a, ctx)) + "/" + par(tx1(n.b, ctx));
+    case "sqrt": return "√" + par(tx1(n.a, ctx));
+    case "over": return tx1(n.b, ctx) + "̊";
+    case "fence": return (n.open || "") + tx(n.items, ctx) + (n.close || "");
+    case "script": {
+      if (n.base.t === "sum") return "Σ(" + tx1(n.sub, ctx) + ".." + tx1(n.sup, ctx) + ") ";
+      const b = n.base.t === "ph" ? ctx.ph(n.base.k, true) : tx1(n.base, ctx);
+      return b + (n.sub ? tx1(n.sub, ctx) : "") + (n.sup ? "^" + par(tx1(n.sup, ctx)) : "");
+    }
+  }
+  return "";
+}
+
+/* symboles des variables */
+function symML(f, k, enExposant){
+  const nodes = parseTex(f.vars[k].sym);
+  const inner = ml(nodes, {ph: () => ""});
+  return enExposant && nodes.length > 1 ? "<mo>(</mo>" + inner + "<mo>)</mo>" : inner;
+}
+function symTxt(f, k, enExposant){ const s = tx(parseTex(f.vars[k].sym), {ph: () => ""}); return enExposant ? par(s) : s; }
+function mathSym(f, k){ return "<math>" + symML(f, k) + "</math>"; }
+
+/* nombres en MathML */
+function numML(x){
+  const s = sci(x);
+  const signe = n => n < 0 ? "<mo>−</mo><mn>" + plain(-n) + "</mn>" : "<mn>" + plain(n) + "</mn>";
+  if (!isFinite(x)) return "<mn>" + fmt(x) + "</mn>";
+  if (s) return "<mrow>" + signe(s.m) + "<mo>×</mo><msup><mn>10</mn><mrow>" + (s.e < 0 ? "<mo>−</mo>" : "") + "<mn>" + Math.abs(s.e) + "</mn></mrow></msup></mrow>";
+  return "<mrow>" + signe(Number.isInteger(x) ? x : +x.toPrecision(6)) + "</mrow>";
+}
+const aParenth = x => x < 0 || !!sci(x);
+function numMLp(x){ return aParenth(x) ? "<mrow><mo>(</mo>" + numML(x) + "<mo>)</mo></mrow>" : numML(x); }
+function numTxtp(x){ return aParenth(x) ? "(" + fmt(x) + ")" : fmt(x); }
+
+/* =====================================================================
+   3. FICHES (formules du cours, chaque variable est calculable)
+   ===================================================================== */
+const V = (sym, nom, syn, extra) => Object.assign({sym, nom, syn: syn || []}, extra || {});
+const exp = Math.exp, ln = Math.log, pow = Math.pow, sqrt = Math.sqrt;
+
+const FICHES = [
+{
+  id: "weibull", ch: "M2", titre: "Loi de Weibull", sous: "Fiabilité, défaillance, taux, MTTF (2 paramètres, t0 = 0)",
+  ref: {doc: "Topic 2/M2-Maths.pdf", page: 35, lib: "M2 diapo 35"},
+  mots: ["weibull", "loi", "usure", "vieillissement", "beta eta", "rayleigh", "courbe en baignoire"],
+  vars: {
+    t:    V("t", "temps (âge, durée de mission)", ["temps", "durée", "mission", "âge", "heures", "instant"]),
+    b:    V("b", "paramètre de forme (β)", ["beta", "β", "forme", "pente", "shape"], {lo: 0.02, hi: 50}),
+    th:   V("\\theta", "paramètre d'échelle (η)", ["theta", "θ", "eta", "η", "échelle", "vie caractéristique", "scale"]),
+    R:    V("R", "fiabilité R(t)", ["fiabilité", "survie", "reliability", "bon fonctionnement"], {lo: 1e-300, hi: 1}),
+    F:    V("F", "probabilité de défaillance F(t)", ["défaillance", "répartition", "panne", "cdf", "non-fiabilité"], {lo: 1e-300, hi: 1}),
+    lam:  V("\\lambda", "taux de défaillance λ(t)", ["taux", "lambda", "λ", "hasard", "failure rate"]),
+    g:    V("\\Gamma\\left(1+\\frac{1}{b}\\right)", "fonction Gamma (Annexe G)", ["gamma", "annexe g"]),
+    mttf: V("MTTF", "durée moyenne de bon fonctionnement", ["mttf", "moyenne", "espérance", "durée de vie moyenne", "temps moyen"])
+  },
+  eqs: [
+    {id: "w1", label: "Fonction fiabilité", main: "R", solve: {
+      R:  {tpl: "\\exp\\left[-\\left(\\frac{@t}{@th}\\right)^{@b}\\right]", fn: v => exp(-pow(v.t / v.th, v.b))},
+      t:  {tpl: "@th\\left(-\\ln @R\\right)^{\\frac{1}{@b}}", fn: v => v.th * pow(-ln(v.R), 1 / v.b)},
+      th: {tpl: "\\frac{@t}{\\left(-\\ln @R\\right)^{\\frac{1}{@b}}}", fn: v => v.t / pow(-ln(v.R), 1 / v.b)},
+      b:  {tpl: "\\frac{\\ln\\left(-\\ln @R\\right)}{\\ln\\left(\\frac{@t}{@th}\\right)}", fn: v => ln(-ln(v.R)) / ln(v.t / v.th)}}},
+    {id: "w2", label: "Fonction de répartition", main: "F", solve: {
+      F: {tpl: "1-@R", fn: v => 1 - v.R},
+      R: {tpl: "1-@F", fn: v => 1 - v.F}}},
+    {id: "w3", label: "Taux de défaillance", main: "lam", solve: {
+      lam: {tpl: "\\frac{@b}{@th}\\left(\\frac{@t}{@th}\\right)^{@b-1}", fn: v => v.b / v.th * pow(v.t / v.th, v.b - 1)},
+      th:  {tpl: "\\left(\\frac{@b\\cdot @t^{@b-1}}{@lam}\\right)^{\\frac{1}{@b}}", fn: v => pow(v.b * pow(v.t, v.b - 1) / v.lam, 1 / v.b)},
+      t:   {tpl: "@th\\left(\\frac{@lam\\cdot @th}{@b}\\right)^{\\frac{1}{@b-1}}", fn: v => v.th * pow(v.lam * v.th / v.b, 1 / (v.b - 1))}}},
+    {id: "w4", label: "MTTF", main: "mttf", solve: {
+      mttf: {tpl: "@th\\,@g", fn: v => v.th * v.g},
+      th:   {tpl: "\\frac{@mttf}{@g}", fn: v => v.mttf / v.g},
+      g:    {tpl: "\\frac{@mttf}{@th}", fn: v => v.mttf / v.th}}},
+    {id: "w5", label: "Fonction Gamma", main: "g", cache: true, solve: {
+      g: {tpl: "\\Gamma\\left(1+\\frac{1}{@b}\\right)", fn: v => M.gamma(1 + 1 / v.b)}}}
+  ],
+  notes(val){
+    const n = [];
+    if ("R" in val && !(val.R > 0 && val.R < 1)) n.push({type: "bad", html: "R doit être compris entre 0 et 1."});
+    if ("b" in val){
+      if (val.b < 1) n.push({type: "info", html: "b &lt; 1 : taux de défaillance décroissant (jeunesse) → maintenance préventive <b>nuisible</b>."});
+      else if (val.b === 1) n.push({type: "info", html: "b = 1 : loi exponentielle (λ = 1/θ) → maintenance préventive <b>inutile</b>."});
+      else n.push({type: "info", html: "b &gt; 1 : usure, taux croissant → maintenance préventive <b>raisonnable</b>."});
+    }
+    return n;
+  }
+},
+{
+  id: "corrective", ch: "M3", titre: "Maintenance corrective — disponibilité optimale", sous: "K1, K2, κ, Å∞, Cmv et coûts d'exploitation",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 86, lib: "M3 diapos 83–87"},
+  mots: ["maintenance corrective", "disponibilité optimale", "optimisation coût disponibilité", "main d'œuvre", "kappa", "coût total", "charges d'exploitation", "intensifier"],
+  options: [{key: "arrondiA", label: "Arrondir Å∞ à 3 décimales (comme dans le corrigé)", def: true}],
+  post(x, v, opts, e){ return (x === "Ao" && e.id === "c4" && opts.arrondiA) ? Math.round(v * 1000) / 1000 : v; },
+  vars: {
+    Ap:   V("A'_{\\infty}", "disponibilité actuelle", ["disponibilité actuelle", "dispo", "availability", "A prime"], {lo: 1e-9, hi: 1}),
+    Cmvp: V("C'_{mv}", "coût actuel de main-d'œuvre par réparation", ["coût main d'œuvre actuel", "Cmv prime"]),
+    mttf: V("MTTF", "temps (ou km) moyen de bon fonctionnement", ["mttf", "mtbf", "temps moyen", "km"]),
+    c:    V("c", "perte par unité de temps d'arrêt", ["perte", "facteur de proportionnalité", "coût d'arrêt", "$/km", "$/h"]),
+    K1:   V("K_{1}", "constante de coût de réparation", ["k1"]),
+    K2:   V("K_{2}", "constante de perte = c·MTTF", ["k2"]),
+    kap:  V("\\kappa", "rapport K2/K1", ["kappa", "κ"], {lo: 1e-9, hi: 1e15}),
+    Ao:   V("\\overset{o}{A}_{\\infty}", "disponibilité optimale", ["disponibilité optimale", "A optimale", "Aopt", "dispo optimale"], {lo: 1e-9, hi: 1}),
+    Cmv:  V("C_{mv}", "coût de main-d'œuvre optimal par réparation", ["coût main d'œuvre", "nouveau coût", "Cmv"]),
+    Pa:   V("C_{p}", "pertes actuelles par réparation", ["pertes actuelles"]),
+    Po:   V("\\overset{o}{C}_{p}", "pertes après modification", ["pertes optimales", "pertes après"]),
+    dCP:  V("\\Delta C_{P}", "diminution des pertes", ["diminution des pertes", "gain pertes"], {lo: -1e12, hi: 1e12, lin: true}),
+    CTa:  V("C_{T}", "coût total actuel (+ Cpr)", ["coût total actuel", "charges d'exploitation"]),
+    CTo:  V("\\overset{o}{C}_{T}", "coût total optimal (+ Cpr)", ["coût total optimal", "après modification"]),
+    dCEX: V("\\Delta C_{EX}", "diminution des charges d'exploitation", ["diminution des charges", "gain"], {lo: -1e12, hi: 1e12, lin: true}),
+    dCI:  V("\\Delta C_{I}", "investissement supplémentaire = Cmv − C′mv", ["investissement", "augmentation du coût"], {lo: -1e12, hi: 1e12, lin: true})
+  },
+  eqs: [
+    {id: "c1", label: "Calcul de K1", main: "K1", solve: {
+      K1:   {tpl: "@Cmvp\\,\\frac{1-@Ap}{@Ap}", fn: v => v.Cmvp * (1 - v.Ap) / v.Ap},
+      Cmvp: {tpl: "\\frac{@K1\\,@Ap}{1-@Ap}", fn: v => v.K1 * v.Ap / (1 - v.Ap)},
+      Ap:   {tpl: "\\frac{@Cmvp}{@K1+@Cmvp}", fn: v => v.Cmvp / (v.K1 + v.Cmvp)}}},
+    {id: "c2", label: "Calcul de K2", main: "K2", solve: {
+      K2:   {tpl: "@c\\cdot @mttf", fn: v => v.c * v.mttf},
+      c:    {tpl: "\\frac{@K2}{@mttf}", fn: v => v.K2 / v.mttf},
+      mttf: {tpl: "\\frac{@K2}{@c}", fn: v => v.K2 / v.c}}},
+    {id: "c3", label: "Calcul de κ", main: "kap", solve: {
+      kap: {tpl: "\\frac{@K2}{@K1}", fn: v => v.K2 / v.K1},
+      K2:  {tpl: "@kap\\cdot @K1", fn: v => v.kap * v.K1},
+      K1:  {tpl: "\\frac{@K2}{@kap}", fn: v => v.K2 / v.kap}}},
+    {id: "c4", label: "Disponibilité optimale", main: "Ao", solve: {
+      Ao:  {tpl: "\\frac{\\sqrt{@kap}}{1+\\sqrt{@kap}}", fn: v => sqrt(v.kap) / (1 + sqrt(v.kap))},
+      kap: {tpl: "\\left(\\frac{@Ao}{1-@Ao}\\right)^{2}", fn: v => pow(v.Ao / (1 - v.Ao), 2)}}},
+    {id: "c5", label: "Coût moyen de la main-d'œuvre", main: "Cmv", solve: {
+      Cmv: {tpl: "@K1\\,\\frac{@Ao}{1-@Ao}", fn: v => v.K1 * v.Ao / (1 - v.Ao)},
+      K1:  {tpl: "@Cmv\\,\\frac{1-@Ao}{@Ao}", fn: v => v.Cmv * (1 - v.Ao) / v.Ao},
+      Ao:  {tpl: "\\frac{@Cmv}{@K1+@Cmv}", fn: v => v.Cmv / (v.K1 + v.Cmv)}}},
+    {id: "c6", label: "Pertes actuelles", main: "Pa", solve: {
+      Pa: {tpl: "@K2\\left(\\frac{1}{@Ap}-1\\right)", fn: v => v.K2 * (1 / v.Ap - 1)},
+      K2: {tpl: "\\frac{@Pa}{\\frac{1}{@Ap}-1}", fn: v => v.Pa / (1 / v.Ap - 1)},
+      Ap: {tpl: "\\frac{@K2}{@K2+@Pa}", fn: v => v.K2 / (v.K2 + v.Pa)}}},
+    {id: "c7", label: "Pertes après modification", main: "Po", solve: {
+      Po: {tpl: "@K2\\left(\\frac{1}{@Ao}-1\\right)", fn: v => v.K2 * (1 / v.Ao - 1)},
+      K2: {tpl: "\\frac{@Po}{\\frac{1}{@Ao}-1}", fn: v => v.Po / (1 / v.Ao - 1)},
+      Ao: {tpl: "\\frac{@K2}{@K2+@Po}", fn: v => v.K2 / (v.K2 + v.Po)}}},
+    {id: "c8", label: "Diminution des pertes", main: "dCP", solve: {
+      dCP: {tpl: "@Pa-@Po", fn: v => v.Pa - v.Po},
+      Pa:  {tpl: "@dCP+@Po", fn: v => v.dCP + v.Po},
+      Po:  {tpl: "@Pa-@dCP", fn: v => v.Pa - v.dCP}}},
+    {id: "c9", label: "Coût total actuel", main: "CTa", solve: {
+      CTa:  {tpl: "@Cmvp+@Pa", fn: v => v.Cmvp + v.Pa},
+      Cmvp: {tpl: "@CTa-@Pa", fn: v => v.CTa - v.Pa},
+      Pa:   {tpl: "@CTa-@Cmvp", fn: v => v.CTa - v.Cmvp}}},
+    {id: "c10", label: "Coût total après modification", main: "CTo", solve: {
+      CTo: {tpl: "@Cmv+@Po", fn: v => v.Cmv + v.Po},
+      Cmv: {tpl: "@CTo-@Po", fn: v => v.CTo - v.Po},
+      Po:  {tpl: "@CTo-@Cmv", fn: v => v.CTo - v.Cmv}}},
+    {id: "c11", label: "Diminution des charges", main: "dCEX", solve: {
+      dCEX: {tpl: "@CTa-@CTo", fn: v => v.CTa - v.CTo},
+      CTa:  {tpl: "@dCEX+@CTo", fn: v => v.dCEX + v.CTo},
+      CTo:  {tpl: "@CTa-@dCEX", fn: v => v.CTa - v.dCEX}}},
+    {id: "c12", label: "Investissement", main: "dCI", solve: {
+      dCI:  {tpl: "@Cmv-@Cmvp", fn: v => v.Cmv - v.Cmvp},
+      Cmv:  {tpl: "@dCI+@Cmvp", fn: v => v.dCI + v.Cmvp},
+      Cmvp: {tpl: "@Cmv-@dCI", fn: v => v.Cmv - v.dCI}}}
+  ],
+  notes(val){
+    const n = [];
+    if ("Ap" in val && !(val.Ap > 0 && val.Ap < 1)) n.push({type: "bad", html: "A′∞ doit être compris entre 0 et 1."});
+    if ("Ap" in val && "Ao" in val){
+      if (val.Ao > val.Ap) n.push({type: "info", html: "Å∞ &gt; A′∞ : <b>intensifier</b> la maintenance (augmenter Cmv)."});
+      else if (val.Ao < val.Ap) n.push({type: "info", html: "Å∞ &lt; A′∞ : <b>réduire</b> l'effort de maintenance (diminuer Cmv)."});
+      else n.push({type: "info", html: "Å∞ = A′∞ : la disponibilité actuelle est déjà optimale."});
+    }
+    if ("CTa" in val || "CTo" in val) n.push({type: "info", html: "Coûts totaux donnés sans le coût des pièces Cpr (à ajouter s'il est connu)."});
+    return n;
+  }
+},
+{
+  id: "stock", ch: "M3", titre: "Stock de pièces de rechange", sous: "Niveau de stock SN (loi normale) et calcul exact (Poisson)",
+  ref: {doc: "Topic 3/M3-Maintenance.pdf", page: 90, lib: "M3 diapos 88–90"},
+  mots: ["stock", "pièces de rechange", "rechange", "niveau de stock", "approvisionnement", "magasin", "spare parts", "poisson"],
+  vars: {
+    lam: V("\\lambda", "taux de défaillance d'un élément", ["taux", "lambda", "λ", "pannes par heure"]),
+    T:   V("T", "durée de la mission", ["durée", "mission", "période", "heures"]),
+    m:   V("\\lambda T", "nombre moyen de défaillances sur T", ["nombre moyen", "lambda T"]),
+    p0:  V("p_{o}", "probabilité d'avoir un stock suffisant", ["probabilité", "niveau de confiance", "p0"], {lo: 1e-12, hi: 1 - 1e-12, lin: true}),
+    u:   V("u", "variable normale réduite (tableau N1)", ["u", "normale réduite", "tableau n1", "quantile"], {lo: -10, hi: 10, lin: true}),
+    SN:  V("S_{N}", "niveau du stock (formule approximative)", ["niveau du stock", "sn", "stock"]),
+    N:   V("N", "stock à prévoir (arrondi supérieur)", ["nombre de pièces", "stock arrondi"]),
+    kP:  V("k", "stock exact (loi de Poisson)", ["poisson", "exact", "k"])
+  },
+  eqs: [
+    {id: "s1", label: "Nombre moyen de défaillances", main: "m", solve: {
+      m:   {tpl: "@lam\\cdot @T", fn: v => v.lam * v.T},
+      lam: {tpl: "\\frac{@m}{@T}", fn: v => v.m / v.T},
+      T:   {tpl: "\\frac{@m}{@lam}", fn: v => v.m / v.lam}}},
+    {id: "s2", label: "Loi normale (tableau N1)", main: "p0", solve: {
+      p0: {tpl: "F\\left(@u\\right)", fn: v => M.phi(v.u)},
+      u:  {tpl: "F^{-1}\\left(@p0\\right)", fn: v => M.phiinv(v.p0)}}},
+    {id: "s3", label: "Niveau du stock (approx.)", main: "SN", solve: {
+      SN: {tpl: "@m+@u\\sqrt{@m}", fn: v => v.m + v.u * sqrt(v.m)},
+      u:  {tpl: "\\frac{@SN-@m}{\\sqrt{@m}}", fn: v => (v.SN - v.m) / sqrt(v.m)},
+      m:  {tpl: "\\left(\\frac{-@u+\\sqrt{@u^{2}+4@SN}}{2}\\right)^{2}", fn: v => pow((-v.u + sqrt(v.u * v.u + 4 * v.SN)) / 2, 2)}}},
+    {id: "s4", label: "Arrondi à l'entier supérieur", main: "N", oneWay: true, solve: {
+      N: {tpl: "\\lceil @SN\\rceil", fn: v => Math.ceil(v.SN - 1e-9)}}},
+    {id: "s5", label: "Loi de Poisson (exact)", main: "kP", oneWay: true, solve: {
+      kP: {tpl: "\\min\\left\\{k \\,:\\, \\exp\\left(-@m\\right)\\sum_{j=0}^{k}\\frac{@m^{j}}{j!}\\geq @p0\\right\\}", fn: v => {
+        let t = exp(-v.m), c = t, k = 0;
+        while (c < v.p0 && k < 100000){ k++; t *= v.m / k; c += t; }
+        return k; }}}}
+  ],
+  notes(val){
+    const n = [];
+    if ("p0" in val && !(val.p0 > 0 && val.p0 < 1)) n.push({type: "bad", html: "p0 doit être compris entre 0 et 1."});
+    if ("SN" in val) n.push({type: "info", html: "Arrondir S<sub>N</sub> à l'entier <b>supérieur</b> pour obtenir le stock."});
+    return n;
+  }
+}
+];
+
+/* Sujets indexés pour la recherche, fiches à venir dans la version complète */
+const A_VENIR = [
+  {ch: "M2", titre: "Loi exponentielle", mots: ["exponentielle", "lambda constant", "taux constant", "mttf 1/lambda", "poisson"]},
+  {ch: "M2", titre: "Loi normale", mots: ["normale", "gauss", "gaussienne", "tableau n1", "u = (t-m)/sigma", "écart-type"]},
+  {ch: "M2", titre: "Loi log-normale", mots: ["log-normale", "lognormale", "sigma y", "mu y"]},
+  {ch: "M2", titre: "Probabilité de défaillance dans Δt", mots: ["intervalle", "delta t", "conditionnelle", "sachant", "t1 t2"]},
+  {ch: "M2", titre: "Systèmes série / parallèle", mots: ["série", "parallèle", "redondance", "fiabilité structurale", "diagramme de fiabilité"]},
+  {ch: "M2", titre: "Redondance r/m", mots: ["r/m", "r parmi m", "vote", "k sur n", "au moins"]},
+  {ch: "M2", titre: "Système avec réserve (stand-by)", mots: ["stand-by", "standby", "réserve", "commutateur", "secours", "passif"]},
+  {ch: "M2", titre: "Système complexe (pont)", mots: ["pont", "système complexe", "probabilité conditionnelle", "énumération des états", "chemins"]},
+  {ch: "M3", titre: "Élément réparable — disponibilité", mots: ["disponibilité", "dispo", "availability", "réparable", "mu", "taux de réparation", "mttr", "maintenabilité", "A(t)"]},
+  {ch: "M3", titre: "Temps moyens MUT / MDT / MTBF", mots: ["mtbf", "mut", "mdt", "temps moyen entre pannes", "indisponibilité", "durée moyenne de panne", "temps d'arrêt"]},
+  {ch: "M3", titre: "Deux éléments réparables en parallèle", mots: ["deux pompes", "parallèle réparable", "réparateur"]},
+  {ch: "M3", titre: "Chaîne de Markov", mots: ["markov", "graphe d'états", "états", "transition", "processeurs sources d'énergie"]},
+  {ch: "M3", titre: "Maintenance préventive systématique", mots: ["préventive", "systématique", "n maintenances", "a + b t", "fréquence", "intervalle de maintenance"]},
+  {ch: "M3", titre: "Période optimale de remplacement", mots: ["remplacement", "période optimale", "investissement", "ice icm", "coût total annuel", "âge fixé"]},
+  {ch: "M3", titre: "Abaque — période systématique (Weibull)", mots: ["abaque", "c2/c1", "criticité économique", "r = P/p", "x0"]},
+  {ch: "M3", titre: "Analyse ABC (Pareto)", mots: ["abc", "pareto", "priorité", "heures d'arrêt", "classement"]},
+  {ch: "M4", titre: "Contrainte–résistance", mots: ["contrainte", "résistance", "interférence", "stress strength", "coefficient de sécurité"]},
+  {ch: "M5", titre: "Arbre de défaillance / d'événements", mots: ["arbre de défaillance", "fta", "coupes minimales", "porte et ou", "arbre d'événements", "événement redouté"]}
+];
+
+/* =====================================================================
+   4. MOTEUR DE RÉSOLUTION
+   ===================================================================== */
+for (const f of FICHES) for (const e of f.eqs){
+  const s = new Set([e.main]);
+  for (const k in e.solve){ s.add(k); (e.solve[k].tpl.match(/@(\w+)/g) || []).forEach(m => s.add(m.slice(1))); }
+  e.vars = [...s];
+}
+
+function numSolve(g, lo, hi, lin){
+  const N = 800;
+  let px = null, pg = null;
+  for (let k = 0; k <= N; k++){
+    const x = lin ? lo + (hi - lo) * k / N : lo * Math.pow(hi / lo, k / N);
+    const gx = g(x);
+    if (!isFinite(gx)){ px = null; continue; }
+    if (gx === 0) return x;
+    if (px !== null && (gx > 0) !== (pg > 0)){
+      let a = px, b = x, ga = pg;
+      for (let i = 0; i < 200; i++){
+        const m = (a + b) / 2, gm = g(m);
+        if ((gm > 0) === (ga > 0)){ a = m; ga = gm; } else b = m;
+      }
+      const r = (a + b) / 2, gr = Math.abs(g(r));
+      if (gr <= 1e-7 * Math.max(Math.abs(pg), Math.abs(gx)) || gr < 1e-12) return r;
+    }
+    px = x; pg = gx;
+  }
+  return NaN;
+}
+
+function resoudre(f, connues, cible, eqPref, opts){
+  const val = {}, how = {};
+  for (const k in connues) if (k !== cible && isFinite(connues[k])) val[k] = connues[k];
+  const inconnue = e => { const u = e.vars.filter(k => !(k in val)); return u.length === 1 ? u[0] : null; };
+  const calc = (e, x) => {
+    const s = e.solve[x]; let v, numeric = false;
+    if (s) v = s.fn(val);
+    else {
+      if (e.oneWay) return false;
+      const fm = e.solve[e.main].fn, d = f.vars[x];
+      const g = y => { const w = Object.assign({}, val); w[x] = y; return val[e.main] - fm(w); };
+      v = numSolve(g, d.lo ?? 1e-9, d.hi ?? 1e12, d.lin); numeric = true;
+    }
+    if (typeof v !== "number" || !isFinite(v)) return false;
+    let arrondi = false;
+    if (f.post){ const p = f.post(x, v, opts || {}, e); if (p !== v){ v = p; arrondi = true; } }
+    val[x] = v; how[x] = {eq: e, numeric, arrondi, inputs: e.vars.filter(k => k !== x)};
+    return true;
+  };
+  const propager = interdit => {
+    let ch = true;
+    while (ch){ ch = false; for (const e of f.eqs){ const x = inconnue(e); if (x && x !== interdit && calc(e, x)) ch = true; } }
+  };
+  propager(cible);
+  if (cible && !(cible in val)){
+    const cands = f.eqs.filter(e => inconnue(e) === cible);
+    const note = e => (e === eqPref ? 2 : 0) + (e.solve[cible] ? 1 : 0);
+    cands.sort((a, b) => note(b) - note(a));
+    for (const e of cands) if (calc(e, cible)) break;
+    propager(null);
+  }
+  const alertes = [];
+  for (const e of f.eqs){
+    if (!e.vars.every(k => k in val)) continue;
+    if (Object.values(how).some(h => h.eq === e)) continue;
+    const r = val[e.main] - e.solve[e.main].fn(val);
+    if (Math.abs(r) > 1e-4 * Math.max(1, Math.abs(val[e.main]))) alertes.push(e);
+  }
+  return {val, how, alertes};
+}
+
+function trace(res, x, acc, vu){
+  acc = acc || []; vu = vu || new Set();
+  if (vu.has(x)) return acc; vu.add(x);
+  const h = res.how[x]; if (!h) return acc;
+  for (const k of h.inputs) trace(res, k, acc, vu);
+  acc.push(x); return acc;
+}
+
+/* =====================================================================
+   5. RECHERCHE (synonymes, accents, fautes de frappe)
+   ===================================================================== */
+const STOP = new Set(["de", "la", "le", "les", "du", "des", "d", "l", "a", "et", "en", "un", "une", "pour", "par", "au", "aux", "sur", "dans", "calcul", "calculer", "formule", "trouver"]);
+function norm(s){ return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+function tokens(s){ return norm(txt(s)).split(/[^a-z0-9Ͱ-Ͽ∞]+/).filter(Boolean); }
+function lev(a, b){
+  if (Math.abs(a.length - b.length) > 2) return 9;
+  let prev = Array.from({length: b.length + 1}, (_, j) => j);
+  for (let i = 1; i <= a.length; i++){
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+function tokScore(q, d){
+  if (q === d) return 3;
+  if (q.length >= 2 && d.startsWith(q)) return 2;
+  if (d.length >= 3 && q.startsWith(d)) return 1.4;
+  if (q.length >= 3 && d.includes(q)) return 1.2;
+  if (q.length >= 4){ const L = lev(q, d); if (L <= 1) return 1; if (L <= 2 && q.length >= 7) return 0.8; }
+  return 0;
+}
+function scoreDoc(qt, dt){
+  let s = 0, hit = 0;
+  for (const q of qt){
+    let b = 0;
+    for (const d of dt){ const v = tokScore(q, d); if (v > b) b = v; if (b === 3) break; }
+    if (b > 0) hit++; s += b;
+  }
+  if (hit === qt.length) s += 2; else s *= 0.6 * hit / qt.length;
+  return {s, hit};
+}
+const INDEX = [
+  ...FICHES.map(f => ({type: "fiche", f, titre: f.titre, ch: f.ch,
+    toks: tokens([f.titre, f.sous, ...f.mots, ...f.eqs.map(e => e.label),
+      ...Object.keys(f.vars).flatMap(k => [f.vars[k].nom, symTxt(f, k), ...f.vars[k].syn])].join(" ")),
+    vtoks: Object.fromEntries(Object.keys(f.vars).map(k => [k, tokens([f.vars[k].nom, symTxt(f, k), ...f.vars[k].syn].join(" "))]))})),
+  ...A_VENIR.map(a => ({type: "avenir", titre: a.titre, ch: a.ch, toks: tokens([a.titre, ...a.mots].join(" "))}))
+];
+function chercher(q){
+  const qt = tokens(q).filter(t => !STOP.has(t));
+  if (!qt.length) return [];
+  const out = [];
+  for (const it of INDEX){
+    const r = scoreDoc(qt, it.toks);
+    if (r.s <= 0) continue;
+    let s = r.s + (norm(it.titre).includes(norm(q).trim()) ? 3 : 0);
+    if (it.type === "avenir") s -= 0.5;
+    let cible = null;
+    if (it.type === "fiche"){
+      let best = 0;
+      for (const k in it.vtoks){
+        const v = scoreDoc(qt, it.vtoks[k]);
+        if (v.s > best && v.hit >= Math.ceil(qt.length / 2) && v.s >= 2.5){ best = v.s; cible = k; }
+      }
+    }
+    out.push({it, s, cible});
+  }
+  return out.sort((a, b) => b.s - a.s).slice(0, 12);
+}
+
+/* =====================================================================
+   6. INTERFACE
+   ===================================================================== */
+const TEST = location.hash === "#test";
+const CLE = "mec8312-calculatrice-v1";
+const S = {fiche: "weibull", vals: {}, cible: {}, eq: {}, opts: {}, mem: []};
+if (!TEST) try { Object.assign(S, JSON.parse(localStorage.getItem(CLE) || "{}")); } catch (e) {}
+if (!FICHES.some(f => f.id === S.fiche)) S.fiche = FICHES[0].id;
+function save(){ if (!TEST) try { localStorage.setItem(CLE, JSON.stringify(S)); } catch (e) {} }
+
+const $ = s => document.querySelector(s);
+const att = (el, n) => el.getAttribute("data-" + n);
+let lastInput = null, res = null, sel = 0, trouves = [];
+
+const F = () => FICHES.find(f => f.id === S.fiche);
+const valsOf = f => S.vals[f.id] || (S.vals[f.id] = {});
+const optsOf = f => { const o = {}; for (const op of f.options || []) o[op.key] = (S.opts[f.id] || {})[op.key] ?? op.def; return o; };
+const eqOf = f => f.eqs.find(e => e.id === S.eq[f.id]) || f.eqs[0];
+const memEnv = () => Object.fromEntries(S.mem.map((m, i) => ["m" + (i + 1), m.v]));
+function connues(f){
+  const o = {}, raw = valsOf(f);
+  for (const k in raw){
+    if (raw[k] == null || String(raw[k]).trim() === "") continue;
+    try { const v = evalExpr(raw[k], memEnv()); if (isFinite(v)) o[k] = v; } catch (e) {}
+  }
+  return o;
+}
+function toast(m){ const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 1400); }
+function copier(texte){
+  const secours = () => { const ta = document.createElement("textarea"); ta.value = texte; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch (e) {} ta.remove(); };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(texte).catch(secours); else secours();
+  toast("Copié : " + texte.split("\n").pop());
+}
+
+function choisirCible(f, k){
+  S.cible[f.id] = k;
+  const eq = eqOf(f);
+  if (!eq.vars.includes(k)){
+    const avec = f.eqs.filter(e => e.vars.includes(k));
+    const e = avec.find(e => e.main === k) || avec.find(e => e.solve[k]) || avec[0];
+    if (e) S.eq[f.id] = e.id;
+  }
+}
+
+function renderNav(){
+  const grp = {M2: "M2 — Lois et systèmes", M3: "M3 — Réparables et maintenance", M4: "Chapitres suivants", M5: "Chapitres suivants"};
+  let h = "", cur = "";
+  const items = [...FICHES.map(f => ({f, ch: f.ch, titre: f.titre})), ...A_VENIR.map(a => ({ch: a.ch, titre: a.titre}))];
+  for (const ch of ["M2", "M3", "M4", "M5"]){
+    for (const it of items.filter(x => x.ch === ch)){
+      if (grp[ch] !== cur){ cur = grp[ch]; h += `<div class="grp">${cur}</div>`; }
+      h += it.f ? `<a data-f="${it.f.id}" class="${it.f.id === S.fiche ? "on" : ""}">${esc(it.titre)}</a>`
+                : `<a class="off" title="Dans la version complète">${esc(it.titre)}</a>`;
+    }
+  }
+  $("#nav").innerHTML = h;
+}
+
+function renderMem(){
+  $("#mems").innerHTML = S.mem.map((m, i) =>
+    `<button class="mem" data-mem="${i}" title="Coller dans le champ actif"><b>M${i + 1}</b> ${esc(m.nom)} = ${fmt(m.v)}<span class="x" data-memx="${i}" title="Supprimer">✕</span></button>`
+  ).join("") || '<div class="small">Aucune valeur épinglée.</div>';
+}
+function epingler(nom, v){ S.mem.push({nom, v}); save(); renderMem(); toast(`Épinglé M${S.mem.length} : ${nom} = ${fmt(v)}`); }
+
+function renderFiche(){
+  const f = F(), eq = eqOf(f);
+  if (!S.cible[f.id]) S.cible[f.id] = eq.main;
+  const c = S.cible[f.id], vars = f.vars, raw = valsOf(f), o = optsOf(f);
+  const ctxRow = e => ({ph: (k, x) => `<mrow class="v ${k === c ? "tgt" : ""}" data-var="${k}" data-eqv="${e.id}" title="${esc(vars[k].nom)}">${symML(f, k, x)}</mrow>`});
+  let h = `<div class="card">
+    <div class="fhead"><div><div class="ch">${f.ch}</div><h1>${esc(f.titre)}</h1><div class="sous">${esc(f.sous)}</div></div>
+      <div class="acts"><a class="btn" href="${encodeURI(f.ref.doc)}#page=${f.ref.page}" target="_blank" title="Ouvrir la diapositive du cours">📄 ${esc(f.ref.lib)}</a>
+      <button class="btn" id="btn-clear">Effacer les données</button></div></div>`;
+  if (f.options) h += `<div class="opts">` + f.options.map(op => `<label><input type="checkbox" data-opt="${op.key}" ${o[op.key] ? "checked" : ""}> ${esc(op.label)}</label>`).join(" ") + `</div>`;
+  h += `<div class="step"><div class="sh"><span class="n">1</span>Formule <span class="hint">— cliquez sur une variable de la formule pour la choisir comme inconnue</span></div><div class="eqs">`;
+  for (const e of f.eqs){
+    if (e.cache) continue;
+    const cx = ctxRow(e);
+    h += `<div class="eq ${e === eq ? "on" : ""}" data-eq="${e.id}"><span class="el">${esc(e.label)}</span>
+      <span><math displaystyle="true">${cx.ph(e.main, false)}<mo>=</mo>${ml(parseTex(e.solve[e.main].tpl), cx)}</math></span></div>`;
+  }
+  h += `</div></div>
+    <div class="step"><div class="sh"><span class="n">2</span>Variable cherchée</div><div class="chips">`;
+  for (const k of eq.vars) h += `<button class="chip ${k === c ? "on" : ""}" data-cible="${k}">${mathSym(f, k)}<small>${esc(vars[k].nom)}</small></button>`;
+  h += `</div></div>
+    <div class="step"><div class="sh"><span class="n">3</span>Résolution <span class="hint">— cliquez sur une variable encadrée en pointillé pour saisir sa valeur (Entrée = suivante)</span></div><div class="sol" id="sol"></div></div>
+    <div class="step"><div class="sh"><span class="n">4</span>Toutes les variables <span class="hint">— 🎯 pour changer d'inconnue ; les valeurs calculées se réutilisent automatiquement</span></div>
+    <table class="grid">`;
+  for (const k in vars){
+    h += `<tr data-row="${k}" class="${k === c ? "tgt" : ""}">
+      <td style="width:28px"><button class="tb" data-cible="${k}" title="Chercher cette variable">🎯</button></td>
+      <td class="sym">${mathSym(f, k)}</td><td class="nom">${esc(vars[k].nom)}</td>
+      <td><input data-k="${k}" value="${k === c ? "" : esc(raw[k] ?? "")}" ${k === c ? "readonly" : ""} autocomplete="off" spellcheck="false"></td>
+      <td class="etat" id="etat-${k}"></td></tr>`;
+  }
+  h += `</table></div></div>`;
+  $("#main").innerHTML = h;
+  renderNav();
+  update();
+}
+
+/* une ligne de calcul : symbole = formule = nombres = résultat */
+function stepLine(f, r, k, final){
+  const h = r.how[k], e = h.eq, s = e.solve[k];
+  const res = `<mrow class="resv">${numML(r.val[k])}</mrow>`;
+  const ctxSym = {ph: (x, ex) => symML(f, x, ex)};
+  const ctxNum = {ph: (x) => numMLp(r.val[x])};
+  const tSym = {ph: (x, ex) => symTxt(f, x, ex)};
+  const tNum = {ph: (x) => numTxtp(r.val[x])};
+  const arr = h.arrondi ? "<mtext>&#160;(arrondi)</mtext>" : "";
+  const arrT = h.arrondi ? " (arrondi)" : "";
+  if (s && !h.numeric){
+    const tree = parseTex(s.tpl);
+    const html = symML(f, k) + "<mo>=</mo>" + (final ? "" : ml(tree, ctxSym) + "<mo>=</mo>") + ml(tree, ctxNum) + "<mo>=</mo>" + res + arr;
+    const texte = `${symTxt(f, k)} = ${tx(tree, tSym)} = ${tx(tree, tNum)} = ${fmt(r.val[k])}${arrT}`;
+    return {html, texte};
+  }
+  const tree = parseTex(e.solve[e.main].tpl);
+  const ctxMix = {ph: (x, ex) => x === k ? symML(f, x, ex) : numMLp(r.val[x])};
+  const tMix = {ph: (x, ex) => x === k ? symTxt(f, x, ex) : numTxtp(r.val[x])};
+  const html = numMLp(r.val[e.main]) + "<mo>=</mo>" + ml(tree, ctxMix) + "<mo>⇒</mo>" + symML(f, k) + "<mo>=</mo>" + res + "<mtext>&#160;(résolu numériquement)</mtext>";
+  const texte = `${numTxtp(r.val[e.main])} = ${tx(tree, tMix)} ⇒ ${symTxt(f, k)} = ${fmt(r.val[k])} (résolu numériquement)`;
+  return {html, texte};
+}
+
+function update(){
+  const f = F(), c = S.cible[f.id], eq = eqOf(f), vars = f.vars, raw = valsOf(f);
+  const K = connues(f);
+  res = resoudre(f, K, c, eq, optsOf(f));
+  const r = res;
+
+  /* tableau des variables */
+  for (const k in vars){
+    const cell = document.getElementById("etat-" + k), inp = document.querySelector(`input[data-k="${k}"]`);
+    if (!cell || !inp) continue;
+    const rk = raw[k] != null && String(raw[k]).trim() !== "";
+    if (k === c){
+      inp.value = k in r.val ? fmt(r.val[k]) : ""; inp.placeholder = "inconnue";
+      cell.innerHTML = k in r.val ? `<span class="calc">résultat</span> <button class="pin" data-pin="${k}" title="Épingler">📌</button>` : '<span class="muted">à calculer</span>';
+    } else if (k in K){
+      inp.placeholder = "";
+      const e = String(raw[k]).trim();
+      cell.innerHTML = (/^[−-]?[\d.,]+(e[-+]?\d+)?$/i.test(e) ? '<span class="muted">donnée</span>' : `<span class="muted">donnée = ${fmt(K[k])}</span>`);
+    } else if (rk){
+      inp.placeholder = ""; cell.innerHTML = '<span class="bad">saisie invalide</span>';
+    } else if (k in r.val){
+      const h = r.how[k];
+      inp.placeholder = "";
+      cell.innerHTML = `<span class="calc">= ${fmt(r.val[k])}</span> <span class="muted">(${esc(h.eq.label)}${h.numeric ? ", numérique" : ""})</span> <button class="pin" data-pin="${k}" title="Épingler">📌</button>`;
+    } else { inp.placeholder = ""; cell.innerHTML = ""; }
+  }
+
+  /* zone de résolution */
+  const s = eq.solve[c], autres = eq.vars.filter(k => k !== c);
+  const pill = (k, ex) => {
+    const connu = k in r.val, donne = k in K;
+    const p = `<mrow class="pill ${connu ? "have" : ""} ${connu && !donne ? "calc" : ""}" data-edit="${k}"><munder><mrow>${symML(f, k)}</mrow><mtext class="pv">${connu ? fmt(r.val[k]) : "?"}</mtext></munder></mrow>`;
+    return ex && parseTex(vars[k].sym).length > 1 ? `<mrow><mo>(</mo>${p}<mo>)</mo></mrow>` : p;
+  };
+  const tgt = k => `<mrow class="tgt">${symML(f, k)}</mrow>`;
+  let h;
+  if (s) h = `<div class="solf"><math displaystyle="true">${tgt(c)}<mo>=</mo>${ml(parseTex(s.tpl), {ph: pill})}</math></div>`;
+  else h = `<div class="solf"><math displaystyle="true">${pill(eq.main)}<mo>=</mo>${ml(parseTex(eq.solve[eq.main].tpl), {ph: (k, ex) => k === c ? tgt(k) : pill(k, ex)})}</math></div>
+    <div class="hint">Pas de forme explicite pour ${mathSym(f, c)} dans cette formule : la valeur sera trouvée numériquement.</div>`;
+
+  if (c in r.val){
+    const inter = trace(r, c).filter(k => k !== c);
+    const lignes = inter.map(k => stepLine(f, r, k, false));
+    const fin = stepLine(f, r, c, true);
+    if (lignes.length) h += `<div class="inter"><div class="il">Calculs intermédiaires</div>${lignes.map(l => `<div class="l"><math displaystyle="true">${l.html}</math></div>`).join("")}</div>`;
+    res.texteTout = [...lignes.map(l => l.texte), fin.texte].join("\n");
+    res.texteFin = fin.texte;
+    h += `<div class="res-line"><math displaystyle="true">${fin.html}</math>
+      <span class="acts"><button class="btn" data-copy="1" title="Copier la ligne de résultat">📋 Copier</button><button class="btn" data-copyall="1" title="Copier tout le calcul">📋 Tout</button><button class="btn" data-pin="${c}">📌 Épingler</button></span></div>`;
+  } else {
+    const manque = autres.filter(k => !(k in r.val));
+    h += `<div class="miss">Il manque : ${manque.map(k => `<math>${pill(k)}</math>`).join(" ")}`;
+    const alt = f.eqs.filter(e => e !== eq && !e.cache && e.vars.includes(c)).map(e => {
+      const m = e.vars.filter(k => k !== c && !(k in r.val));
+      return `« ${esc(e.label)} » (manque ${m.map(k => mathSym(f, k)).join(", ") || "rien"})`;
+    });
+    if (alt.length) h += `<div class="hint">Autres formules contenant ${mathSym(f, c)} : ${alt.join(" · ")} — ou saisissez des données dans le tableau ci-dessous.</div>`;
+    h += `</div>`;
+  }
+  for (const n of (f.notes ? f.notes(r.val) : [])) h += `<div class="note ${n.type}">${n.html}</div>`;
+  for (const e of r.alertes) h += `<div class="note bad">Données incohérentes avec la formule « ${esc(e.label)} » : vérifiez les valeurs saisies (trop de données ?).</div>`;
+  $("#sol").innerHTML = h;
+}
+
+/* ---- saisie par clic sur une variable (fenêtre flottante) ---- */
+function ouvrirSaisie(k, ancre){
+  const f = F(), pop = $("#pop"), inp = $("#pop-in");
+  pop.setAttribute("data-k", k);
+  $("#pop-lab").innerHTML = `${mathSym(f, k)} — ${esc(f.vars[k].nom)}`;
+  inp.value = valsOf(f)[k] ?? "";
+  const rc = ancre.getBoundingClientRect();
+  pop.style.left = Math.min(rc.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - 290) + "px";
+  pop.style.top = (rc.bottom + window.scrollY + 8) + "px";
+  pop.style.display = "block";
+  majPop(); inp.focus(); inp.select(); lastInput = inp;
+}
+function fermerSaisie(){ $("#pop").style.display = "none"; }
+function majPop(){
+  const inp = $("#pop-in"), ev = $("#pop-ev"), t = inp.value.trim();
+  if (!t){ ev.textContent = "Vide = donnée inconnue. Échap pour fermer."; ev.className = "pe"; return; }
+  try { ev.textContent = "= " + fmt(evalExpr(t, memEnv())); ev.className = "pe"; }
+  catch (e){ ev.textContent = "⚠ " + e; ev.className = "pe bad"; }
+}
+function saisir(k, texte){
+  const f = F(); valsOf(f)[k] = texte;
+  const g = document.querySelector(`input[data-k="${k}"]`); if (g && !g.readOnly) g.value = texte;
+  save(); update();
+}
+
+/* ---- recherche ---- */
+function afficherResultats(){
+  const box = $("#results"), q = $("#q").value;
+  trouves = chercher(q);
+  if (!q.trim()){ box.style.display = "none"; return; }
+  sel = Math.min(sel, Math.max(0, trouves.length - 1));
+  box.innerHTML = trouves.length ? trouves.map((x, i) => {
+    const it = x.it, off = it.type === "avenir";
+    const cib = x.cible ? `<span class="tag cible">inconnue : ${esc(symTxt(it.f, x.cible))}</span>` : "";
+    const sous = off ? "Fiche prévue dans la version complète" : esc(it.f.sous);
+    return `<div class="res ${i === sel ? "sel" : ""} ${off ? "off" : ""}" data-i="${i}"><span class="t">${esc(it.titre)}</span>${cib}<span class="s">${sous}</span><span class="r"><span class="tag">${it.ch}${off ? " · à venir" : ""}</span></span></div>`;
+  }).join("") : `<div class="res vide">Aucune formule trouvée pour « ${esc(q)} ».</div>`;
+  box.style.display = "block";
+}
+function ouvrir(x){
+  if (!x || x.it.type !== "fiche"){ toast("Cette fiche arrive dans la version complète."); return; }
+  S.fiche = x.it.f.id;
+  if (x.cible) choisirCible(x.it.f, x.cible);
+  save(); $("#q").value = ""; $("#results").style.display = "none"; $("#q").blur();
+  renderFiche();
+  const p = document.querySelector("#sol .pill:not(.have)");
+  if (p) ouvrirSaisie(att(p, "edit"), p);
+}
+
+/* ---- événements ---- */
+function brancher(){
+  document.addEventListener("keydown", ev => {
+    const typing = /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+    if ((ev.ctrlKey && ev.key.toLowerCase() === "k") || (ev.key === "/" && !typing)){ ev.preventDefault(); fermerSaisie(); $("#q").focus(); $("#q").select(); afficherResultats(); }
+    else if (ev.key === "Escape"){ fermerSaisie(); $("#results").style.display = "none"; }
+  });
+  $("#q").addEventListener("input", () => { sel = 0; afficherResultats(); });
+  $("#q").addEventListener("focus", afficherResultats);
+  $("#q").addEventListener("blur", () => setTimeout(() => $("#results").style.display = "none", 150));
+  $("#q").addEventListener("keydown", ev => {
+    if (ev.key === "ArrowDown"){ ev.preventDefault(); sel = Math.min(sel + 1, trouves.length - 1); afficherResultats(); }
+    else if (ev.key === "ArrowUp"){ ev.preventDefault(); sel = Math.max(sel - 1, 0); afficherResultats(); }
+    else if (ev.key === "Enter"){ ev.preventDefault(); ouvrir(trouves[sel]); }
+  });
+  $("#results").addEventListener("mousedown", ev => { const d = ev.target.closest("[data-i]"); if (d){ ev.preventDefault(); ouvrir(trouves[+att(d, "i")]); } });
+  $("#nav").addEventListener("click", ev => { const a = ev.target.closest("[data-f]"); if (a){ S.fiche = att(a, "f"); save(); fermerSaisie(); renderFiche(); } });
+
+  const main = $("#main");
+  main.addEventListener("click", ev => {
+    const f = F(), t = ev.target;
+    let d;
+    if ((d = t.closest("[data-edit]"))){ ouvrirSaisie(att(d, "edit"), d); return; }
+    if ((d = t.closest("[data-var]"))){ S.eq[f.id] = att(d, "eqv"); S.cible[f.id] = att(d, "var"); save(); fermerSaisie(); renderFiche(); return; }
+    if ((d = t.closest("[data-cible]"))){ choisirCible(f, att(d, "cible")); save(); fermerSaisie(); renderFiche(); return; }
+    if ((d = t.closest("[data-eq]"))){
+      const e = f.eqs.find(x => x.id === att(d, "eq")); S.eq[f.id] = e.id;
+      if (!e.vars.includes(S.cible[f.id])) S.cible[f.id] = e.main;
+      save(); fermerSaisie(); renderFiche(); return;
+    }
+    if ((d = t.closest("[data-pin]"))){ const k = att(d, "pin"); if (k in res.val) epingler(`${symTxt(f, k)} (${f.titre.split(" —")[0]})`, res.val[k]); return; }
+    if (t.closest("[data-copy]")){ copier(res.texteFin); return; }
+    if (t.closest("[data-copyall]")){ copier(res.texteTout); return; }
+    if (t.id === "btn-clear"){ S.vals[f.id] = {}; save(); fermerSaisie(); renderFiche(); }
+  });
+  main.addEventListener("change", ev => {
+    const cb = ev.target.closest("[data-opt]");
+    if (cb){ const f = F(); (S.opts[f.id] = S.opts[f.id] || {})[att(cb, "opt")] = cb.checked; save(); update(); }
+  });
+  main.addEventListener("input", ev => {
+    const inp = ev.target.closest("input[data-k]");
+    if (inp && !inp.readOnly){ valsOf(F())[att(inp, "k")] = inp.value; save(); update(); }
+  });
+  main.addEventListener("focusin", ev => { if (ev.target.matches("input[data-k]:not([readonly])")) lastInput = ev.target; });
+  main.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" && ev.target.matches("input[data-k]")){
+      const all = [...document.querySelectorAll("input[data-k]:not([readonly])")];
+      const n = all[all.indexOf(ev.target) + 1]; if (n) n.focus();
+    }
+  });
+
+  const pin = $("#pop-in");
+  pin.addEventListener("input", () => { majPop(); saisir(att($("#pop"), "k"), pin.value); });
+  pin.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" || ev.key === "Tab"){
+      ev.preventDefault(); fermerSaisie();
+      const cur = att($("#pop"), "k");
+      const p = [...document.querySelectorAll("#sol .pill:not(.have)")].find(x => att(x, "edit") !== cur);
+      if (p) ouvrirSaisie(att(p, "edit"), p);
+    }
+  });
+  document.addEventListener("mousedown", ev => { if (!ev.target.closest("#pop") && !ev.target.closest("[data-edit]") && !ev.target.closest("#mems")) fermerSaisie(); });
+
+  $("#mems").addEventListener("click", ev => {
+    const x = ev.target.closest("[data-memx]");
+    if (x){ S.mem.splice(+att(x, "memx"), 1); save(); renderMem(); update(); return; }
+    const m = ev.target.closest("[data-mem]"); if (!m) return;
+    const i = +att(m, "mem"), v = S.mem[i].v;
+    if (lastInput && document.body.contains(lastInput) && !lastInput.readOnly && lastInput.offsetParent !== null){
+      lastInput.value = numStr(v); lastInput.dispatchEvent(new Event("input", {bubbles: true})); lastInput.focus();
+      toast(`M${i + 1} collée`);
+    } else copier(numStr(v));
+  });
+
+  const ci = $("#calc-in");
+  const calcul = () => { const t = ci.value.trim(); if (!t){ $("#calc-out").textContent = ""; return null; }
+    try { const v = evalExpr(t, memEnv()); $("#calc-out").textContent = "= " + fmt(v); return v; }
+    catch (e){ $("#calc-out").innerHTML = `<span class="bad">⚠ ${esc(e)}</span>`; return null; } };
+  ci.addEventListener("input", calcul);
+  ci.addEventListener("focus", () => { lastInput = ci; });
+  ci.addEventListener("keydown", ev => { if (ev.key === "Enter"){ const v = calcul(); if (v !== null && isFinite(v)) epingler(ci.value.trim(), v); } });
+  $("#lien-test").addEventListener("click", ev => { ev.preventDefault(); location.hash = "#test"; location.reload(); });
+}
+
+/* =====================================================================
+   7. AUTOTEST (exemples du cours) — ouvrir la page avec #test
+   ===================================================================== */
+function autotest(){
+  const T = [], chk = (nom, got, exp, tol) => T.push({nom, got, exp, ok: typeof got === "number" && Math.abs(got - exp) <= tol});
+  const ok = (nom, cond) => T.push({nom, got: !!cond, exp: true, ok: !!cond});
+  const [W, C, St] = FICHES;
+  chk("Γ(2,5) — diapo M2-38", M.gamma(2.5), 1.3293, 1e-4);
+  chk("F(u=1,2) — diapo M2-34", M.phi(1.2), 0.8849, 1e-4);
+  chk("u(p=0,975)", M.phiinv(0.975), 1.95996, 1e-4);
+  chk("saisie 1/500", evalExpr("1/500"), 0.002, 1e-15);
+  chk("saisie 0,994", evalExpr("0,994"), 0.994, 1e-15);
+  chk("saisie 5e-4", evalExpr("5e-4"), 5e-4, 1e-18);
+  chk("saisie -2^2", evalExpr("-2^2"), -4, 0);
+  chk("saisie √4 + gamma(3)", evalExpr("√4 + gamma(3)"), 4, 1e-12);
+  chk("saisie 2(3+1)", evalExpr("2(3+1)"), 8, 0);
+  let r = resoudre(W, {b: 0.5, th: 1, t: 2}, "F", null, {});
+  chk("Weibull F(MTTF), b=0,5 — diapo M2-38", r.val.F, 0.7569, 5e-5);
+  r = resoudre(W, {b: 0.5, th: 1}, "mttf", null, {});
+  chk("Weibull MTTF, b=0,5", r.val.mttf, 2, 1e-9);
+  r = resoudre(W, {b: 3.5, th: 1, t: 0.9}, "R", null, {});
+  chk("Weibull R(0,9), b=3,5 — diapo M2-40", r.val.R, 0.5008, 1e-4);
+  r = resoudre(W, {R: Math.exp(-0.25), t: 500, b: 2}, "th", null, {});
+  chk("Weibull θ inverse depuis R", r.val.th, 1000, 1e-6);
+  r = resoudre(W, {F: 1 - Math.exp(-0.25), t: 500, b: 2}, "th", null, {});
+  chk("Weibull θ depuis F (enchaînement)", r.val.th, 1000, 1e-6);
+  r = resoudre(W, {lam: 0.001, t: 500, b: 2}, "th", null, {});
+  chk("Weibull θ depuis λ(t)", r.val.th, 1000, 1e-6);
+  r = resoudre(W, {mttf: 2, th: 1}, "b", null, {});
+  chk("Weibull b depuis MTTF (numérique)", r.val.b, 0.5, 1e-6);
+  r = resoudre(W, {R: Math.exp(-0.25), t: 500, th: 1000}, "b", null, {});
+  chk("Weibull b depuis R", r.val.b, 2, 1e-9);
+  r = resoudre(C, {Ap: 0.994, Cmvp: 200, mttf: 27000, c: 5}, "Cmv", null, {arrondiA: true});
+  chk("Corrective K1", r.val.K1, 1.2072, 1e-4);
+  chk("Corrective Å∞ arrondi", r.val.Ao, 0.997, 1e-12);
+  chk("Corrective Cmv — corrigé 401 $", r.val.Cmv, 401.2, 0.05);
+  chk("Corrective CT actuel — 1014,9", r.val.CTa, 1014.9, 0.05);
+  chk("Corrective CT optimal — 807,2", r.val.CTo, 807.4, 0.05);
+  chk("Corrective ΔCP — 408,7", r.val.dCP, 408.7, 0.05);
+  r = resoudre(C, {Ap: 0.994, Cmvp: 200, mttf: 27000, c: 5}, "Cmv", null, {arrondiA: false});
+  chk("Corrective Cmv sans arrondi", r.val.Cmv, 403.705, 0.01);
+  r = resoudre(C, {Ap: 0.994, Cmvp: 200, c: 5, Ao: 0.997}, "mttf", null, {arrondiA: false});
+  chk("Corrective MTTF inverse (depuis Å∞)", r.val.mttf, Math.pow(0.997 / 0.003, 2) * 200 * 0.006 / 0.994 / 5, 1e-6);
+  r = resoudre(St, {lam: 0.0007, T: 3000, p0: 0.975}, "SN", null, {});
+  chk("Stock SN — diapo 4,94", r.val.SN, 4.94, 5e-3);
+  chk("Stock arrondi — 5 pompes", r.val.N, 5, 0);
+  chk("Stock Poisson exact", r.val.kP, 5, 0);
+  r = resoudre(St, {lam: 0.0007, T: 3000, SN: 4.940258}, "p0", null, {});
+  chk("Stock p0 inverse", r.val.p0, 0.975, 1e-4);
+  r = resoudre(St, {u: 1.96, SN: 4.94, lam: 0.0007}, "T", null, {});
+  chk("Stock T inverse (via λT)", r.val.T, 3000, 1);
+  const top = q => (chercher(q)[0] || {it: {}}).it;
+  ok("recherche « pieces de rechange » → stock", top("pieces de rechange").f?.id === "stock");
+  ok("recherche « weibul » (faute) → Weibull", top("weibul").f?.id === "weibull");
+  ok("recherche « dispo optimale » → corrective", top("dispo optimale").f?.id === "corrective");
+  ok("recherche « échelle » → Weibull, inconnue θ", chercher("échelle")[0]?.cible === "th");
+  ok("recherche « MTBF » trouve une fiche", chercher("MTBF").length > 0);
+  let erreurs = [];
+  for (const f of FICHES){
+    for (const k in f.vars) try { parseTex(f.vars[k].sym); } catch (e){ erreurs.push(f.id + "." + k + " : " + e); }
+    for (const e of f.eqs) for (const x in e.solve) try { parseTex(e.solve[x].tpl); } catch (er){ erreurs.push(e.id + "." + x + " : " + er); }
+  }
+  ok("toutes les formules s'analysent" + (erreurs.length ? " — " + erreurs.join(" ; ") : ""), erreurs.length === 0);
+  ok("texte copié : fiabilité Weibull", tx(parseTex(W.eqs[0].solve.R.tpl), {ph: k => symTxt(W, k)}) === "exp[−(t/θ)^b]");
+  ok("texte copié : Å∞", symTxt(C, "Ao") === "Å∞");
+  for (const f of FICHES){
+    S.fiche = f.id; S.vals[f.id] = {}; S.cible[f.id] = null; S.eq[f.id] = null;
+    renderFiche();
+    ok("interface : fiche " + f.id + " s'affiche", document.querySelectorAll("#sol .pill").length > 0);
+  }
+  const mathEl = document.querySelector("#main math");
+  ok("formules en MathML", mathEl && mathEl.namespaceURI === "http://www.w3.org/1998/Math/MathML");
+  const fr = document.querySelector("#main mfrac"), mi = document.querySelector("#main mi");
+  ok("fractions empilées (rendu MathML actif)", fr && mi && fr.getBoundingClientRect().height > 1.6 * mi.getBoundingClientRect().height);
+  S.fiche = "corrective"; S.vals.corrective = {Ap: "0,994", Cmvp: "200", mttf: "27000", c: "5"}; S.cible.corrective = "Cmv"; S.eq.corrective = "c5";
+  renderFiche();
+  ok("interface : résultat Cmv affiché", /401,207/.test($("#sol").textContent));
+  ok("texte copié du résultat", /^Cmv = /.test(res.texteFin) && /401,207/.test(res.texteFin));
+  return T;
+}
+
+/* ---- démarrage ---- */
+if (location.hash === "#demo"){
+  S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "th"; S.eq.weibull = "w1";
+}
+if (location.hash === "#demo2"){
+  S.fiche = "corrective"; S.vals.corrective = {Ap: "0,994", Cmvp: "200", mttf: "27000", c: "5"}; S.cible.corrective = "Cmv"; S.eq.corrective = "c5";
+}
+brancher(); renderMem(); renderFiche();
+if (TEST){
+  const T = autotest(), n = T.filter(t => t.ok).length;
+  const pre = document.createElement("pre");
+  pre.id = "test-out";
+  pre.style.cssText = "position:fixed;inset:20px;overflow:auto;background:#fff;border:2px solid " + (n === T.length ? "#0f7b5f" : "#b42318") + ";padding:16px;z-index:99;font:13px Consolas,monospace";
+  pre.textContent = `AUTOTEST ${n}/${T.length} ${n === T.length ? "OK" : "ÉCHEC"}\n\n` +
+    T.map(t => `${t.ok ? "✔" : "✘"} ${t.nom} : obtenu ${t.got} / attendu ${t.exp}`).join("\n") + "\n\n(retirer #test de l'adresse pour revenir à la calculatrice)";
+  document.body.appendChild(pre);
+}
+</script>
+</body>
+</html>
