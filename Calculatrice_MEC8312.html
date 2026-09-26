@@ -125,6 +125,12 @@ button.bloque{opacity:.35;cursor:not-allowed}
 .chip.on small{color:#d7f3e9}
 .solf{padding:2px 0;overflow:hidden;text-align:center}
 .solf math{font-size:26px}
+.solv{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0 2px}
+.solv-i{font:14px "Segoe UI",sans-serif;border:1.5px dashed #e59a94;background:#fdf1f0;color:var(--bad);border-radius:8px;padding:2px 9px;cursor:pointer}
+.solv-i math{font-size:16px}
+.solv-i.have{border:1px solid #c9d3e3;background:#fff;color:var(--ink);font-weight:600}
+.solv-i.have.calc{border-color:#8fd3b6;background:#f1fbf6;color:var(--ok)}
+.solv-i:hover{box-shadow:0 0 0 3px var(--accent-soft)}
 mrow.pill{cursor:pointer;border:1.5px dashed #8fa8e6;background:#f3f6ff;color:var(--accent);border-radius:6px;padding:2px 5px;margin:0 2px}
 mrow.pill.have{border-style:solid;border-color:#c9d3e3;background:#fff;color:var(--ink)}
 mrow.pill:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -265,11 +271,13 @@ table.tab{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px}
 .rb-leg i.par{background:#eef3ff;border-color:#2457d6}.rb-leg i.serie{background:#ecf8f2;border-color:#0f7b5f}.rb-leg i.piv{background:#fff6e8;border-color:#8a5200}
 mrow.rb-v,[data-rbr][data-rbv],td[data-rbv]{cursor:help}
 mrow.rb-v:hover,[data-rbr][data-rbv]:hover,td[data-rbv]:hover{background:var(--accent-soft);border-radius:4px}
-#rb-bulle{position:absolute;z-index:60;display:none;max-width:460px;background:#fff;border:1px solid #c9d3e3;border-radius:10px;box-shadow:0 12px 30px rgba(20,30,50,.18);padding:8px 12px;font-size:13px;line-height:1.5;color:var(--ink);pointer-events:none}
+#rb-bulle{position:absolute;z-index:60;display:none;box-sizing:border-box;overflow:hidden;background:#fff;border:1px solid #c9d3e3;border-radius:10px;box-shadow:0 12px 30px rgba(20,30,50,.18);padding:8px 12px;font-size:13px;line-height:1.5;color:var(--ink);pointer-events:none}
 #rb-bulle .t{font-weight:600;margin-bottom:3px}
 #rb-bulle .s{color:var(--muted);font-size:12px}
 #rb-bulle hr{border:0;border-top:1px dashed var(--line);margin:5px 0}
 #rb-bulle math{font-size:15px}
+#rb-bulle .lc .un,#rb-bulle .lc .p{text-align:left;overflow:hidden}
+#rb-bulle .lc{margin:3px 0}
 .rb-det{margin:2px 0 6px}
 .rb-det summary{cursor:pointer;color:var(--accent);font-size:12px}
 .rb-det .lc{margin-left:12px;padding-left:8px;border-left:2px dotted var(--line)}
@@ -1554,7 +1562,7 @@ function bulleVar(k){
   if (f.custom || !r || !f.vars[k] || !(k in r.val)) return "";
   const D = r.D || {}, d = f.vars[k], v = r.val[k];
   let h = `<div class="t"><math>${symML(f, k)}</math> = ${esc(avecU(f, k, v))} — ${esc(d.nom)}</div>`;
-  if (D.conv && D.conv[k]) h += `<div class="s">Donnée convertie dans l'unité de la fiche :</div><math displaystyle="true">${ligneConv(f, k, D.conv[k]).html}</math>`;
+  if (D.conv && D.conv[k]) h += `<div class="s">Donnée convertie dans l'unité de la fiche :</div>${ligne(ligneConv(f, k, D.conv[k]))}`;
   else if (D.resolus && D.resolus[k]) h += `<div class="s">Trouvée pour que ${esc(symTxt(f, D.resolus[k].k))} = ${esc(D.resolus[k].expr)} (résolution numérique).</div>`;
   else if (D.liens && k in D.liens && D.K && k in D.K) h += `<div class="s">Relation saisie : ${esc(symTxt(f, k))} = ${esc(D.liens[k])}</div>`;
   else if (D.K && k in D.K) h += `<div class="s">Donnée de l'énoncé.</div>`;
@@ -1562,7 +1570,7 @@ function bulleVar(k){
     const hw = r.how[k], ent = hw.inputs.filter(x => x in r.val && x !== k);
     let sl = null; try { sl = stepLine(f, r, k, false); } catch (e){}
     h += `<div class="s">Non donnée : calculée par « ${esc(hw.eq.label)} »${hw.numeric ? " (résolution numérique)" : ""}${hw.arrondi ? ", arrondie" : ""} :</div>`
-      + (sl ? `<math displaystyle="true">${sl.html}</math>` : "")
+      + (sl ? ligne(sl) : "")
       + (ent.length ? `<div class="s">à partir de : ${ent.map(x => esc(symTxt(f, x) + " = " + avecU(f, x, r.val[x]))).join(" ; ")}</div>` : "");
   } else h += `<div class="s">Déterminée par les relations saisies.</div>`;
   return h;
@@ -1739,7 +1747,7 @@ function rbBulle(el, fixe){
   if (cle[0] === "#"){
     const d = RB_DEFS[cle.slice(1)], nom = rbQui({compo: true, nom: cle.slice(1)}).replace(/^R/, L);
     if (!d) return;
-    h = `<div class="t">${esc(nom)} — résultat intermédiaire</div><div class="s">${d.note}</div><math displaystyle="true">${d.html}</math>
+    h = `<div class="t">${esc(nom)} — résultat intermédiaire</div><div class="s">${d.note}</div>${ligne({html: d.html, a: d.html, b: ""})}
       <div class="s">Regroupe : ${esc([...new Set(d.c)].join(", "))}</div>`;
   } else {
     const l = A.lois[cle]; if (!l) return;
@@ -1748,9 +1756,34 @@ function rbBulle(el, fixe){
   }
   bulleMontrer(b, el, h);
 }
+/* ajuste chaque ligne de calcul à la largeur disponible : taille réduite, puis deux lignes si besoin */
+function caserDans(racine){
+  const caser = box => {
+    const m = box.querySelector("math"); if (!m) return 99;
+    m.style.fontSize = "";
+    const dispo = box.clientWidth - 2;
+    let taille = parseFloat(getComputedStyle(m).fontSize);
+    for (let i = 0; i < 6; i++){ const w = m.getBoundingClientRect().width; if (w <= dispo || taille <= 9) break; taille = Math.max(9, taille * dispo / w * 0.98); m.style.fontSize = taille + "px"; }
+    return taille;
+  };
+  racine.querySelectorAll(".lc").forEach(lc => {
+    const un = lc.querySelector(".un"), deux = lc.querySelector(".deux"), b2 = deux && deux.querySelector(".p.b math");
+    un.hidden = false; if (deux) deux.hidden = true;
+    if (caser(un) < 12 && b2 && b2.textContent.trim()){ un.hidden = true; deux.hidden = false; deux.querySelectorAll(".p").forEach(caser); }
+  });
+}
 function bulleMontrer(b, el, h){
   b.innerHTML = h; b.style.display = "block";
-  const r = el.getBoundingClientRect(), W = Math.min(460, document.documentElement.clientWidth - 20);
+  /* largeur adaptée au contenu : la formule la plus large, à sa taille normale et sur une ligne ;
+     plafonnée par l'écran seulement (alors réduction ou deux lignes en dernier recours) */
+  const vw = document.documentElement.clientWidth, maxi = vw - 24;
+  b.style.width = "auto"; b.style.maxWidth = maxi + "px";
+  b.querySelectorAll(".lc").forEach(lc => { const un = lc.querySelector(".un"), deux = lc.querySelector(".deux"); un.hidden = false; if (deux) deux.hidden = true; const m = un.querySelector("math"); if (m) m.style.fontSize = ""; });
+  const cs = getComputedStyle(b), bord = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+  const large = Math.max(0, ...[...b.querySelectorAll("math")].filter(m => !m.closest("[hidden]")).map(m => m.getBoundingClientRect().width));
+  b.style.width = Math.min(maxi, Math.max(380, Math.ceil(large + bord + 6))) + "px";
+  caserDans(b);
+  const r = el.getBoundingClientRect(), W = b.offsetWidth;
   b.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - W - 12)) + "px";
   const bas = r.bottom + window.scrollY + 8, hb = b.offsetHeight;
   b.style.top = (r.bottom + hb + 12 > window.innerHeight && r.top > hb + 12 ? r.top + window.scrollY - hb - 8 : bas) + "px";
@@ -4043,16 +4076,28 @@ function update(){
 
   /* zone de résolution */
   const s = eq.solve[c], autres = eq.vars.filter(k => k !== c);
+  let compact = false;   /* formule trop large : symboles seuls, valeurs listées dessous */
   const pill = (k, ex) => {
-    const connu = k in r.val, donne = k in K;
-    const p = `<mrow class="pill ${connu ? "have" : ""} ${connu && !donne ? "calc" : ""}" data-edit="${k}"><munder><mrow>${symML(f, k)}</mrow><mtext class="pv">${connu ? avecU(f, k, r.val[k]) : "?"}</mtext></munder></mrow>`;
+    const connu = k in r.val, donne = k in K, cls = `pill ${connu ? "have" : ""} ${connu && !donne ? "calc" : ""}`;
+    const p = compact ? `<mrow class="${cls}" data-edit="${k}">${symML(f, k)}</mrow>`
+      : `<mrow class="${cls}" data-edit="${k}"><munder><mrow>${symML(f, k)}</mrow><mtext class="pv">${connu ? avecU(f, k, r.val[k]) : "?"}</mtext></munder></mrow>`;
     return ex && parseTex(vars[k].sym).length > 1 ? `<mrow><mo>(</mo>${p}<mo>)</mo></mrow>` : p;
   };
   const tgt = k => `<mrow class="tgt">${symML(f, k)}</mrow>`;
   let h;
   if (!c) h = `<div class="miss">Cliquez une variable dans une formule, un bouton ci-dessus ou 🎯 dans la feuille de données pour choisir l'inconnue. Les valeurs déjà calculables s'affichent dans les blocs et la feuille.</div>`;
-  else if (s) h = `<div class="solf"><math displaystyle="true">${tgt(c)}<mo>=</mo>${ml(parseTex(s.tpl), {ph: pill})}</math></div>`;
-  else h = `<div class="solf"><math displaystyle="true">${pill(eq.main)}<mo>=</mo>${ml(parseTex(eq.solve[eq.main].tpl), {ph: (k, ex) => k === c ? tgt(k) : pill(k, ex)})}</math></div>
+  const solf = () => {
+    const tpl = s ? s.tpl : eq.solve[eq.main].tpl;
+    const m = s ? `<math displaystyle="true">${tgt(c)}<mo>=</mo>${ml(parseTex(tpl), {ph: pill})}</math>`
+      : `<math displaystyle="true">${pill(eq.main)}<mo>=</mo>${ml(parseTex(tpl), {ph: (k, ex) => k === c ? tgt(k) : pill(k, ex)})}</math>`;
+    if (!compact) return m;
+    const ks = [...new Set([...(s ? [] : [eq.main]), ...(tpl.match(/@(\w+)/g) || []).map(x => x.slice(1))])].filter(k => k !== c);
+    return m + `<div class="solv">${ks.map(k => { const connu = k in r.val;
+      return `<button class="solv-i ${connu ? "have" : ""} ${connu && !(k in K) ? "calc" : ""}" data-edit="${k}" title="Cliquer pour saisir"><math>${symML(f, k)}</math> = ${connu ? esc(avecU(f, k, r.val[k])) : "?"}</button>`; }).join("")}</div>`;
+  };
+  if (!c){}
+  else if (s) h = `<div class="solf" id="solf">${solf()}</div>`;
+  else h = `<div class="solf" id="solf">${solf()}</div>
     <div class="hint">Pas de forme explicite pour ${mathSym(f, c)} dans cette formule : la valeur sera trouvée numériquement.</div>`;
 
   if (!c){}
@@ -4150,6 +4195,9 @@ function update(){
     bc.innerHTML = html; bb.textContent = badge;
   }
   ajuster();
+  /* formule de l'inconnue devenue trop petite (valeurs sous les symboles) : on passe en affichage compact */
+  const sfm = document.querySelector("#solf > math");
+  if (sfm && !compact && parseFloat(getComputedStyle(sfm).fontSize) < 17){ compact = true; document.getElementById("solf").innerHTML = solf(); ajuster(); }
 }
 
 /* chaque formule est réduite juste assez pour tenir entière dans son cadre */
@@ -5127,6 +5175,18 @@ function autotest(){
   ok("bulle Markov : MTTF (états absorbants, système τ)", /absorbants/.test(tb) && /5150/.test(tb));
   tb = survolQ(document.querySelector('#cu-res [data-rbv="x:mk-ainf"]'));
   ok("bulle Markov : A∞ = Σπ des états de marche (π·Q = 0)", /π·Q = 0/.test(tb) && /0,999804/.test(tb));
+  S.fiche = "stock"; S.vals.stock = {lam: "0,0007", T: "3000", p0: "0,975"}; S.cible.stock = "kP"; S.eq.stock = "s5"; renderFiche();
+  const elK = document.querySelector('#synth [data-rbv="v:kP"]'); elK.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
+  const bb = bulle().getBoundingClientRect(), deborde5 = [...bulle().querySelectorAll("math")].filter(m => !m.closest("[hidden]") && m.getBoundingClientRect().right > bb.right + 1);
+  ok("bulle : la ligne de calcul (Poisson, stock k) tient dans la bulle", bulle().style.display === "block" && /Loi de Poisson/.test(bulle().textContent) && deborde5.length === 0);
+  const mK = bulle().querySelector(".lc .un math");
+  ok("bulle adaptée au contenu : formule sur une ligne, à taille normale, bulle élargie", !bulle().querySelector(".lc .un").hidden && mK.style.fontSize === "" && bulle().offsetWidth > 580 && bulle().offsetWidth <= document.documentElement.clientWidth - 24);
+  elK.dispatchEvent(new MouseEvent("mouseout", {bubbles: true}));
+  S.fiche = "stock"; S.vals.stock = {lam: "0,0007", T: "3000", p0: "0,975"}; S.cible.stock = "kP"; S.eq.stock = "s5"; renderFiche();
+  const fsSol = () => parseFloat(getComputedStyle(document.querySelector("#solf > math")).fontSize);
+  ok("inconnue : formule large (Poisson) en affichage compact lisible, valeurs listées dessous", !!document.querySelector("#solf .solv") && fsSol() >= 17 && document.querySelectorAll("#solf .solv-i").length === 3 && /0,0007 h⁻¹/.test($("#solf .solv").textContent));
+  S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "th"; S.eq.weibull = "w1"; renderFiche();
+  ok("inconnue : formule courte (Weibull θ) garde les valeurs sous les symboles", !document.querySelector("#solf .solv") && !!document.querySelector("#solf mtext.pv"));
   /* ---- synthèse sur toutes les fiches ---- */
   const sBoites = () => [...document.querySelectorAll("#synth .rb-a")];
   S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "th"; S.eq.weibull = "w1"; renderFiche();
