@@ -333,7 +333,10 @@ def schema_fiabilite(blocs, R, t=None, entree="E", sortie="S", unite_temps="h", 
                 Ex. pont : [("A","E","1"), ("B","E","2"), ("C","1","S"), ("D","2","S"), ("X","1","2")]
     R         : dict {composant: valeur} ; une valeur peut aussi être une loi (Exponentielle,
                 Weibull…) : sa fiabilité est prise au temps t. Un bloc r/m ou stand-by se
-                donne par sa fiabilité (r_sur_m, standby).
+                donne par sa fiabilité, y compris un stand-by d'éléments différents (modèles
+                4 à 6), à condition que ses éléments n'apparaissent pas ailleurs :
+                X = standby(t=500, lamA=0.001, lamB=0.002, Rs=0.95)["Rsb(500)"]
+                schema_fiabilite([("C", "E", "1"), ("X", "1", "S")], {"C": 0.99, "X": X})
     grandeur  : "R" (fiabilité) ou "A" (disponibilité : donner A_i = μ/(λ + μ), un réparateur
                 par composant) ; la même structure s'applique.
     cible, inconnue : calcul inverse. `inconnue` = nom d'un composant -> sa valeur pour que

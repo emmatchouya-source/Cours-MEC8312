@@ -217,6 +217,13 @@ class DiagrammeFiabilite(unittest.TestCase):
         s = schema_fiabilite([("A", "E", "1"), ("V", "1", "S")], {"A": 0.95, "V": r_sur_m(0.9, 2, 3)["R_2/3"]})
         self.assertAlmostEqual(s["R_S"], 0.95 * 0.972, 12)
 
+    def test_standby_elements_differents_dans_un_schema(self):
+        X = standby(t=500, lamA=0.001, lamB=0.002, Rs=0.95)["Rsb(500)"]
+        e = math.exp
+        self.assertAlmostEqual(X, e(-0.5) + 0.95 * 0.001 / 0.001 * (e(-0.5) - e(-1.0)), 12)
+        s = schema_fiabilite([("C", "E", "1"), ("X", "1", "S")], {"C": 0.99, "X": X})
+        self.assertAlmostEqual(s["R_S"], 0.99 * X, 12)
+
     def test_inverse_composant(self):
         s = schema_fiabilite([("A", "E", "1"), ("B", "1", "S")], {"A": Exponentielle(0.001), "B": 0.95},
                              t=100, cible=0.9, inconnue="A")
