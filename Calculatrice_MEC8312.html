@@ -215,6 +215,10 @@ table.tab{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px}
 #rb-svg{max-width:100%}
 .rb-tab{width:auto}
 .rb-obj{margin-top:6px;font-size:14px}
+.rb-det{margin:2px 0 6px}
+.rb-det summary{cursor:pointer;color:var(--accent);font-size:12px}
+.rb-det .lc{margin-left:12px;padding-left:8px;border-left:2px dotted var(--line)}
+.bloc .rb-det math{font-size:15px}
 .rb-ex{font:13px "Segoe UI",sans-serif;border:1px solid var(--line);border-radius:7px;padding:3px 6px;background:#fff;color:var(--ink);cursor:pointer}
 .rb-obj input,.rb-obj select{font:14px "Segoe UI",sans-serif;padding:2px 6px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff;margin:0 4px}
 .rb-obj input{width:90px}
@@ -1331,20 +1335,62 @@ function rbResoudre(f, v){
   return {g, res, R, t, Rs, trace, etats, imp, mttf, courbe, tousTemps, aTemps, mode, lois, At, inverse};
 }
 const SUB = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉"};
-let RB_L = "R";   /* R (fiabilité) ou A (disponibilité) dans les étapes affichées */
-const rbNomML = e => e.compo ? `<msub><mi>${RB_L}</mi><mn>${e.nom}</mn></msub>` : `<msub><mi>${RB_L}</mi><mi mathvariant="normal">${esc(e.nom)}</mi></msub>`;
-const rbNomTx = e => e.compo ? RB_L + e.nom.split("").map(c => SUB[c]).join("") : RB_L + "_" + e.nom;
-const rbQui = e => e.compo ? RB_L + e.nom.split("").map(c => SUB[c]).join("") : e.nom;
+let RB_L = "R", RB_AFF = {};   /* R (fiabilité) ou A (disponibilité) ; numéros affichés des résultats intermédiaires */
+const rbNum = e => RB_AFF[e.nom] || e.nom;
+const rbNomML = e => e.compo ? `<msub><mi>${RB_L}</mi><mn>${rbNum(e)}</mn></msub>` : `<msub><mi>${RB_L}</mi><mi mathvariant="normal">${esc(e.nom)}</mi></msub>`;
+const rbNomTx = e => e.compo ? RB_L + rbNum(e).split("").map(c => SUB[c] || c).join("") : RB_L + "_" + e.nom;
+const rbQui = e => e.compo ? RB_L + rbNum(e).split("").map(c => SUB[c] || c).join("") : e.nom;
+/* réductions en chaîne regroupées : 4 blocs en parallèle = une ligne 1 − Π(1 − R_i), n blocs en série = Π R_i ;
+   le détail deux à deux reste dans g.det */
+function rbGrouper(trace){
+  const out = [];
+  for (const s of trace){
+    const p = out[out.length - 1];
+    if ((s.k === "serie" || s.k === "par") && p && p.k === s.k && p.prof === s.prof && (s.e1 === p.n || s.e2 === p.n)){
+      out[out.length - 1] = {k: s.k, prof: s.prof, n: s.n, ops: [...p.ops, s.e1 === p.n ? s.e2 : s.e1], det: [...p.det, s]};
+    } else if (s.k === "serie" || s.k === "par") out.push({k: s.k, prof: s.prof, n: s.n, ops: [s.e1, s.e2], det: [s]});
+    else out.push(s);
+  }
+  return out;
+}
 /* étapes du calcul (lignes MathML + texte à copier) */
 function rbEtapes(A){
   const out = [], tx = [], pad = p => `style="margin-left:${p * 16}px"`;
   const lig = (sl, p, note) => { out.push(`<div class="rb-et" ${pad(p)}>${ligne(sl)}${note ? `<div class="small">${note}</div>` : ""}</div>`); tx.push("  ".repeat(p) + sl.texte); };
   const titre = (h, t, p) => { out.push(`<div class="rb-cas" ${pad(p)}>${h}</div>`); tx.push("  ".repeat(p) + t); };
   const barre = n => `<mover><mi mathvariant="normal">${esc(n)}</mi><mo>¯</mo></mover>`;
-  const condML = (lab, up) => lab.compo ? `<msub><mi>${RB_L}</mi><mrow><mo>|</mo><mn>${lab.nom}</mn>${up ? "" : "<mo>¯</mo>"}</mrow></msub>`
+  const condML = (lab, up) => lab.compo ? `<msub><mi>${RB_L}</mi><mrow><mo>|</mo><mn>${rbNum(lab)}</mn>${up ? "" : "<mo>¯</mo>"}</mrow></msub>`
     : `<msub><mi>${RB_L}</mi><mrow><mo>|</mo>${up ? `<mi mathvariant="normal">${esc(lab.nom)}</mi>` : barre(lab.nom)}</mrow></msub>`;
   const condTx = (lab, up) => `${RB_L}|${rbQui(lab)}${up ? "" : "̄"}`;
-  for (const s of A.trace){
+  /* numérotation des résultats : 1, 2, 3… pour les lignes regroupées ; 3′, 3″… pour leurs intermédiaires */
+  const T = rbGrouper(A.trace);
+  RB_AFF = {}; let num = 0;
+  for (const s of T) if (s.det){ const k = String(++num); RB_AFF[s.n.nom] = k; s.det.slice(0, -1).forEach((d, i) => RB_AFF[d.n.nom] = k + "′".repeat(i + 1)); }
+  const binaire = s => {
+    const {n, e1, e2} = s, r = `<mrow class="resv">${numML(n.v)}</mrow>`;
+    const a = s.k === "serie" ? `${rbNomML(n)}<mo>=</mo>${rbNomML(e1)}<mo>·</mo>${rbNomML(e2)}`
+      : `${rbNomML(n)}<mo>=</mo><mn>1</mn><mo>−</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${rbNomML(e1)}<mo stretchy="false">)</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${rbNomML(e2)}<mo stretchy="false">)</mo>`;
+    const b = s.k === "serie" ? `<mo>=</mo>${numML(e1.v)}<mo>·</mo>${numML(e2.v)}<mo>=</mo>${r}`
+      : `<mo>=</mo><mn>1</mn><mo>−</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${numML(e1.v)}<mo stretchy="false">)</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${numML(e2.v)}<mo stretchy="false">)</mo><mo>=</mo>${r}`;
+    return {html: a + b, a, b};
+  };
+  for (let s of T){
+    if (s.det && s.ops.length > 2){
+      const {n, ops} = s, r = `<mrow class="resv">${numML(n.v)}</mrow>`, ser = s.k === "serie";
+      const egaux = ops.every(o => Math.abs(o.v - ops[0].v) < 1e-15), q = ops.length;
+      const P = x => `<mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${x}<mo stretchy="false">)</mo></mrow>`;
+      const a = `${rbNomML(n)}<mo>=</mo>` + (ser ? ops.map(rbNomML).join("<mo>·</mo>") : `<mn>1</mn><mo>−</mo>${ops.map(o => P(rbNomML(o))).join("")}`);
+      const b = "<mo>=</mo>" + (ser ? (egaux ? `<msup>${numMLp(ops[0].v)}<mn>${q}</mn></msup>` : ops.map(o => numML(o.v)).join("<mo>·</mo>"))
+        : `<mn>1</mn><mo>−</mo>${egaux ? `<msup>${P(numML(ops[0].v))}<mn>${q}</mn></msup>` : ops.map(o => P(numML(o.v))).join("")}`) + `<mo>=</mo>${r}`;
+      const texte = `${rbNomTx(n)} = ` + (ser ? ops.map(rbNomTx).join("·") : "1 − " + ops.map(o => `(1 − ${rbNomTx(o)})`).join(""))
+        + " = " + (ser ? (egaux ? `${numTxtp(ops[0].v)}^${q}` : ops.map(o => fmt(o.v)).join("·")) : "1 − " + (egaux ? `(1 − ${fmt(ops[0].v)})^${q}` : ops.map(o => `(1 − ${fmt(o.v)})`).join(""))) + ` = ${fmt(n.v)}`;
+      const noms = ops.map(o => esc(rbQui(o)));
+      const det = s.det.map(d => { const b2 = binaire(d); return ligne({html: b2.html, a: b2.a, b: b2.b}); }).join("");
+      lig({html: a + b, a, b, texte}, s.prof, `${noms.slice(0, -1).join(", ")} et ${noms[q - 1]} en ${ser ? "série" : "parallèle"}
+        <details class="rb-det"${RB.details ? " open" : ""}><summary>détail deux à deux (${s.det.length} étapes)</summary>${det}</details>`);
+      continue;
+    }
+    if (s.det) s = Object.assign({}, s.det[0]);
     if (s.k === "serie" || s.k === "par"){
       const {n, e1, e2} = s, r = `<mrow class="resv">${numML(n.v)}</mrow>`;
       const a = s.k === "serie" ? `${rbNomML(n)}<mo>=</mo>${rbNomML(e1)}<mo>·</mo>${rbNomML(e2)}`
@@ -2125,7 +2171,10 @@ const FICHES = [
     {nom: "Stand-by A → B différents (modèle 5) + C en série", vals: {rapide: "serie(C; X)", t: "500", g: rbConstruire(rbParse("serie(C; X)"),
       {C: {type: "R", R: "0,99"}, X: {type: "sbg", ordre: "A; B", Rs: "0,95"}, A: {type: "lam", lam: "0,001"}, B: {type: "lam", lam: "0,002"}})}},
     {nom: "Disponibilité : pompe et moteur réparables", vals: {mode: "A", rapide: "serie(Pompe; par(M1; M2))", g: rbConstruire(rbParse("serie(Pompe; par(M1; M2))"),
-      {Pompe: {atype: "mm", mttf: "500", mttr: "8"}, M1: {atype: "lm", lam: "0,001", mu: "0,05"}, M2: {atype: "lm", lam: "0,001", mu: "0,05"}})}}
+      {Pompe: {atype: "mm", mttf: "500", mttr: "8"}, M1: {atype: "lm", lam: "0,001", mu: "0,05"}, M2: {atype: "lm", lam: "0,001", mu: "0,05"}})}},
+    {nom: "Véhicule autonome : 4 caméras, calculateurs 2/3, 2 actionneurs", vals: {rapide: "serie(par(C1; C2; C3; C4); T; par(A1; A2))", t: "1000", g: rbConstruire(rbParse("serie(par(C1; C2; C3; C4); T; par(A1; A2))"),
+      {C1: {type: "lam", lam: "2e-4"}, C2: {type: "lam", lam: "2e-4"}, C3: {type: "lam", lam: "2e-4"}, C4: {type: "lam", lam: "2e-4"},
+       T: {type: "lam", lam: "1e-4", str: "rm", r: "2", m: "3"}, A1: {type: "lam", lam: "5e-4"}, A2: {type: "lam", lam: "5e-4"}})}}
   ],
   html(v){
     const ut = uniteDe(this);
@@ -2138,7 +2187,7 @@ const FICHES = [
       <div class="rb-don"><label class="rb-t">Temps t <input data-cu="t" value="${esc(v.t || "")}" placeholder="ex. 1000 ou 6 mois" spellcheck="false" autocomplete="off"> <span class="small">${esc(ut.pl || ut.s)} — ${v.mode === "A" ? "facultatif : A(t) instantanée ; vide = A∞" : "pour les lois λ, MTTF et Weibull"}</span></label>
         <div id="rb-comp">${rbTable(this, v)}</div></div>
       </section>
-      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Calcul pas à pas : réductions série / parallèle, puis conditionnement</span><span class="bb"><button class="btn" data-rbcopy="1" title="Copier tout le calcul">📋 Copier</button></span></div><div class="bcalc" id="cu-eqs"></div></div>
+      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Calcul pas à pas : réductions série / parallèle, puis conditionnement</span><span class="bb"><button class="btn" data-rbdet="1" title="Déplier ou replier le détail deux à deux de toutes les lignes regroupées">🔍 Détails</button> <button class="btn" data-rbcopy="1" title="Copier tout le calcul">📋 Copier</button></span></div><div class="bcalc" id="cu-eqs"></div></div>
       <aside class="panneau" id="cu-res"></aside></div>`;
   },
   update(v){
@@ -3841,6 +3890,7 @@ function brancher(){
     if ((d = t.closest("[data-cuex]"))){ S.vals[f.id] = JSON.parse(JSON.stringify(f.exemples[+att(d, "cuex")].vals)); MK.sel = null; MK.mode = null; MK.src = null; RB.sel = null; RB.mode = null; RB.src = null; save(); renderFiche(); return; }
     if ((d = t.closest("[data-rba]"))){ rbAction(att(d, "rba"), d); return; }
     if (t.closest("[data-rbcopy]")){ if (rbResoudre.texte) copier(rbResoudre.texte); return; }
+    if (t.closest("[data-rbdet]")){ const ds = [...document.querySelectorAll("#cu-eqs details.rb-det")], ouv = !ds.every(d => d.open); ds.forEach(d => d.open = ouv); RB.details = ouv; ajuster(); return; }
     if ((d = t.closest("[data-mka]"))){
       const a = att(d, "mka");
       if (a === "ajout") mkAjouter();
@@ -3930,6 +3980,7 @@ function brancher(){
     const inp = ev.target.closest("input[data-k]");
     if (inp && !inp.readOnly){ valsOf(F())[att(inp, "k")] = inp.value; save(); update(); }
   });
+  main.addEventListener("toggle", ev => { if (ev.target.matches && ev.target.matches("details.rb-det")) ajuster(); }, true);
   main.addEventListener("pointerdown", ev => {
     if (ev.target.closest("#rb-svg")){ rbPointer(ev); return; }
     const svg = ev.target.closest("#mk-svg"); if (!svg) return;
@@ -4583,6 +4634,21 @@ function autotest(){
   S.fiche = "diagramme"; S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[6].vals)); RB.sel = null; RB.mode = null; renderFiche();
   ok("interface stand-by : légende A→B, lignes « actif » et « réserve », formule du modèle 5", /stand-by A→B/.test($("#rb-svg").textContent) && /actif de X/.test($("#rb-comp").textContent) && /réserve de X/.test($("#rb-comp").textContent) && /modèle 5/.test($("#cu-eqs").textContent));
   ok("interface stand-by : champ λ en attente sur la réserve seulement", !!document.querySelector('[data-rbc="B"][data-rbp="lsb"]') && !document.querySelector('[data-rbc="A"][data-rbp="lsb"]'));
+  /* ---- étapes regroupées (n blocs en parallèle ou en série sur une ligne) ---- */
+  const iVA = Dg.exemples.findIndex(x => /Véhicule/.test(x.nom));
+  S.fiche = "diagramme"; S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[iVA].vals)); RB.sel = null; RB.mode = null; RB.details = false; renderFiche();
+  chk("Véhicule autonome : R_sys(1000 h) = 0,822788", rbR(Dg.exemples[iVA].vals).Rs, 0.822788, 1e-6);
+  ok("regroupé : 4 caméras en une ligne 1 − (1 − 0,818731)^4", rbResoudre.texte.includes("R₁ = 1 − (1 − R_C1)(1 − R_C2)(1 − R_C3)(1 − R_C4) = 1 − (1 − 0,818731)^4 = 0,99892"));
+  ok("regroupé : série en une ligne R₃ = R₁·R_T·R₂", rbResoudre.texte.includes("R₃ = R₁·R_T·R₂ = 0,99892·0,974556·0,845182 = 0,822788"));
+  ok("regroupé : 3 lignes de calcul (+ résultat) au lieu de 6, détails repliés", document.querySelectorAll("#cu-eqs > .rb-et").length === 4 && document.querySelectorAll("#cu-eqs details.rb-det").length === 2 && ![...document.querySelectorAll("#cu-eqs details.rb-det")].some(d => d.open));
+  ok("détail des caméras : 3 étapes deux à deux (R₁′, R₁″, R₁)", document.querySelector("#cu-eqs details.rb-det").querySelectorAll(".lc").length === 3 && /′/.test(document.querySelector("#cu-eqs details.rb-det").textContent));
+  document.querySelector("[data-rbdet]").click();
+  ok("bouton Détails : tout se déplie", [...document.querySelectorAll("#cu-eqs details.rb-det")].every(d => d.open));
+  S.vals.diagramme.t = "500"; update();
+  ok("détails dépliés conservés après un recalcul", [...document.querySelectorAll("#cu-eqs details.rb-det")].every(d => d.open));
+  document.querySelector("[data-rbdet]").click(); RB.details = false;
+  A = rbR(Dg.exemples[1].vals); RB_L = "R"; rbEtapes(A);
+  ok("pont : conditionnement et numérotation R₁, R₂… continue", /R₁/.test(rbEtapes(A).texte) && !/R₇/.test(rbEtapes(A).texte));
   return T;
 }
 
