@@ -214,6 +214,15 @@ table.tab{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px}
 .bloc .rb-et math{font-size:18px}
 #rb-svg{max-width:100%}
 .rb-tab{width:auto}
+.rb-obj{margin-top:6px;font-size:14px}
+.rb-ex{font:13px "Segoe UI",sans-serif;border:1px solid var(--line);border-radius:7px;padding:3px 6px;background:#fff;color:var(--ink);cursor:pointer}
+.rb-obj input,.rb-obj select{font:14px "Segoe UI",sans-serif;padding:2px 6px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff;margin:0 4px}
+.rb-obj input{width:90px}
+.rb-tab input.rb-expr{width:190px;font-family:Consolas,monospace}
+.rb-tab input.rb-court{width:48px}
+.rb-bloc .in{fill:none;stroke:#1d2330;stroke-width:1}
+.rb-bloc.sous rect:not(.in){fill:#eef3ff}
+.rb-bloc .leg{font:11px "Segoe UI",sans-serif;fill:#5f6b7a;pointer-events:none}
 .rb-cas{font-size:13px;color:var(--ink);margin:6px 0 2px;padding-left:8px;border-left:2px solid var(--accent)}
 .mk-ed{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;background:#fff}
 .mk-ed label{display:block;margin:6px 0;font-size:13px;color:var(--muted)}
@@ -600,14 +609,46 @@ function enumCalc(compTxt, chTxt){
 /* Le schéma : bornes E et S, blocs (côtés a et b) et nœuds, reliés par des fils.
    Les fils fusionnent les points ; chaque bloc devient une arête entre deux nœuds.
    Deux blocs de même nom sont le même composant (même état). */
-function rbReseau(g){
+function rbReseau(g, mode){
   const uf = {}, find = x => { while (uf[x] !== undefined && uf[x] !== x) x = uf[x]; return x; };
   const relies = new Set();
   for (const fl of g.fils){ relies.add(fl.a); relies.add(fl.b); const a = find(fl.a), b = find(fl.b); if (a !== b) uf[a] = b; }
-  const blocs = g.els.filter(e => e.k === "bloc");
-  return {s: find("E"), t: find("S"), comps: [...new Set(blocs.map(e => e.nom))], nbBlocs: blocs.length,
-    aretes: blocs.map(e => ({a: find(e.id + ":a"), b: find(e.id + ":b"), c: [e.nom], nom: e.nom})),
+  const blocs = g.els.filter(e => e.k === "bloc"), aretes = [], cle = mode === "A" ? "atype" : "type";
+  let k = 0;
+  /* un composant « sous-schéma » est remplacé par son montage (série = nœuds intermédiaires,
+     parallèle = arêtes entre les mêmes nœuds) : un composant répété dedans reste le même */
+  const poser = (nom, a, b, pile) => {
+    const s = (g.comps || {})[nom];
+    if (s && s[cle] === "sous"){
+      if (pile.includes(nom)) throw `sous-schéma circulaire : ${[...pile, nom].join(" → ")}`;
+      let arbre;
+      try { arbre = rbParse(s.expr || ""); } catch (e){ throw `sous-schéma de ${nom} : ${String(s.expr || "").trim() ? e : "tapez son montage, par ex. par(B; C)"}`; }
+      const pose = (t, a, b) => {
+        if (t.k === "bloc") return poser(t.nom, a, b, [...pile, nom]);
+        if (t.k === "par") return t.l.forEach(c => pose(c, a, b));
+        let prec = a;
+        t.l.forEach((c, i) => { const nx = i === t.l.length - 1 ? b : "~" + (++k); pose(c, prec, nx); prec = nx; });
+      };
+      pose(arbre, a, b);
+      return;
+    }
+    aretes.push({a, b, c: [nom], nom});
+  };
+  for (const e of blocs) poser(e.nom, find(e.id + ":a"), find(e.id + ":b"), []);
+  return {s: find("E"), t: find("S"), comps: [...new Set(aretes.map(e => e.nom))], nbBlocs: blocs.length, aretes,
     isoles: [...new Set(blocs.filter(e => !relies.has(e.id + ":a") || !relies.has(e.id + ":b")).map(e => e.nom))]};
+}
+/* noms des composants : ceux des blocs, puis ceux cités dans les sous-schémas */
+function rbNoms(g, mode){
+  const cle = mode === "A" ? "atype" : "type", out = [], vus = new Set();
+  const feuilles = t => t.k === "bloc" ? [t.nom] : t.l.flatMap(feuilles);
+  const ajoute = n => {
+    if (vus.has(n)) return; vus.add(n); out.push(n);
+    const s = (g.comps || {})[n];
+    if (s && s[cle] === "sous") try { feuilles(rbParse(s.expr || "")).forEach(ajoute); } catch (e){}
+  };
+  g.els.filter(e => e.k === "bloc").forEach(e => ajoute(e.nom));
+  return out;
 }
 /* existe-t-il un chemin de s à t par des arêtes dont tous les composants marchent ? */
 function rbRelie(s, t, A, marche){
@@ -937,8 +978,11 @@ function rbDessin(v){
       h += `<g class="rb-noeud${sel}${src}" data-rbel="${e.id}" transform="translate(${e.x},${e.y})"><circle class="hit" r="11"/><circle r="${sel || src ? 7 : 5}"/></g>`;
     else {
       const w = e.rot ? RB_BH : RB_BW, hh = e.rot ? RB_BW : RB_BH, a = rbPos(g, e.id + ":a"), b = rbPos(g, e.id + ":b");
-      h += `<g class="rb-bloc${sel}${src}${nb[e.nom] > 1 ? " rep" : ""}${rel ? " rel" : ""}" data-rbel="${e.id}"><rect x="${e.x - w / 2}" y="${e.y - hh / 2}" width="${w}" height="${hh}" rx="6"/>
-        <text x="${e.x}" y="${e.y}" dy="5" text-anchor="middle">${esc(e.nom)}</text>
+      const sp = g.comps[e.nom] || {}, sous = (v.mode === "A" ? sp.atype : sp.type) === "sous";
+      const legende = sous ? "sous-schéma" : sp.str === "rm" ? `${sp.r || "r"}/${sp.m || "m"}` : sp.str === "sb" && v.mode !== "A" ? `stand-by ×${sp.n || 1}` : "";
+      h += `<g class="rb-bloc${sel}${src}${nb[e.nom] > 1 ? " rep" : ""}${rel ? " rel" : ""}${sous ? " sous" : ""}${legende && !sous ? " struct" : ""}" data-rbel="${e.id}"><rect x="${e.x - w / 2}" y="${e.y - hh / 2}" width="${w}" height="${hh}" rx="6"/>
+        ${sous || legende ? `<rect class="in" x="${e.x - w / 2 + 3}" y="${e.y - hh / 2 + 3}" width="${w - 6}" height="${hh - 6}" rx="4"/>` : ""}
+        <text x="${e.x}" y="${e.y}" dy="5" text-anchor="middle">${esc(e.nom)}</text>${legende ? `<text class="leg" x="${e.x}" y="${e.y + hh / 2 + 13}" text-anchor="middle">${esc(legende)}</text>` : ""}
         <circle class="port" cx="${a.x}" cy="${a.y}" r="${rel ? 5 : 3.5}"/><circle class="port" cx="${b.x}" cy="${b.y}" r="${rel ? 5 : 3.5}"/></g>`;
     }
   }
@@ -974,7 +1018,15 @@ function rbEditeur(v){
 function rbChange(table, editeur){
   const f = F(), v = valsOf(f);
   save();
-  if (table){ const tb = document.getElementById("rb-comp"); if (tb) tb.innerHTML = rbTable(f, v); }
+  if (table){
+    const tb = document.getElementById("rb-comp"), act = document.activeElement;
+    const cle = act && tb && tb.contains(act) ? [att(act, "rbc"), att(act, "rbp"), att(act, "cu"), act.selectionStart] : null;
+    if (tb) tb.innerHTML = rbTable(f, v);
+    if (cle){
+      const sel = cle[2] ? `[data-cu="${cle[2]}"]` : `[data-rbc="${CSS.escape(cle[0] || "")}"][data-rbp="${cle[1]}"]`, el = tb.querySelector(sel);
+      if (el){ el.focus(); try { if (cle[3] != null) el.setSelectionRange(cle[3], cle[3]); } catch (e){} }
+    }
+  }
   if (editeur) rbEditeur(v);
   f.update(v); ajuster();
 }
@@ -1053,26 +1105,88 @@ function rbGlisser(ev){
   e.y = Math.max(20, Math.round((p.y + RB.drag.dy) / 5) * 5);
   RB.drag.moved = true; rbDessin(v);
 }
-/* tableau des composants : une ligne par nom, loi et données */
+/* tableau des composants : une ligne par nom (blocs et sous-schémas), loi, structure, valeur */
 function rbTable(f, v){
-  const g = rbGraphe(v), ut = uniteDe(f), blocs = g.els.filter(e => e.k === "bloc");
-  const noms = [...new Set(blocs.map(e => e.nom))];
+  const g = rbGraphe(v), ut = uniteDe(f), A = v.mode === "A", L = A ? "A" : "R";
+  const blocs = g.els.filter(e => e.k === "bloc"), noms = rbNoms(g, v.mode);
   if (!noms.length) return '<div class="small">Aucun bloc pour l\'instant.</div>';
-  const champ = (n, p, lab, u) => `<label class="rb-p">${lab}<input data-rbc="${esc(n)}" data-rbp="${p}" value="${esc(rbSpec(g, n)[p] ?? "")}" spellcheck="false" autocomplete="off">${u ? `<span class="small">${esc(u)}</span>` : ""}</label>`;
-  const lois = [["R", "R donnée"], ["lam", "exponentielle (λ)"], ["mttf", "exponentielle (MTTF)"], ["weib", "Weibull (β, θ)"]];
-  return `<table class="tab rb-tab"><tr><th>Composant</th><th>Loi</th><th>Données</th><th>R${v.t ? "(t)" : ""}</th><th></th></tr>` + noms.map(n => {
-    const s = rbSpec(g, n), nb = blocs.filter(e => e.nom === n).length;
-    const par = s.type === "lam" ? champ(n, "lam", "λ =", ut.s + "⁻¹") : s.type === "mttf" ? champ(n, "mttf", "MTTF =", ut.s)
-      : s.type === "weib" ? champ(n, "beta", "β =", "") + champ(n, "eta", "θ =", ut.s) : champ(n, "R", "R =", "");
-    return `<tr><td><b>${esc(n)}</b>${nb > 1 ? ` <span class="tag" title="Ce composant apparaît ${nb} fois dans le schéma : c'est le même composant">×${nb}</span>` : ""}</td>
-      <td><select data-rbc="${esc(n)}" data-rbp="type">${lois.map(([k, l]) => `<option value="${k}" ${s.type === k ? "selected" : ""}>${l}</option>`).join("")}</select></td>
-      <td class="rb-par">${par}</td><td class="calc" data-rbr="${esc(n)}"></td>
+  const champ = (n, p, lab, u, cl) => `<label class="rb-p">${lab}<input data-rbc="${esc(n)}" data-rbp="${p}" value="${esc(rbSpec(g, n)[p] ?? "")}" spellcheck="false" autocomplete="off"${cl ? ` class="${cl}"` : ""}>${u ? `<span class="small">${esc(u)}</span>` : ""}</label>`;
+  const lois = A ? [["A", "A donnée"], ["lm", "λ et μ"], ["mm", "MTTF et MTTR"], ["sous", "sous-schéma"]]
+                 : [["R", "R donnée"], ["lam", "exponentielle (λ)"], ["mttf", "exponentielle (MTTF)"], ["weib", "Weibull (β, θ)"], ["sous", "sous-schéma"]];
+  const cle = A ? "atype" : "type";
+  const lignes = noms.map(n => {
+    const s = rbSpec(g, n), nb = blocs.filter(e => e.nom === n).length, ty = s[cle] || (A ? "A" : "R");
+    const par = ty === "sous" ? champ(n, "expr", "montage :", "", "rb-expr")
+      : ty === "lam" ? champ(n, "lam", "λ =", ut.s + "⁻¹") : ty === "mttf" ? champ(n, "mttf", "MTTF =", ut.s)
+      : ty === "weib" ? champ(n, "beta", "β =", "") + champ(n, "eta", "θ =", ut.s)
+      : ty === "lm" ? champ(n, "lam", "λ =", ut.s + "⁻¹") + champ(n, "mu", "μ =", ut.s + "⁻¹")
+      : ty === "mm" ? champ(n, "mttf", "MTTF =", ut.s) + champ(n, "mttr", "MTTR =", ut.s)
+      : champ(n, A ? "A" : "R", `${L} =`, "");
+    const strs = [["", "simple"], ["rm", "r/m identiques"], ...(A ? [] : [["sb", "stand-by"]])];
+    const st = ty === "sous" ? '<span class="small">—</span>'
+      : `<select data-rbc="${esc(n)}" data-rbp="str">${strs.map(([k, l]) => `<option value="${k}" ${(s.str || "") === k ? "selected" : ""}>${l}</option>`).join("")}</select>`
+        + (s.str === "rm" ? champ(n, "r", " r =", "") + champ(n, "m", "sur m =", "", "rb-court") : s.str === "sb" && !A ? champ(n, "n", " réserves n =", "", "rb-court") + champ(n, "Rs", "R commutateur =", "", "rb-court") : "");
+    const ou = nb ? (nb > 1 ? ` <span class="tag" title="Ce composant apparaît ${nb} fois dans le schéma : c'est le même composant">×${nb}</span>` : "") : ' <span class="tag" title="Cité seulement dans un sous-schéma">sous-schéma</span>';
+    return `<tr><td><b>${esc(n)}</b>${ou}</td>
+      <td><select data-rbc="${esc(n)}" data-rbp="${cle}">${lois.map(([k, l]) => `<option value="${k}" ${ty === k ? "selected" : ""}>${l}</option>`).join("")}</select></td>
+      <td class="rb-par">${par}</td><td class="rb-par">${st}</td><td class="calc" data-rbr="${esc(n)}"></td>
       <td><button class="btn" data-rba="tous" data-rbn="${esc(n)}" title="Donner cette loi et ces valeurs à tous les composants">⇊ à tous</button></td></tr>`;
-  }).join("") + "</table>";
+  });
+  const feuilles = noms.filter(n => (rbSpec(g, n)[cle] || "") !== "sous");
+  const obj = `<div class="rb-obj"><b>Calcul inverse</b> : ${L}<sub>S</sub> visée = <input data-cu="cible" value="${esc(v.cible ?? "")}" placeholder="ex. 0,99" spellcheck="false" autocomplete="off">
+    → trouver <select data-cu="inc"><option value="">—</option>${A ? "" : `<option value="t" ${v.inc === "t" ? "selected" : ""}>le temps t</option>`}${feuilles.map(n => `<option value="${esc(n)}" ${v.inc === n ? "selected" : ""}>${L} de ${esc(n)}</option>`).join("")}</select></div>`;
+  return `<table class="tab rb-tab"><tr><th>Composant</th><th>Loi</th><th>Données</th><th>Structure du bloc</th><th>${L}${A ? (v.t ? "(t)" : "∞") : v.t ? "(t)" : ""}</th><th></th></tr>${lignes.join("")}</table>${obj}`;
 }
-/* résolution complète : lois des composants à t, R_S pas à pas, états, importance, R_S(t) et MTTF */
+/* loi d'un composant : valeur (R ou A) en fonction de t, avec sa structure (r/m, stand-by) */
+function rbLoi(f, g, n, mode, lire){
+  const s = rbSpec(g, n), ut = uniteDe(f), manque = [];
+  let base = null;
+  const lu = (p, dim, nom) => { const x = lire(s[p], dim, nom); if (x === undefined) manque.push(nom); return x; };
+  if (mode === "A"){
+    const ty = s.atype || "A";
+    if (ty === "lm" || ty === "mm"){
+      let l, mu;
+      if (ty === "lm"){ l = lu("lam", "1/T", "λ de " + n); mu = lu("mu", "1/T", "μ de " + n); }
+      else { const a = lu("mttf", "T", "MTTF de " + n), b = lu("mttr", "T", "MTTR de " + n); l = a > 0 ? 1 / a : a; mu = b > 0 ? 1 / b : b; }
+      if (!manque.length){
+        if (!(l >= 0 && mu > 0)) throw `${n} : λ ≥ 0 et μ > 0 (MTTF et MTTR > 0)`;
+        base = {temps: true, lam: l, mu, R: t => t === undefined ? mu / (l + mu) : mu / (l + mu) + l / (l + mu) * Math.exp(-(l + mu) * t),
+          inv: x => `μ = λ·A/(1 − A) = ${fmt(l * x / (1 - x))} ${ut.s}⁻¹, soit MTTR = ${fmt((1 - x) / (l * x))} ${uniteTxt("T", ut, (1 - x) / (l * x))}`};
+      }
+    } else { const a = lu("A", "P", "A de " + n); if (a !== undefined){ if (!(a >= 0 && a <= 1)) throw `A de ${n} doit être entre 0 et 1`; base = {temps: false, R: () => a}; } }
+  } else {
+    const ty = s.type || "R";
+    if (ty === "lam"){ const l = lu("lam", "1/T", "λ de " + n); if (l !== undefined){ if (l < 0) throw `λ de ${n} négatif`; base = {temps: true, lam: l, echelle: 1 / l, R: t => Math.exp(-l * t), inv: (x, t) => `λ = −ln(${fmt(x)})/t = ${fmt(-Math.log(x) / t)} ${ut.s}⁻¹`}; } }
+    else if (ty === "mttf"){ const m = lu("mttf", "T", "MTTF de " + n); if (m !== undefined){ if (!(m > 0)) throw `MTTF de ${n} doit être > 0`; base = {temps: true, lam: 1 / m, echelle: m, R: t => Math.exp(-t / m), inv: (x, t) => `MTTF = −t/ln(${fmt(x)}) = ${fmt(-t / Math.log(x))} ${uniteTxt("T", ut, -t / Math.log(x))}`}; } }
+    else if (ty === "weib"){
+      const b = lu("beta", "-", "β de " + n), th = lu("eta", "T", "θ de " + n);
+      if (b !== undefined && th !== undefined){ if (!(b > 0 && th > 0)) throw `β et θ de ${n} doivent être > 0`;
+        base = {temps: true, echelle: th * M.gamma(1 + 1 / b), R: t => Math.exp(-Math.pow(t / th, b)), inv: (x, t) => `θ = t/(−ln ${fmt(x)})^(1/β) = ${fmt(t / Math.pow(-Math.log(x), 1 / b))} ${uniteTxt("T", ut, t / Math.pow(-Math.log(x), 1 / b))}`}; }
+    } else { const r = lu("R", "P", "R de " + n); if (r !== undefined){ if (!(r >= 0 && r <= 1)) throw `R de ${n} doit être entre 0 et 1`; base = {temps: false, R: () => r}; } }
+  }
+  /* structure du bloc : r/m éléments identiques, ou stand-by (1 actif + n réserves, commutateur R_S) */
+  let struct = x => x, sdesc = "", ech = base && base.echelle;
+  if (s.str === "rm"){
+    const r = lu("r", "-", "r de " + n), m = lu("m", "-", "m de " + n);
+    if (r !== undefined && m !== undefined){
+      if (!(Number.isInteger(r) && Number.isInteger(m) && r >= 1 && r <= m)) throw `${n} : r et m entiers avec 1 ≤ r ≤ m`;
+      struct = x => FUNCS.rm(r, m, x); sdesc = `au moins ${r} sur ${m} : Σ C(${m}, y)·x^y·(1 − x)^(${m} − y) pour y = ${r} à ${m}`; ech = ech && ech * m;
+    }
+  } else if (s.str === "sb" && mode !== "A"){
+    if (base && !base.lam) throw `${n} : le stand-by (modèles 1 à 3) suppose une loi exponentielle (λ ou MTTF)`;
+    const nr = lire(s.n, "-", "n de " + n) ?? 1, rs = lire(s.Rs, "P", "R du commutateur de " + n) ?? 1;
+    if (!(Number.isInteger(nr) && nr >= 1)) throw `${n} : nombre de réserves n entier ≥ 1`;
+    if (!(rs >= 0 && rs <= 1)) throw `${n} : R du commutateur entre 0 et 1`;
+    struct = x => { if (!(x > 0)) return 0; const h = -Math.log(x); let t = 1, sm = 1; for (let k = 1; k <= nr; k++){ t *= rs * h / k; sm += t; } return x * sm; };
+    sdesc = `stand-by, ${nr} réserve${nr > 1 ? "s" : ""}${rs < 1 ? `, commutateur R = ${fmt(rs)}` : ""} : e^(−λt)·Σ (${rs < 1 ? `${fmt(rs)}·` : ""}λt)^x/x! pour x = 0 à ${nr}`;
+    ech = ech && ech * (nr + 1);
+  }
+  if (!base || manque.length) return {manque};
+  return {manque, temps: base.temps, elem: base.R, val: t => struct(base.R(t)), struct, sdesc, str: sdesc ? s.str : "", echelle: ech, inv: base.inv, base};
+}
+/* résolution complète : valeurs des composants, R_S (ou A_S) pas à pas, états, importance, R_S(t), MTTF, calcul inverse */
 function rbResoudre(f, v){
-  const g = rbGraphe(v), res = rbReseau(g), env = memEnv(), manque = [], lois = {};
+  const g = rbGraphe(v), mode = v.mode === "A" ? "A" : "R", res = rbReseau(g, mode), env = memEnv(), manque = [], lois = {};
   if (!res.nbBlocs) throw "Ajoutez des blocs (＋ Bloc, double-clic) ou tapez un montage, par ex. serie(A; par(B; C); D), puis « Dessiner ».";
   const lire = (s, dim, nom) => {
     const t = String(s ?? "").trim(); if (!t) return undefined;
@@ -1082,29 +1196,21 @@ function rbResoudre(f, v){
     if (!isFinite(x)) throw `${nom} : valeur invalide`;
     return x;
   };
-  for (const n of res.comps){
-    const s = rbSpec(g, n);
-    if (s.type === "lam"){ const l = lire(s.lam, "1/T", "λ de " + n); if (l === undefined) manque.push("λ de " + n); else if (l < 0) throw `λ de ${n} négatif`; else lois[n] = {temps: true, R: t => Math.exp(-l * t), echelle: 1 / l}; }
-    else if (s.type === "mttf"){ const m = lire(s.mttf, "T", "MTTF de " + n); if (m === undefined) manque.push("MTTF de " + n); else if (!(m > 0)) throw `MTTF de ${n} doit être > 0`; else lois[n] = {temps: true, R: t => Math.exp(-t / m), echelle: m}; }
-    else if (s.type === "weib"){
-      const b = lire(s.beta, "-", "β de " + n), th = lire(s.eta, "T", "θ de " + n);
-      if (b === undefined) manque.push("β de " + n); if (th === undefined) manque.push("θ de " + n);
-      if (b !== undefined && th !== undefined){ if (!(b > 0 && th > 0)) throw `β et θ de ${n} doivent être > 0`; lois[n] = {temps: true, R: t => Math.exp(-Math.pow(t / th, b)), echelle: th * M.gamma(1 + 1 / b)}; }
-    } else { const r = lire(s.R, "P", "R de " + n); if (r === undefined) manque.push("R de " + n); else if (!(r >= 0 && r <= 1)) throw `R de ${n} doit être entre 0 et 1`; else lois[n] = {temps: false, R: () => r}; }
-  }
+  for (const n of res.comps){ const l = rbLoi(f, g, n, mode, lire); if (l.manque.length) manque.push(...l.manque); else lois[n] = l; }
   const aTemps = Object.values(lois).some(l => l.temps), t = lire(v.t, "T", "t");
-  if (aTemps && t === undefined) manque.push("le temps t");
+  if (mode === "R" && aTemps && t === undefined) manque.push("le temps t");
   if (manque.length) throw "Il manque : " + manque.join(", ") + ".";
-  const R = Object.fromEntries(res.comps.map(n => [n, lois[n].R(t ?? 0)]));
+  const tv = mode === "A" ? undefined : (t ?? 0);
+  const R = Object.fromEntries(res.comps.map(n => [n, lois[n].val(tv)]));
   const trace = [], Rs = rbFiab(res, R, trace), etats = rbEtats(res, R);
   const imp = res.comps.map(n => {
     const h = rbFiab(res, Object.assign({}, R, {[n]: 1})), b = rbFiab(res, Object.assign({}, R, {[n]: 0}));
     return {n, R: R[n], IB: h - b, gain: h - Rs, IC: Rs < 1 ? (h - b) * (1 - R[n]) / (1 - Rs) : 0};
   }).sort((x, y) => y.IB - x.IB || x.n.localeCompare(y.n));
-  let mttf = NaN, courbe = null;
+  const RsT = x => rbFiab(res, Object.fromEntries(res.comps.map(n => [n, lois[n].val(x)])));
+  let mttf = NaN, courbe = null, At = NaN;
   const tousTemps = res.comps.every(n => lois[n].temps);
-  if (tousTemps){
-    const RsT = x => rbFiab(res, Object.fromEntries(res.comps.map(n => [n, lois[n].R(x)])));
+  if (mode === "R" && tousTemps){
     let T = Math.max(...res.comps.map(n => lois[n].echelle)), k = 0;
     while (RsT(T) > 1e-7 && k++ < 60) T *= 2;
     mttf = +simpson(RsT, 0, T, 4000).toPrecision(7);   /* intégration numérique : 7 chiffres significatifs */
@@ -1112,21 +1218,51 @@ function rbResoudre(f, v){
     if (t > Tp) Tp = t * 1.2;
     courbe = {T: Tp, pts: Array.from({length: 121}, (_, i) => [Tp * i / 120, RsT(Tp * i / 120)])};
   }
-  return {g, res, R, t, Rs, trace, etats, imp, mttf, courbe, tousTemps, aTemps};
+  if (mode === "A" && t !== undefined && aTemps) At = RsT(t);
+  /* calcul inverse : valeur visée de R_S (A_S) → valeur d'un composant ou temps t */
+  let inverse = null;
+  const cib = String(v.cible ?? "").trim(), inc = v.inc || "";
+  if (cib && inc){
+    let y; try { y = evalExpr(cib, env); } catch (e){ y = NaN; }
+    if (!(y > 0 && y < 1)) inverse = {err: `valeur visée de ${mode}_S : un nombre entre 0 et 1`};
+    else if (inc === "t"){
+      if (mode === "A" || !aTemps) inverse = {err: "aucun composant ne dépend du temps"};
+      else if (RsT(0) < y) inverse = {err: `même à t = 0, R_S = ${fmt(RsT(0))} < ${fmt(y)} : objectif impossible`};
+      else {
+        let hi = Math.max(...res.comps.filter(n => lois[n].temps).map(n => lois[n].echelle)), k = 0;
+        while (RsT(hi) > y && k++ < 80) hi *= 2;
+        if (RsT(hi) > y) inverse = {err: `R_S ne descend pas sous ${fmt(RsT(hi))} (composants à fiabilité fixe)`};
+        else { let lo = 0; for (let i = 0; i < 200; i++){ const m = (lo + hi) / 2; if (RsT(m) > y) lo = m; else hi = m; } inverse = {k: "t", y, v: (lo + hi) / 2}; }
+      }
+    } else if (lois[inc]){
+      const h = rbFiab(res, Object.assign({}, R, {[inc]: 1})), b = rbFiab(res, Object.assign({}, R, {[inc]: 0}));
+      if (y > h + 1e-15) inverse = {err: `impossible : même avec ${mode}_${inc} = 1, ${mode}_S = ${fmt(h)} < ${fmt(y)}`};
+      else if (y < b - 1e-15) inverse = {err: `déjà atteint : même avec ${mode}_${inc} = 0, ${mode}_S = ${fmt(b)}`};
+      else {
+        const xb = Math.min(1, Math.max(0, (y - b) / (h - b))), L = lois[inc];
+        let xe = xb;
+        if (L.str){ let lo = 0, hi = 1; for (let i = 0; i < 200; i++){ const m = (lo + hi) / 2; if (L.struct(m) < xb) lo = m; else hi = m; } xe = (lo + hi) / 2; }
+        const loi = L.inv && xe > 0 && xe < 1 && (mode === "A" || t > 0) ? L.inv(xe, t) : "";
+        inverse = {k: "comp", n: inc, y, b, h, xb, xe, loi, str: L.str};
+      }
+    } else inverse = {err: `${inc} n'est plus un composant du schéma`};
+  }
+  return {g, res, R, t, Rs, trace, etats, imp, mttf, courbe, tousTemps, aTemps, mode, lois, At, inverse};
 }
 const SUB = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉"};
-const rbNomML = e => e.compo ? `<msub><mi>R</mi><mn>${e.nom}</mn></msub>` : `<msub><mi>R</mi><mi mathvariant="normal">${esc(e.nom)}</mi></msub>`;
-const rbNomTx = e => e.compo ? "R" + e.nom.split("").map(c => SUB[c]).join("") : "R_" + e.nom;
-const rbQui = e => e.compo ? "R" + e.nom.split("").map(c => SUB[c]).join("") : e.nom;
+let RB_L = "R";   /* R (fiabilité) ou A (disponibilité) dans les étapes affichées */
+const rbNomML = e => e.compo ? `<msub><mi>${RB_L}</mi><mn>${e.nom}</mn></msub>` : `<msub><mi>${RB_L}</mi><mi mathvariant="normal">${esc(e.nom)}</mi></msub>`;
+const rbNomTx = e => e.compo ? RB_L + e.nom.split("").map(c => SUB[c]).join("") : RB_L + "_" + e.nom;
+const rbQui = e => e.compo ? RB_L + e.nom.split("").map(c => SUB[c]).join("") : e.nom;
 /* étapes du calcul (lignes MathML + texte à copier) */
 function rbEtapes(A){
   const out = [], tx = [], pad = p => `style="margin-left:${p * 16}px"`;
   const lig = (sl, p, note) => { out.push(`<div class="rb-et" ${pad(p)}>${ligne(sl)}${note ? `<div class="small">${note}</div>` : ""}</div>`); tx.push("  ".repeat(p) + sl.texte); };
   const titre = (h, t, p) => { out.push(`<div class="rb-cas" ${pad(p)}>${h}</div>`); tx.push("  ".repeat(p) + t); };
   const barre = n => `<mover><mi mathvariant="normal">${esc(n)}</mi><mo>¯</mo></mover>`;
-  const condML = (lab, up) => lab.compo ? `<msub><mi>R</mi><mrow><mo>|</mo><mn>${lab.nom}</mn>${up ? "" : "<mo>¯</mo>"}</mrow></msub>`
-    : `<msub><mi>R</mi><mrow><mo>|</mo>${up ? `<mi mathvariant="normal">${esc(lab.nom)}</mi>` : barre(lab.nom)}</mrow></msub>`;
-  const condTx = (lab, up) => `R|${rbQui(lab)}${up ? "" : "̄"}`;
+  const condML = (lab, up) => lab.compo ? `<msub><mi>${RB_L}</mi><mrow><mo>|</mo><mn>${lab.nom}</mn>${up ? "" : "<mo>¯</mo>"}</mrow></msub>`
+    : `<msub><mi>${RB_L}</mi><mrow><mo>|</mo>${up ? `<mi mathvariant="normal">${esc(lab.nom)}</mi>` : barre(lab.nom)}</mrow></msub>`;
+  const condTx = (lab, up) => `${RB_L}|${rbQui(lab)}${up ? "" : "̄"}`;
   for (const s of A.trace){
     if (s.k === "serie" || s.k === "par"){
       const {n, e1, e2} = s, r = `<mrow class="resv">${numML(n.v)}</mrow>`;
@@ -1139,17 +1275,17 @@ function rbEtapes(A){
       lig({html: a + b, a, b, texte}, s.prof, `${esc(rbQui(e1))} et ${esc(rbQui(e2))} en ${s.k === "serie" ? "série" : "parallèle"}`);
     } else if (s.k === "pivot"){
       const q = rbQui(s.lab);
-      titre(`<b>Conditionnement sur ${esc(q)}</b> (${s.lab.rep ? "composant répété dans le schéma" : "montage non réductible : élément central"}) — probabilité conditionnelle, ${s.lab.compo ? esc(q) : `R<sub>${esc(q)}</sub>`} = ${fmt(s.v)}`,
-        `Conditionnement sur ${q} (R = ${fmt(s.v)}) :`, s.prof);
+      titre(`<b>Conditionnement sur ${esc(q)}</b> (${s.lab.rep ? "composant répété dans le schéma" : "montage non réductible : élément central"}) — probabilité conditionnelle, ${s.lab.compo ? esc(q) : `${RB_L}<sub>${esc(q)}</sub>`} = ${fmt(s.v)}`,
+        `Conditionnement sur ${q} (${RB_L} = ${fmt(s.v)}) :`, s.prof);
     } else if (s.k === "cas") titre(s.marche ? `Si ${esc(rbQui(s.lab))} marche (remplacé par un fil) :` : `Si ${esc(rbQui(s.lab))} est en panne (retiré) :`, s.marche ? `Si ${rbQui(s.lab)} marche :` : `Si ${rbQui(s.lab)} est en panne :`, s.prof);
-    else if (s.k === "res"){ const html = `<mo>→</mo><mi>R</mi><mo>=</mo>${rbNomML(s.e)}<mo>=</mo><mrow class="resv">${numML(s.e.v)}</mrow>`; lig({html, a: html, b: "", texte: `→ R = ${rbNomTx(s.e)} = ${fmt(s.e.v)}`}, s.prof); }
-    else if (s.k === "res1") titre("→ entrée et sortie directement reliées : R = 1", "→ entrée et sortie reliées : R = 1", s.prof);
-    else if (s.k === "res0") titre("→ plus aucun chemin de l'entrée à la sortie : R = 0", "→ aucun chemin : R = 0", s.prof);
+    else if (s.k === "res"){ const html = `<mo>→</mo><mi>${RB_L}</mi><mo>=</mo>${rbNomML(s.e)}<mo>=</mo><mrow class="resv">${numML(s.e.v)}</mrow>`; lig({html, a: html, b: "", texte: `→ ${RB_L} = ${rbNomTx(s.e)} = ${fmt(s.e.v)}`}, s.prof); }
+    else if (s.k === "res1") titre(`→ entrée et sortie directement reliées : ${RB_L} = 1`, `→ entrée et sortie reliées : ${RB_L} = 1`, s.prof);
+    else if (s.k === "res0") titre(`→ plus aucun chemin de l'entrée à la sortie : ${RB_L} = 0`, `→ aucun chemin : ${RB_L} = 0`, s.prof);
     else if (s.k === "somme"){
       const L = s.lab, pv = rbNomML(L);
-      const a = `<mi>R</mi><mo>=</mo>${pv}<mo>·</mo>${condML(L, true)}<mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${pv}<mo stretchy="false">)</mo><mo>·</mo>${condML(L, false)}`;
+      const a = `<mi>${RB_L}</mi><mo>=</mo>${pv}<mo>·</mo>${condML(L, true)}<mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${pv}<mo stretchy="false">)</mo><mo>·</mo>${condML(L, false)}`;
       const b = `<mo>=</mo>${numML(s.pv)}<mo>·</mo>${numMLp(s.vh)}<mo>+</mo>${numMLp(1 - s.pv)}<mo>·</mo>${numMLp(s.vb)}<mo>=</mo><mrow class="resv">${numML(s.v)}</mrow>`;
-      lig({html: a + b, a, b, texte: `R = ${rbNomTx(L)}·${condTx(L, true)} + (1 − ${rbNomTx(L)})·${condTx(L, false)} = ${fmt(s.pv)}·${numTxtp(s.vh)} + ${numTxtp(1 - s.pv)}·${numTxtp(s.vb)} = ${fmt(s.v)}`}, s.prof);
+      lig({html: a + b, a, b, texte: `${RB_L} = ${rbNomTx(L)}·${condTx(L, true)} + (1 − ${rbNomTx(L)})·${condTx(L, false)} = ${fmt(s.pv)}·${numTxtp(s.vh)} + ${numTxtp(1 - s.pv)}·${numTxtp(s.vb)} = ${fmt(s.v)}`}, s.prof);
     }
   }
   return {html: out.join(""), texte: tx.join("\n")};
@@ -1900,16 +2036,23 @@ const FICHES = [
         {a: "bC:b", b: "S"}, {a: "bD:b", b: "S"}, {a: "n1", b: "bE:a"}, {a: "bE:b", b: "n2"}],
       comps: {A: {type: "R", R: "0,99"}, B: {type: "R", R: "0,99"}, C: {type: "R", R: "0,99"}, D: {type: "R", R: "0,99"}, E: {type: "R", R: "0,99"}}}}},
     {nom: "Composant répété : (A–B) // (A–C)", vals: {rapide: "par(serie(A; B); serie(A; C))", g: rbConstruire(rbParse("par(serie(A; B); serie(A; C))"), {A: {type: "R", R: "0,9"}, B: {type: "R", R: "0,8"}, C: {type: "R", R: "0,7"}})}},
-    {nom: "2 pompes en parallèle (λ = 0,002, t = 150 h)", vals: {rapide: "par(P1; P2)", t: "150", g: rbConstruire(rbParse("par(P1; P2)"), {P1: {type: "lam", lam: "0,002"}, P2: {type: "lam", lam: "0,002"}})}}
+    {nom: "2 pompes en parallèle (λ = 0,002, t = 150 h)", vals: {rapide: "par(P1; P2)", t: "150", g: rbConstruire(rbParse("par(P1; P2)"), {P1: {type: "lam", lam: "0,002"}, P2: {type: "lam", lam: "0,002"}})}},
+    {nom: "Capteurs 2/3 + pompe en stand-by", vals: {rapide: "serie(Cap; P)", t: "200", g: rbConstruire(rbParse("serie(Cap; P)"),
+      {Cap: {type: "lam", lam: "0,001", str: "rm", r: "2", m: "3"}, P: {type: "lam", lam: "0,002", str: "sb", n: "1", Rs: "0,95"}})}},
+    {nom: "Sous-schéma X = par(B; C)", vals: {rapide: "serie(A; X; D)", g: rbConstruire(rbParse("serie(A; X; D)"),
+      {A: {type: "R", R: "0,95"}, X: {type: "sous", expr: "par(B; C)"}, B: {type: "R", R: "0,9"}, C: {type: "R", R: "0,85"}, D: {type: "R", R: "0,98"}})}},
+    {nom: "Disponibilité : pompe et moteur réparables", vals: {mode: "A", rapide: "serie(Pompe; par(M1; M2))", g: rbConstruire(rbParse("serie(Pompe; par(M1; M2))"),
+      {Pompe: {atype: "mm", mttf: "500", mttr: "8"}, M1: {atype: "lm", lam: "0,001", mu: "0,05"}, M2: {atype: "lm", lam: "0,001", mu: "0,05"}})}}
   ],
   html(v){
     const ut = uniteDe(this);
     return `<section class="feuille"><div class="fh">Schéma <span class="hint">— ＋ Bloc puis « Relier » pour tracer les fils · glissez pour déplacer · deux blocs du même nom = le même composant · ou tapez le montage et « Dessiner »</span></div>
-      <div class="mk-bar"><button class="btn" data-rba="bloc">＋ Bloc</button><button class="btn" data-rba="noeud">＋ Nœud</button><button class="btn ${RB.mode === "relier" ? "on" : ""}" id="rb-relier" data-rba="relier">↗ Relier</button>
+      <div class="mk-bar"><label class="usel">Grandeur <select data-rbm><option value="R" ${v.mode !== "A" ? "selected" : ""}>fiabilité R</option><option value="A" ${v.mode === "A" ? "selected" : ""}>disponibilité A (réparables)</option></select></label>
+        <button class="btn" data-rba="bloc">＋ Bloc</button><button class="btn" data-rba="noeud">＋ Nœud</button><button class="btn ${RB.mode === "relier" ? "on" : ""}" id="rb-relier" data-rba="relier">↗ Relier</button>
         <span class="rb-rap"><input data-cu="rapide" value="${esc(v.rapide || "")}" placeholder="serie(A; par(B; C); D)" spellcheck="false" autocomplete="off"><button class="btn" data-rba="rapide">Dessiner</button></span>
-        <span class="small">Exemples : ${this.exemples.map((e, i) => `<button class="btn" data-cuex="${i}">${esc(e.nom)}</button>`).join(" ")}</span></div>
+        <select class="rb-ex" data-rbex title="Charger un exemple"><option value="">Exemples…</option>${this.exemples.map((e, i) => `<option value="${i}">${esc(e.nom)}</option>`).join("")}</select></div>
       <div class="mk-grid"><svg id="rb-svg" role="img" aria-label="Diagramme de fiabilité"></svg><div class="mk-ed" id="rb-ed"></div></div>
-      <div class="rb-don"><label class="rb-t">Temps t <input data-cu="t" value="${esc(v.t || "")}" placeholder="ex. 1000 ou 6 mois" spellcheck="false" autocomplete="off"> <span class="small">${esc(ut.pl || ut.s)} — pour les lois λ, MTTF et Weibull</span></label>
+      <div class="rb-don"><label class="rb-t">Temps t <input data-cu="t" value="${esc(v.t || "")}" placeholder="ex. 1000 ou 6 mois" spellcheck="false" autocomplete="off"> <span class="small">${esc(ut.pl || ut.s)} — ${v.mode === "A" ? "facultatif : A(t) instantanée ; vide = A∞" : "pour les lois λ, MTTF et Weibull"}</span></label>
         <div id="rb-comp">${rbTable(this, v)}</div></div>
       </section>
       <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Calcul pas à pas : réductions série / parallèle, puis conditionnement</span><span class="bb"><button class="btn" data-rbcopy="1" title="Copier tout le calcul">📋 Copier</button></span></div><div class="bcalc" id="cu-eqs"></div></div>
@@ -1924,19 +2067,36 @@ const FICHES = [
     let A;
     try { A = rbResoudre(this, v); }
     catch (e){ eqs.innerHTML = `<div class="manque">${esc(e)}</div>`; out.innerHTML = ""; rbResoudre.texte = ""; return; }
-    const ut = uniteDe(this), res = A.res, et = rbEtapes(A);
+    const ut = uniteDe(this), res = A.res, L = A.mode;
+    RB_L = L; const et = rbEtapes(A); RB_L = "R";
     document.querySelectorAll("[data-rbr]").forEach(c => { const n = att(c, "rbr"); if (n in A.R) c.textContent = fmt(A.R[n]); });
-    eqs.innerHTML = et.html || '<div class="small">Le montage est un seul bloc : R_S = sa fiabilité.</div>';
-    const tt = isFinite(A.t) ? ` (t = ${fmt(A.t)} ${uniteTxt("T", ut, A.t)})` : "";
-    const lst = l => l.map(c => c.join("")).join(" · ");
+    /* blocs composés (r/m, stand-by) : valeur de l'élément puis du bloc */
+    const comp = res.comps.filter(n => A.lois[n].sdesc).map(n => {
+      const l = A.lois[n], x = l.elem(A.mode === "A" ? undefined : A.t ?? 0);
+      return {h: `<div class="rb-cas"><b>Bloc ${esc(n)}</b> (${esc(l.sdesc)}) : élément ${L} = ${fmt(x)} → ${L}<sub>${esc(n)}</sub> = <b class="calc">${fmt(A.R[n])}</b></div>`, t: `Bloc ${n} (${l.sdesc}) : élément ${L} = ${fmt(x)} → ${L}_${n} = ${fmt(A.R[n])}`};
+    });
+    eqs.innerHTML = comp.map(c => c.h).join("") + (et.html || `<div class="small">Le montage est un seul bloc : ${L}<sub>S</sub> = sa valeur.</div>`);
+    const tt = A.mode === "A" ? " — disponibilité stationnaire" : isFinite(A.t) ? ` (t = ${fmt(A.t)} ${uniteTxt("T", ut, A.t)})` : "";
+    const lst = l => l.map(c => c.join(c.some(n => n.length > 1) ? "–" : "")).join(" · ");
     let h = `<h2>Résultat${esc(tt)}</h2>
-      <div class="res-line"><math displaystyle="true"><msub><mi>R</mi><mi>S</mi></msub><mo>=</mo><mrow class="resv">${numML(A.Rs)}</mrow></math></div>
-      <div class="res-line"><math displaystyle="true"><msub><mi>F</mi><mi>S</mi></msub><mo>=</mo><mn>1</mn><mo>−</mo><msub><mi>R</mi><mi>S</mi></msub><mo>=</mo><mrow class="resv">${numML(1 - A.Rs)}</mrow></math></div>`;
+      <div class="res-line"><math displaystyle="true"><msub><mi>${L}</mi><mi>${L === "A" ? "S∞" : "S"}</mi></msub><mo>=</mo><mrow class="resv">${numML(A.Rs)}</mrow></math></div>
+      <div class="res-line"><math displaystyle="true">${L === "A" ? "<msub><mi>ID</mi><mi>S∞</mi></msub>" : "<msub><mi>F</mi><mi>S</mi></msub>"}<mo>=</mo><mn>1</mn><mo>−</mo><msub><mi>${L}</mi><mi>${L === "A" ? "S∞" : "S"}</mi></msub><mo>=</mo><mrow class="resv">${numML(1 - A.Rs)}</mrow></math></div>`;
+    if (isFinite(A.At)) h += `<div class="res-line"><math displaystyle="true"><msub><mi>A</mi><mi>S</mi></msub><mo>(</mo><mi>t</mi><mo>=</mo><mn>${fmt(A.t)}</mn><mo>)</mo><mo>=</mo><mrow class="resv">${numML(A.At)}</mrow></math></div>`;
+    if (A.mode === "A") h += `<div class="note info">Disponibilité : chaque composant a son propre réparateur (composants indépendants) ; A<sub>i</sub> = μ/(λ + μ). La même structure que pour la fiabilité s'applique.</div>`;
+    if (A.inverse){
+      const I = A.inverse;
+      if (I.err) h += `<div class="note warn"><b>Calcul inverse</b> : ${esc(I.err)}</div>`;
+      else if (I.k === "t") h += `<div class="sec"><b>Calcul inverse</b> : R<sub>S</sub>(t) = ${fmt(I.y)}</div><div class="res-line"><math displaystyle="true"><mi>t</mi><mo>=</mo><mrow class="resv">${numML(I.v)}</mrow><mspace width="0.3em"></mspace><mtext class="unite">${esc(uniteTxt("T", ut, I.v))}</mtext></math></div><div class="small">R<sub>S</sub>(t) décroît avec t : valeur trouvée par dichotomie.</div>`;
+      else h += `<div class="sec"><b>Calcul inverse</b> : ${L}<sub>S</sub> est affine en ${L}<sub>${esc(I.n)}</sub> : ${L}<sub>S</sub> = ${fmt(I.b)} + ${L}<sub>${esc(I.n)}</sub> × ${fmt(I.h - I.b)} (I<sub>B</sub>)</div>
+        <div class="res-line"><math displaystyle="true"><msub><mi>${L}</mi><mi mathvariant="normal">${esc(I.n)}</mi></msub><mo>=</mo><mfrac><mrow><mn>${fmt(I.y)}</mn><mo>−</mo><mn>${fmt(I.b)}</mn></mrow><mn>${fmt(I.h - I.b)}</mn></mfrac><mo>=</mo><mrow class="resv">${numML(I.xb)}</mrow></math></div>`
+        + (I.str ? `<div class="small">Élément du bloc ${esc(I.n)} : ${L} = <b>${fmt(I.xe)}</b> (structure inversée par dichotomie).</div>` : "")
+        + (I.loi ? `<div class="note info">Soit ${esc(I.loi)}.</div>` : "");
+    }
     if (A.etats) h += Math.abs(A.etats.Rs - A.Rs) < 1e-12 ? `<div class="note info">✓ Vérifié par l'énumération des 2<sup>${A.etats.n}</sup> = ${1 << A.etats.n} états (${A.etats.nb} où le système marche).</div>`
       : `<div class="note bad">Écart avec l'énumération des états : ${fmt(A.etats.Rs)}.</div>`;
-    if (A.tousTemps) h += `<div class="res-line"><div class="rm"><math displaystyle="true"><msub><mi>MTTF</mi><mi>S</mi></msub><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><msub><mi>R</mi><mi>S</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo><mspace width="0.17em"></mspace><mi mathvariant="normal">d</mi><mi>t</mi><mo>=</mo><mrow class="resv">${numML(A.mttf)}</mrow><mspace width="0.3em"></mspace><mtext class="unite">${esc(uniteTxt("T", ut, A.mttf))}</mtext></math></div></div>
+    if (A.courbe) h += `<div class="res-line"><div class="rm"><math displaystyle="true"><msub><mi>MTTF</mi><mi>S</mi></msub><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><msub><mi>R</mi><mi>S</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo><mspace width="0.17em"></mspace><mi mathvariant="normal">d</mi><mi>t</mi><mo>=</mo><mrow class="resv">${numML(A.mttf)}</mrow><mspace width="0.3em"></mspace><mtext class="unite">${esc(uniteTxt("T", ut, A.mttf))}</mtext></math></div></div>
       <div class="small">Courbe R<sub>S</sub>(t) — en pointillé vert : t choisi ; en brun : MTTF<sub>S</sub>.</div>${rbCourbe(A, ut)}`;
-    else if (A.aTemps) h += `<div class="note info">MTTF du système non calculée : certains composants ont une fiabilité fixe (R donnée).</div>`;
+    else if (A.mode === "R" && A.aTemps) h += `<div class="note info">MTTF du système non calculée : certains composants ont une fiabilité fixe (R donnée).</div>`;
     if (A.etats){
       h += `<div class="sec"><b>Chemins de succès minimaux</b> (${A.etats.chemins.length}) : ${esc(lst(A.etats.chemins)) || "aucun"}</div>
         <div class="sec"><b>Coupes minimales</b> (${A.etats.coupes.length}) : ${esc(lst(A.etats.coupes)) || "aucune"}</div>`;
@@ -1944,11 +2104,11 @@ const FICHES = [
       if (faibles.length) h += `<div class="note warn">Point${faibles.length > 1 ? "s" : ""} faible${faibles.length > 1 ? "s" : ""} (coupe d'ordre 1) : <b>${esc(faibles.join(", "))}</b> — sa panne arrête à elle seule le système.</div>`;
     } else h += `<div class="note info">Plus de 16 composants : chemins, coupes et vérification par énumération non calculés.</div>`;
     if (res.comps.length > 1){
-      h += `<div class="sec"><b>Importance des composants</b><table class="tab"><tr><th>Composant</th><th>R<sub>i</sub></th><th title="Birnbaum : I_B = R_S(R_i = 1) − R_S(R_i = 0) = ∂R_S/∂R_i">I<sub>B</sub></th><th title="Gain sur R_S si le composant devenait parfait : R_S(R_i = 1) − R_S">gain si R<sub>i</sub> = 1</th><th title="Criticité : probabilité que le composant soit la cause de la panne du système">criticité</th></tr>` +
+      h += `<div class="sec"><b>Importance des composants</b><table class="tab"><tr><th>Composant</th><th>${L}<sub>i</sub></th><th title="Birnbaum : I_B = ${L}_S(${L}_i = 1) − ${L}_S(${L}_i = 0)">I<sub>B</sub></th><th title="Gain si le composant devenait parfait : ${L}_S(${L}_i = 1) − ${L}_S">gain si ${L}<sub>i</sub> = 1</th><th title="Criticité : probabilité que le composant soit la cause de la panne du système">criticité</th></tr>` +
         A.imp.map(x => `<tr><td>${esc(x.n)}</td><td>${fmt(x.R)}</td><td>${fmt(x.IB)}</td><td>${fmt(x.gain)}</td><td>${fmt(x.IC)}</td></tr>`).join("") + `</table>
-        <div class="small">I<sub>B</sub> = R<sub>S</sub>(R<sub>i</sub> = 1) − R<sub>S</sub>(R<sub>i</sub> = 0) : +0,01 sur R<sub>i</sub> donne +0,01·I<sub>B</sub> sur R<sub>S</sub>.</div></div>`;
+        <div class="small">I<sub>B</sub> = ${L}<sub>S</sub>(${L}<sub>i</sub> = 1) − ${L}<sub>S</sub>(${L}<sub>i</sub> = 0) : +0,01 sur ${L}<sub>i</sub> donne +0,01·I<sub>B</sub> sur ${L}<sub>S</sub>.</div></div>`;
       const top = [...A.imp].sort((x, y) => y.gain - x.gain)[0];
-      if (top && top.gain > 0) h += `<div class="note info">Priorité d'amélioration : <b>${esc(top.n)}</b> (gain possible sur R<sub>S</sub> : ${fmt(top.gain)}).</div>`;
+      if (top && top.gain > 0) h += `<div class="note info">Priorité d'amélioration : <b>${esc(top.n)}</b> (gain possible sur ${L}<sub>S</sub> : ${fmt(top.gain)}).</div>`;
     }
     const reps = res.comps.filter(n => A.g.els.filter(e => e.k === "bloc" && e.nom === n).length > 1);
     if (reps.length) h += `<div class="note info">Composant${reps.length > 1 ? "s" : ""} répété${reps.length > 1 ? "s" : ""} : <b>${esc(reps.join(", "))}</b> — traité${reps.length > 1 ? "s" : ""} par conditionnement (les blocs du même nom ne sont pas indépendants).</div>`;
@@ -1956,7 +2116,7 @@ const FICHES = [
     if (!rbRelie(res.s, res.t, res.aretes, () => true)) h += `<div class="note bad">L'entrée n'est reliée à la sortie par aucun chemin : R<sub>S</sub> = 0. Tracez les fils avec « Relier ».</div>`;
     if (res.s === res.t) h += `<div class="note warn">Un fil relie directement l'entrée à la sortie : R<sub>S</sub> = 1.</div>`;
     out.innerHTML = h;
-    rbResoudre.texte = [`Diagramme de fiabilité${tt}`, et.texte, `R_S = ${fmt(A.Rs)}`, A.tousTemps ? `MTTF_S = ${fmt(A.mttf)} ${uniteTxt("T", ut, A.mttf)}` : ""].filter(Boolean).join("\n");
+    rbResoudre.texte = [`Diagramme de ${L === "A" ? "disponibilité" : "fiabilité"}${tt}`, ...comp.map(c => c.t), et.texte, `${L}_S = ${fmt(A.Rs)}`, A.courbe ? `MTTF_S = ${fmt(A.mttf)} ${uniteTxt("T", ut, A.mttf)}` : ""].filter(Boolean).join("\n");
   }
 },
 {
@@ -3671,10 +3831,15 @@ function brancher(){
       if (e && e.k === "bloc"){ e.nom = rbx.value.trim().replace(/[\s;,()]+/g, "_") || "?"; rbChange(true, false); }
       return;
     }
+    const rbex = ev.target.closest("[data-rbex]");
+    if (rbex){ if (rbex.value !== ""){ const f = F(); S.vals[f.id] = JSON.parse(JSON.stringify(f.exemples[+rbex.value].vals)); RB.sel = null; RB.mode = null; RB.src = null; save(); renderFiche(); } return; }
+    const rbm = ev.target.closest("[data-rbm]");
+    if (rbm){ valsOf(F()).mode = rbm.value; save(); RB.sel = null; renderFiche(); return; }
     const rbc = ev.target.closest("[data-rbc]");
     if (rbc){
-      const p = att(rbc, "rbp"); rbSpec(rbGraphe(valsOf(F())), att(rbc, "rbc"))[p] = rbc.value;
-      rbChange(p === "type", false); return;
+      const g = rbGraphe(valsOf(F())), p = att(rbc, "rbp"), avant = rbNoms(g, valsOf(F()).mode).join();
+      rbSpec(g, att(rbc, "rbc"))[p] = rbc.value;
+      rbChange(["type", "atype", "str"].includes(p) || rbNoms(g, valsOf(F()).mode).join() !== avant, false); return;
     }
     const cu = ev.target.closest("[data-cu]");
     if (cu){ valsOf(F())[att(cu, "cu")] = cu.value; save(); update(); return; }
@@ -4258,6 +4423,50 @@ function autotest(){
   const deb4 = [...document.querySelectorAll("#cu-eqs .un, #cu-eqs .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1; });
   ok("diagramme : aucun calcul ne déborde", deb4.length === 0);
   ok("recherche « schéma montage » → diagramme", (chercher("schéma montage")[0] || {it: {}}).it.f?.id === "diagramme");
+  /* ---- diagramme : étape B (r/m, stand-by, sous-schémas, disponibilité, calcul inverse) ---- */
+  const G1 = (expr, comps, extra) => Object.assign({g: rbConstruire(rbParse(expr), comps)}, extra || {});
+  chk("Bloc r/m : 2/3 à R = 0,9 → 0,972", rbR(G1("A", {A: {type: "R", R: "0,9", str: "rm", r: "2", m: "3"}})).Rs, 0.972, 1e-12);
+  chk("Bloc stand-by modèle 1 : e^(−λt)(1 + λt)", rbR(G1("A", {A: {type: "lam", lam: "0,001", str: "sb", n: "1"}}, {t: "500"})).Rs, Math.exp(-0.5) * 1.5, 1e-12);
+  chk("Bloc stand-by modèle 3 : e^(−λt)(1 + λt·Rs)", rbR(G1("A", {A: {type: "lam", lam: "0,001", str: "sb", n: "1", Rs: "0,9"}}, {t: "500"})).Rs, Math.exp(-0.5) * (1 + 0.45), 1e-12);
+  chk("Bloc stand-by modèle 2 : n = 2 réserves (Poisson)", rbR(G1("A", {A: {type: "lam", lam: "0,001", str: "sb", n: "2"}}, {t: "500"})).Rs, Math.exp(-0.5) * (1 + 0.5 + 0.125), 1e-12);
+  chk("Stand-by : MTTF = (n + 1)/λ = 2000", rbR(G1("A", {A: {type: "lam", lam: "0,001", str: "sb", n: "1"}}, {t: "500"})).mttf, 2000, 0.01);
+  ok("Stand-by refusé avec une loi de Weibull", (() => { try { rbR(G1("A", {A: {type: "weib", beta: "2", eta: "100", str: "sb", n: "1"}}, {t: "10"})); return false; } catch (e){ return /exponentielle/.test(e); } })());
+  A = rbR(Dg.exemples[4].vals);
+  chk("Exemple capteurs 2/3 + stand-by", A.Rs, FUNCS.rm(2, 3, Math.exp(-0.2)) * Math.exp(-0.4) * (1 + 0.95 * 0.4), 1e-12);
+  A = rbR(Dg.exemples[5].vals);
+  chk("Sous-schéma X = par(B; C) dans serie(A; X; D)", A.Rs, 0.95 * (1 - 0.1 * 0.15) * 0.98, 1e-12);
+  ok("Sous-schéma : composants B et C calculés, X développé", A.res.comps.join() === "A,B,C,D");
+  chk("Sous-schéma contenant un composant répété : serie(A; X), X = par(A; B) → R_A", rbR(G1("serie(A; X)", {A: {type: "R", R: "0,9"}, B: {type: "R", R: "0,8"}, X: {type: "sous", expr: "par(A; B)"}})).Rs, 0.9, 1e-12);
+  ok("Sous-schéma circulaire refusé", (() => { try { rbR(G1("X", {X: {type: "sous", expr: "par(X; B)"}, B: {type: "R", R: "0,9"}})); return false; } catch (e){ return /circulaire/.test(e); } })());
+  A = rbR(Dg.exemples[6].vals);
+  const aP = 500 / 508, aM = 0.05 / 0.051;
+  chk("Disponibilité : A_S∞ = A_pompe·[1 − (1 − A_M)²]", A.Rs, aP * (1 - Math.pow(1 - aM, 2)), 1e-12);
+  chk("Disponibilité A(t) d'un élément à t = 0 : 1", rbR(Object.assign(JSON.parse(JSON.stringify(Dg.exemples[6].vals)), {t: "0"})).At, 1, 1e-12);
+  ok("Disponibilité : bloc r/m accepté, stand-by ignoré", Math.abs(rbR(G1("A", {A: {atype: "A", A: "0,9", str: "rm", r: "1", m: "2"}}, {mode: "A"})).Rs - 0.99) < 1e-12);
+  A = rbR(G1("serie(A; B)", {A: {type: "R", R: "0,9"}, B: {type: "R", R: "0,95"}}, {cible: "0,9", inc: "A"}));
+  chk("Inverse : R_A pour R_S = 0,9 en série avec R_B = 0,95", A.inverse.xb, 0.9 / 0.95, 1e-12);
+  A = rbR(G1("serie(A; B)", {A: {type: "lam", lam: "0,001"}, B: {type: "R", R: "0,95"}}, {t: "100", cible: "0,9", inc: "A"}));
+  ok("Inverse : traduit en λ_A = −ln(R_A)/t", /λ = /.test(A.inverse.loi) && A.inverse.loi.includes(fmt(-Math.log(0.9 / 0.95) / 100)));
+  A = rbR(G1("serie(A; B)", {A: {type: "R", R: "0,9"}, B: {type: "R", R: "0,95"}}, {cible: "0,99", inc: "A"}));
+  ok("Inverse impossible signalé (R_B = 0,95 < 0,99)", /impossible/.test(A.inverse.err || ""));
+  A = rbR(Object.assign(JSON.parse(JSON.stringify(Dg.exemples[3].vals)), {cible: "0,9", inc: "t"}));
+  chk("Inverse : t tel que R_S(t) = 0,9 (2 pompes)", A.inverse.v, -Math.log(1 - Math.sqrt(0.1)) / 0.002, 1e-6);
+  A = rbR(G1("A", {A: {type: "R", R: "0,9", str: "rm", r: "2", m: "3"}}, {cible: "0,99", inc: "A"}));
+  chk("Inverse à travers un bloc 2/3 : élément tel que R_2/3 = 0,99", FUNCS.rm(2, 3, A.inverse.xe), 0.99, 1e-9);
+  A = rbR(Object.assign(JSON.parse(JSON.stringify(Dg.exemples[6].vals)), {cible: "0,98", inc: "Pompe"}));
+  ok("Inverse en disponibilité : MTTR de la pompe donné", /MTTR/.test(A.inverse.loi) && Math.abs(A.inverse.xb * (1 - Math.pow(1 - aM, 2)) - 0.98) < 1e-12);
+  S.fiche = "diagramme"; S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[5].vals)); RB.sel = null; RB.mode = null; renderFiche();
+  ok("interface : sous-schéma dessiné (légende) et ses composants dans le tableau", /sous-schéma/.test($("#rb-svg").textContent) && document.querySelectorAll("#rb-comp tr").length === 6);
+  S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[6].vals)); renderFiche();
+  ok("interface disponibilité : A_S∞ et note des réparateurs", /A/.test($("#cu-res .res-line").textContent) && /réparateur/.test($("#cu-res").textContent) && /Disponibilité|disponibilité/.test($("#cu-res").textContent));
+  S.vals.diagramme.cible = "0,98"; S.vals.diagramme.inc = "Pompe"; renderFiche();
+  ok("interface : calcul inverse affiché", /Calcul inverse/.test($("#cu-res").textContent) && /MTTR/.test($("#cu-res").textContent));
+  S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[4].vals)); renderFiche();
+  ok("interface : blocs 2/3 et stand-by (légendes et lignes de calcul)", /2\/3/.test($("#rb-svg").textContent) && /stand-by/.test($("#rb-svg").textContent) && /Bloc Cap/.test($("#cu-eqs").textContent));
+  const inpExpr = () => document.querySelector('[data-rbc="X"][data-rbp="expr"]');
+  S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[5].vals)); renderFiche();
+  inpExpr().focus(); inpExpr().value = "par(B; C; K)"; inpExpr().dispatchEvent(new Event("input", {bubbles: true}));
+  ok("saisie d'un sous-schéma : nouveau composant K ajouté, curseur conservé", document.querySelectorAll("#rb-comp tr").length === 7 && document.activeElement === inpExpr());
   return T;
 }
 

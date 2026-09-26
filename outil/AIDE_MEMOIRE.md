@@ -15,7 +15,7 @@ Numéro = option du menu `python3 outil/examen.py`.
 | k éléments identiques exponentiels, MTTF système | Série/parallèle expo | 9 | `serie_exp`, `parallele_exp` |
 | « en réserve », « stand-by », commutateur Rs | Stand-by modèles 1-6 | 10 | `standby(t, lamA, lamB, Rs, n, lamBsb)` |
 | schéma en pont, « système complexe » | Chemins minimaux | 11 | `pont(...)`, `systeme_chemins(...)` |
-| montage quelconque dessiné, composant répété, importance | Diagramme de fiabilité | 11 | `schema_fiabilite([("A","E","1"), …], R)` ; calculatrice : fiche « Diagramme de fiabilité » |
+| montage quelconque dessiné, composant répété, importance, « quelle R faut-il ? » | Diagramme de fiabilité | 11 | `schema_fiabilite([("A","E","1"), …], R, grandeur="A", cible=0.99, inconnue="A")` ; calculatrice : fiche « Diagramme de fiabilité » (blocs r/m, stand-by, sous-schémas, disponibilité, calcul inverse) |
 | λ et μ (ou MTTF et MTTR), A(t), A∞ | Élément réparable | 12 | `element_reparable` |
 | MUT, MDT, MTBF | Temps moyens | 13 | `temps_moyens` |
 | plusieurs éléments réparables, un réparateur chacun | Série/parallèle réparable | 14 | `serie_reparable`, `parallele_reparable` |

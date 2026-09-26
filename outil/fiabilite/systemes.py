@@ -1,7 +1,9 @@
 """M2 — Fiabilité structurale : série, parallèle, r/m, stand-by, systèmes complexes."""
 import itertools
 import math
+import re
 
+from .lois import Exponentielle
 from .rapport import Solution, fmt
 
 
@@ -321,26 +323,35 @@ def _fiab_reseau(s, t, aretes, R, trace=None):
     return go(s, t, [[a, b, list(c), n, R[n]] for a, b, c, n in aretes], 0)
 
 
-def schema_fiabilite(blocs, R, t=None, entree="E", sortie="S", unite_temps="h"):
+def schema_fiabilite(blocs, R, t=None, entree="E", sortie="S", unite_temps="h", grandeur="R",
+                     cible=None, inconnue=None):
     """Diagramme de fiabilité quelconque (série, parallèle, pont, composants répétés).
 
-    blocs : liste de (composant, nœud_a, nœud_b) ; un bloc relie deux nœuds, `entree` et
-            `sortie` sont les bornes du système. Deux blocs du même nom sont le même
-            composant (il marche ou tombe en panne partout à la fois).
-            Ex. pont : [("A","E","1"), ("B","E","2"), ("C","1","S"), ("D","2","S"), ("X","1","2")]
-    R     : dict {composant: fiabilité} ; une valeur peut aussi être une loi (Exponentielle,
-            Weibull…) : sa fiabilité est prise au temps t.
+    blocs     : liste de (composant, nœud_a, nœud_b) ; un bloc relie deux nœuds, `entree` et
+                `sortie` sont les bornes du système. Deux blocs du même nom sont le même
+                composant (il marche ou tombe en panne partout à la fois).
+                Ex. pont : [("A","E","1"), ("B","E","2"), ("C","1","S"), ("D","2","S"), ("X","1","2")]
+    R         : dict {composant: valeur} ; une valeur peut aussi être une loi (Exponentielle,
+                Weibull…) : sa fiabilité est prise au temps t. Un bloc r/m ou stand-by se
+                donne par sa fiabilité (r_sur_m, standby).
+    grandeur  : "R" (fiabilité) ou "A" (disponibilité : donner A_i = μ/(λ + μ), un réparateur
+                par composant) ; la même structure s'applique.
+    cible, inconnue : calcul inverse. `inconnue` = nom d'un composant -> sa valeur pour que
+                R_S = cible (R_S est affine en chaque composant) ; `inconnue` = "t" -> temps t
+                tel que R_S(t) = cible (toutes les valeurs de R doivent alors être des lois).
     Calcule R_S pas à pas (réductions série/parallèle puis conditionnement), vérifie par
     énumération des états, donne les chemins et coupes minimaux et l'importance de Birnbaum
     I_B = R_S(R_i = 1) - R_S(R_i = 0).
     """
-    sol = Solution("DIAGRAMME DE FIABILITÉ", unite_temps)
+    L = "A" if grandeur == "A" else "R"
+    sol = Solution("DIAGRAMME DE " + ("DISPONIBILITÉ" if L == "A" else "FIABILITÉ"), unite_temps)
+    lettre = (lambda s: re.sub(r"\bR(?=[_|0-9 ])", "A", s)) if L == "A" else (lambda s: s)
     Rv = {}
     for n, x in R.items():
         if hasattr(x, "R"):
-            if t is None:
+            if t is None and inconnue != "t":
                 raise ValueError(f"{n} est donné par une loi : préciser t")
-            Rv[n] = x.R(t)
+            Rv[n] = x.R(t) if t is not None else None
         else:
             Rv[n] = x
     comps = []
@@ -350,36 +361,78 @@ def schema_fiabilite(blocs, R, t=None, entree="E", sortie="S", unite_temps="h"):
     aretes = [(a, b, [c], c) for c, a, b in blocs]
     if t is not None:
         sol.donnee(f"t = {sol.q(t, 'T')}")
-    sol.donnee(" ; ".join(f"R_{n} = {fmt(Rv[n])}" for n in comps))
-    trace = []
-    Rs = _fiab_reseau(entree, sortie, aretes, Rv, trace)
-    sol.section("Calcul pas à pas (réductions série / parallèle, conditionnement)")
-    for ligne in trace:
-        sol.etape(ligne)
-    sol.etape("R_S", Rs, "R_S")
-    if len(comps) <= 16:
-        marche = {}
-        for etat in itertools.product([1, 0], repeat=len(comps)):
-            e = dict(zip(comps, etat))
-            marche[etat] = _relie(entree, sortie, aretes, lambda c: e[c])
-        verif = sum(_prod(Rv[n] if x else 1 - Rv[n] for n, x in zip(comps, etat)) for etat, ok in marche.items() if ok)
-        sol.etape(f"Vérification par énumération des {2 ** len(comps)} états", verif, "R_S (énumération)")
-        chemins, coupes = [], []
-        for etat, ok in marche.items():
-            if ok and all(not marche[etat[:i] + (0,) + etat[i + 1:]] for i, x in enumerate(etat) if x):
-                chemins.append([n for n, x in zip(comps, etat) if x])
-            if not ok and all(marche[etat[:i] + (1,) + etat[i + 1:]] for i, x in enumerate(etat) if not x):
-                coupes.append([n for n, x in zip(comps, etat) if not x])
-        chemins.sort(key=lambda c: (len(c), c))
-        coupes.sort(key=lambda c: (len(c), c))
-        sol.resultats["chemins"], sol.resultats["coupes"] = chemins, coupes
-        sol.note("Chemins de succès minimaux : " + ", ".join("".join(c) for c in chemins))
-        sol.note("Coupes minimales : " + ", ".join("".join(c) for c in coupes))
-    sol.section("Importance de Birnbaum I_B = R_S(R_i = 1) - R_S(R_i = 0)")
-    IB = {}
-    for n in comps:
-        IB[n] = (_fiab_reseau(entree, sortie, aretes, dict(Rv, **{n: 1.0}))
-                 - _fiab_reseau(entree, sortie, aretes, dict(Rv, **{n: 0.0})))
-        sol.etape(f"I_B({n})", IB[n])
-    sol.resultats["I_B"] = IB
+    if all(Rv[n] is not None for n in comps):
+        sol.donnee(" ; ".join(f"{L}_{n} = {fmt(Rv[n])}" for n in comps))
+        trace = []
+        Rs = _fiab_reseau(entree, sortie, aretes, Rv, trace)
+        sol.section("Calcul pas à pas (réductions série / parallèle, conditionnement)")
+        for ligne in trace:
+            sol.etape(lettre(ligne))
+        sol.etape(f"{L}_S", Rs, f"{L}_S")
+        if len(comps) <= 16:
+            marche = {}
+            for etat in itertools.product([1, 0], repeat=len(comps)):
+                e = dict(zip(comps, etat))
+                marche[etat] = _relie(entree, sortie, aretes, lambda c: e[c])
+            verif = sum(_prod(Rv[n] if x else 1 - Rv[n] for n, x in zip(comps, etat)) for etat, ok in marche.items() if ok)
+            sol.etape(f"Vérification par énumération des {2 ** len(comps)} états", verif, f"{L}_S (énumération)")
+            chemins, coupes = [], []
+            for etat, ok in marche.items():
+                if ok and all(not marche[etat[:i] + (0,) + etat[i + 1:]] for i, x in enumerate(etat) if x):
+                    chemins.append([n for n, x in zip(comps, etat) if x])
+                if not ok and all(marche[etat[:i] + (1,) + etat[i + 1:]] for i, x in enumerate(etat) if not x):
+                    coupes.append([n for n, x in zip(comps, etat) if not x])
+            chemins.sort(key=lambda c: (len(c), c))
+            coupes.sort(key=lambda c: (len(c), c))
+            sol.resultats["chemins"], sol.resultats["coupes"] = chemins, coupes
+            sep = lambda c: ("–" if any(len(n) > 1 for n in c) else "").join(c)
+            sol.note("Chemins de succès minimaux : " + ", ".join(sep(c) for c in chemins))
+            sol.note("Coupes minimales : " + ", ".join(sep(c) for c in coupes))
+        sol.section(f"Importance de Birnbaum I_B = {L}_S({L}_i = 1) - {L}_S({L}_i = 0)")
+        IB = {}
+        for n in comps:
+            IB[n] = (_fiab_reseau(entree, sortie, aretes, dict(Rv, **{n: 1.0}))
+                     - _fiab_reseau(entree, sortie, aretes, dict(Rv, **{n: 0.0})))
+            sol.etape(f"I_B({n})", IB[n])
+        sol.resultats["I_B"] = IB
+    if cible is None or inconnue is None:
+        return sol
+    sol.section(f"Calcul inverse : {L}_S visée = {fmt(cible)}")
+    if inconnue == "t":
+        lois = {n: x for n, x in R.items() if hasattr(x, "R")}
+
+        def Rs_t(x):
+            return _fiab_reseau(entree, sortie, aretes, {n: (R[n].R(x) if n in lois else R[n]) for n in comps})
+        if Rs_t(0.0) < cible:
+            sol.note(f"Impossible : même à t = 0, {L}_S = {fmt(Rs_t(0.0))}.")
+            return sol
+        hi = max((getattr(x, "mttf", lambda: 1.0)() for x in lois.values()), default=1.0)
+        for _ in range(80):
+            if Rs_t(hi) <= cible:
+                break
+            hi *= 2
+        else:
+            sol.note(f"Impossible : {L}_S ne descend pas sous {fmt(Rs_t(hi))}.")
+            return sol
+        lo = 0.0
+        for _ in range(200):
+            m = (lo + hi) / 2
+            lo, hi = (m, hi) if Rs_t(m) > cible else (lo, m)
+        sol.etape(f"t tel que {L}_S(t) = {fmt(cible)} (dichotomie, {L}_S décroît avec t)", (lo + hi) / 2, "t visé", "T")
+        return sol
+    h = _fiab_reseau(entree, sortie, aretes, dict(Rv, **{inconnue: 1.0}))
+    b = _fiab_reseau(entree, sortie, aretes, dict(Rv, **{inconnue: 0.0}))
+    sol.etape(f"{L}_S({L}_{inconnue} = 0)", b)
+    sol.etape(f"{L}_S({L}_{inconnue} = 1)", h)
+    if cible > h + 1e-15:
+        sol.note(f"Impossible : même avec {L}_{inconnue} = 1, {L}_S = {fmt(h)} < {fmt(cible)}.")
+        return sol
+    if cible < b - 1e-15:
+        sol.note(f"Déjà atteint : même avec {L}_{inconnue} = 0, {L}_S = {fmt(b)}.")
+        return sol
+    x = (cible - b) / (h - b)
+    sol.etape(f"{L}_S est affine en {L}_{inconnue} : {L}_{inconnue} = ({fmt(cible)} - {fmt(b)})/{fmt(h - b)}", x, f"{L}_{inconnue} visée")
+    loi = R.get(inconnue)
+    if isinstance(loi, Exponentielle) and t and 0 < x < 1:
+        sol.etape(f"λ_{inconnue} = -ln({fmt(x)})/t", -math.log(x) / t, f"λ_{inconnue} visé", "1/T")
     return sol

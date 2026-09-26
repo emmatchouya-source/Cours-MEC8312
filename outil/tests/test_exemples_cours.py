@@ -206,6 +206,30 @@ class DiagrammeFiabilite(unittest.TestCase):
         self.assertAlmostEqual(s["R_S"], 0.9 * (1 - 0.2 * 0.3), 12)
         self.assertEqual(s["coupes"][0], ["A"])
 
+    def test_disponibilite(self):
+        aP, aM = 500 / 508, 0.05 / 0.051
+        blocs = [("Pompe", "E", "1"), ("M1", "1", "S"), ("M2", "1", "S")]
+        s = schema_fiabilite(blocs, {"Pompe": aP, "M1": aM, "M2": aM}, grandeur="A")
+        self.assertAlmostEqual(s["A_S"], aP * (1 - (1 - aM) ** 2), 12)
+        self.assertIn("A1 = 1 - (1 - A_M1)(1 - A_M2)", s.texte())
+
+    def test_bloc_r_sur_m(self):
+        s = schema_fiabilite([("A", "E", "1"), ("V", "1", "S")], {"A": 0.95, "V": r_sur_m(0.9, 2, 3)["R_2/3"]})
+        self.assertAlmostEqual(s["R_S"], 0.95 * 0.972, 12)
+
+    def test_inverse_composant(self):
+        s = schema_fiabilite([("A", "E", "1"), ("B", "1", "S")], {"A": Exponentielle(0.001), "B": 0.95},
+                             t=100, cible=0.9, inconnue="A")
+        self.assertAlmostEqual(s["R_A visée"], 0.9 / 0.95, 12)
+        self.assertAlmostEqual(s["λ_A visé"], -math.log(0.9 / 0.95) / 100, 12)
+        s = schema_fiabilite([("A", "E", "1"), ("B", "1", "S")], {"A": 0.9, "B": 0.95}, cible=0.99, inconnue="A")
+        self.assertIn("Impossible", s.texte())
+
+    def test_inverse_temps(self):
+        s = schema_fiabilite([("P1", "E", "S"), ("P2", "E", "S")],
+                             {"P1": Exponentielle(0.002), "P2": Exponentielle(0.002)}, cible=0.9, inconnue="t")
+        self.assertAlmostEqual(s["t visé"], -math.log(1 - math.sqrt(0.1)) / 0.002, 6)
+
     def test_lois_au_temps_t(self):
         s = schema_fiabilite([("P1", "E", "S"), ("P2", "E", "S")],
                              {"P1": Exponentielle(0.002), "P2": Exponentielle(0.002)}, t=150)
