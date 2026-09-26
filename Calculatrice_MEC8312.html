@@ -87,6 +87,7 @@ kbd{font:12px "Segoe UI",sans-serif;border:1px solid var(--line);border-bottom-w
 .bcalc:empty{display:none}
 .lc .un,.lc .p{overflow:hidden;text-align:center;padding:1px 0}
 .lc .p.b{padding-left:14px}
+.defile{overflow-x:auto !important;overflow-y:hidden;text-align:left !important;justify-content:flex-start !important;scrollbar-width:thin}
 .inter .lc .un,.inter .lc .p{text-align:left}
 .inter .lc{margin:3px 0}
 .bcalc math{font-size:16px}
@@ -4200,41 +4201,33 @@ function update(){
   if (sfm && !compact && parseFloat(getComputedStyle(sfm).fontSize) < 17){ compact = true; document.getElementById("solf").innerHTML = solf(); ajuster(); }
 }
 
-/* chaque formule est réduite juste assez pour tenir entière dans son cadre */
+/* chaque formule est réduite pour tenir dans son cadre, jamais sous 13 px (lisible) ;
+   si elle ne tient toujours pas, la ligne passe sur deux lignes, puis le cadre défile horizontalement */
 function ajuster(){
   const LISIBLE = 13;
   const caser = box => {
-    const m = box.querySelector("math"); if (!m) return 99;
+    const m = box.querySelector("math"); box.classList.remove("defile"); if (!m) return true;
     m.style.fontSize = "";
     const cs = getComputedStyle(box);
     const dispo = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2;
     let taille = parseFloat(getComputedStyle(m).fontSize);
-    for (let i = 0; i < 5; i++){
+    for (let i = 0; i < 6; i++){
       const w = m.getBoundingClientRect().width;
-      if (w <= dispo || taille <= 8) break;
-      taille = Math.max(8, taille * dispo / w * 0.98);
+      if (w <= dispo) return true;
+      if (taille <= LISIBLE) break;
+      taille = Math.max(LISIBLE, taille * dispo / w * 0.98);
       m.style.fontSize = taille + "px";
     }
-    return taille;
+    const tient = m.getBoundingClientRect().width <= dispo + 0.5;
+    if (!tient) box.classList.add("defile");
+    return tient;
   };
   document.querySelectorAll("#main .lc").forEach(lc => {
-    const un = lc.querySelector(".un"), deux = lc.querySelector(".deux");
-    un.hidden = false; deux.hidden = true;
-    if (caser(un) < LISIBLE){ un.hidden = true; deux.hidden = false; deux.querySelectorAll(".p").forEach(caser); }
+    const un = lc.querySelector(".un"), deux = lc.querySelector(".deux"), b = deux && deux.querySelector(".p.b math");
+    un.hidden = false; if (deux) deux.hidden = true;
+    if (!caser(un) && b && b.textContent.trim()){ un.classList.remove("defile"); un.hidden = true; deux.hidden = false; deux.querySelectorAll(".p").forEach(caser); }
   });
-  document.querySelectorAll("#main .bf, #main .solf, #main .rm").forEach(box => {
-    const m = box.querySelector("math"); if (!m) return;
-    m.style.fontSize = "";
-    const cs = getComputedStyle(box);
-    const dispo = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2;
-    let taille = parseFloat(getComputedStyle(m).fontSize);
-    for (let i = 0; i < 5; i++){
-      const w = m.getBoundingClientRect().width;
-      if (w <= dispo || taille <= 8) break;
-      taille = Math.max(8, taille * dispo / w * 0.98);
-      m.style.fontSize = taille + "px";
-    }
-  });
+  document.querySelectorAll("#main .bf, #main .solf, #main .rm").forEach(caser);
 }
 let _ajt = 0;
 window.addEventListener("resize", () => { cancelAnimationFrame(_ajt); _ajt = requestAnimationFrame(() => { ajuster(); caserPanneau(); }); });
@@ -4663,7 +4656,7 @@ function autotest(){
   for (const f of FICHES){
     S.fiche = f.id; renderFiche();
     document.querySelectorAll("#main .bf, #main .solf, #main .rm, #main .un, #main .p").forEach(b => {
-      const m = b.querySelector("math"); if (m && m.getBoundingClientRect().width > b.clientWidth + 1) deborde.push(f.id + " : " + b.textContent.slice(0, 30));
+      const m = b.querySelector("math"); if (m && m.getBoundingClientRect().width > b.clientWidth + 1 && !b.classList.contains("defile")) deborde.push(f.id + " : " + b.textContent.slice(0, 30));
     });
   }
   ok("aucune formule ne déborde de son cadre" + (deborde.length ? " — " + deborde.join(" | ") : ""), deborde.length === 0);
@@ -4921,13 +4914,13 @@ function autotest(){
   ok("supprimer une bulle retire ses flèches", S.vals.markov.g.etats.length === 3 && S.vals.markov.g.trans.length === 4);
   S.fiche = "corrective"; renderFiche();
   ok("interface : résultat Cmv affiché", /401,207/.test($("#sol").textContent));
-  const deb2 = [...document.querySelectorAll("#main .bf, #main .solf, #main .rm, #main .un, #main .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1; });
+  const deb2 = [...document.querySelectorAll("#main .bf, #main .solf, #main .rm, #main .un, #main .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1 && !b.classList.contains("defile"); });
   ok("aucune formule ne déborde (calcul complet affiché)", deb2.length === 0);
-  const deb3 = [...document.querySelectorAll("#main .bcalc .un, #main .bcalc .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1; });
+  const deb3 = [...document.querySelectorAll("#main .bcalc .un, #main .bcalc .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1 && !b.classList.contains("defile"); });
   ok("aucun calcul de bloc ne déborde", deb3.length === 0);
   const fe = document.querySelector(".feuille");
   ok("feuille de données sans barre de défilement", fe && fe.scrollWidth <= fe.clientWidth + 1 && fe.scrollHeight <= fe.clientHeight + 1 && [...fe.querySelectorAll(".vc")].every(v => v.scrollWidth <= v.clientWidth + 1));
-  const petits = [...document.querySelectorAll("#main .un:not([hidden]) math, #main .deux:not([hidden]) .p math")].filter(m => parseFloat(getComputedStyle(m).fontSize) < 12.9 && parseFloat(getComputedStyle(m).fontSize) > 8.1);
+  const petits = [...document.querySelectorAll("#main .un:not([hidden]) math, #main .deux:not([hidden]) .p math")].filter(m => parseFloat(getComputedStyle(m).fontSize) < 12.9);
   ok("calculs lisibles (taille ≥ 13 px sauf dernier recours)", petits.length === 0);
   ok("texte copié du résultat", /^Cmv = /.test(res.texteFin) && /401,207/.test(res.texteFin));
   /* ---- unités ---- */
@@ -5020,7 +5013,7 @@ function autotest(){
   ok("fil direct entrée–sortie : R_S = 1 signalé", /directement/.test($("#cu-res").textContent));
   S.vals.diagramme.rapide = "serie(A; par(B; C))"; rbDessiner();
   ok("montage tapé dessiné : 3 blocs, 2 nœuds, valeurs de A, B, C conservées", document.querySelectorAll("#rb-svg .rb-bloc").length === 3 && document.querySelectorAll("#rb-svg .rb-noeud").length === 2 && /0,989901/.test($("#cu-res").textContent));
-  const deb4 = [...document.querySelectorAll("#cu-eqs .un, #cu-eqs .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1; });
+  const deb4 = [...document.querySelectorAll("#cu-eqs .un, #cu-eqs .p")].filter(b => { const m = b.querySelector("math"); return m && m.getBoundingClientRect().width > b.clientWidth + 1 && !b.classList.contains("defile"); });
   ok("diagramme : aucun calcul ne déborde", deb4.length === 0);
   ok("recherche « schéma montage » → diagramme", (chercher("schéma montage")[0] || {it: {}}).it.f?.id === "diagramme");
   /* ---- diagramme : étape B (r/m, stand-by, sous-schémas, disponibilité, calcul inverse) ---- */
@@ -5185,6 +5178,10 @@ function autotest(){
   S.fiche = "stock"; S.vals.stock = {lam: "0,0007", T: "3000", p0: "0,975"}; S.cible.stock = "kP"; S.eq.stock = "s5"; renderFiche();
   const fsSol = () => parseFloat(getComputedStyle(document.querySelector("#solf > math")).fontSize);
   ok("inconnue : formule large (Poisson) en affichage compact lisible, valeurs listées dessous", !!document.querySelector("#solf .solv") && fsSol() >= 17 && document.querySelectorAll("#solf .solv-i").length === 3 && /0,0007 h⁻¹/.test($("#solf .solv").textContent));
+  S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "th"; S.eq.weibull = "w1"; renderFiche();
+  S.fiche = "stock"; S.vals.stock = {lam: "0,0007", T: "3000", p0: "0,975"}; S.cible.stock = "kP"; S.eq.stock = "s5"; renderFiche();
+  const minis = [...document.querySelectorAll("#main math")].filter(m => !m.closest("[hidden]") && m.getBoundingClientRect().width > 0 && parseFloat(getComputedStyle(m).fontSize) < 12.9 && !m.closest(".chip, .vt, .solv-i, .vc, #pop, .miss, .manque"));
+  ok("stock (Poisson) : aucune formule sous 13 px (défilement si besoin)", minis.length === 0);
   S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "th"; S.eq.weibull = "w1"; renderFiche();
   ok("inconnue : formule courte (Weibull θ) garde les valeurs sous les symboles", !document.querySelector("#solf .solv") && !!document.querySelector("#solf mtext.pv"));
   /* ---- synthèse sur toutes les fiches ---- */
