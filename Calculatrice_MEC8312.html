@@ -215,6 +215,40 @@ table.tab{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px}
 #rb-svg{max-width:100%}
 .rb-tab{width:auto}
 .rb-obj{margin-top:6px;font-size:14px}
+.rb-g{display:flex;flex-direction:column;gap:10px;min-width:0}
+#rb-arbre{overflow-x:auto;padding-top:6px}
+.rb-arbre{max-width:100%;height:auto;display:block}
+.rb-a rect{fill:#fff;stroke:#9aa3ae;stroke-width:1.5}
+.rb-a text{font:12px "Segoe UI",sans-serif;fill:var(--ink)}
+.rb-a .l1{font-weight:600;font-size:14px}
+.rb-a.piv .l1{font-size:13px}
+.rb-a .l2{fill:var(--muted);font-size:11px}
+.rb-a .v{font-weight:700;fill:var(--ok);font-size:13px}
+.rb-a.par rect{fill:#eef3ff;stroke:#2457d6}
+.rb-a.serie rect{fill:#ecf8f2;stroke:#0f7b5f}
+.rb-a.piv rect{fill:#fff6e8;stroke:#8a5200}
+.rb-a.cst rect{fill:#f5f6f8;stroke-dasharray:4 3}
+.rb-a.don rect{fill:#fff;stroke:#2457d6}
+.rb-a.calc rect{fill:#ecf8f2;stroke:#0f7b5f}
+.rb-a.sys rect{fill:#fff6e8;stroke:#8a5200}
+.synth-bloc{margin-top:10px}
+#synth{overflow-x:auto;padding-top:6px}
+.rb-a.rac rect{stroke-width:3.5}
+.rb-a[data-rbv]{cursor:help}
+.rb-a[data-rbv]:hover rect{filter:drop-shadow(0 0 3px #2457d6)}
+.rb-af{fill:none;stroke:#5f6b7a;stroke-width:1.6}
+.rb-al{font:italic 10px "Segoe UI",sans-serif;fill:#8a5200}
+.rb-leg{margin-left:8px;white-space:nowrap}
+.rb-leg i{display:inline-block;width:11px;height:11px;border-radius:3px;border:1.5px solid #9aa3ae;background:#fff;margin:0 3px 0 8px;vertical-align:-1px}
+.rb-leg i.don{background:#fff;border-color:#2457d6}.rb-leg i.calc{background:#ecf8f2;border-color:#0f7b5f}.rb-leg i.sys{background:#fff6e8;border-color:#8a5200}
+.rb-leg i.par{background:#eef3ff;border-color:#2457d6}.rb-leg i.serie{background:#ecf8f2;border-color:#0f7b5f}.rb-leg i.piv{background:#fff6e8;border-color:#8a5200}
+mrow.rb-v,[data-rbr][data-rbv],td[data-rbv]{cursor:help}
+mrow.rb-v:hover,[data-rbr][data-rbv]:hover,td[data-rbv]:hover{background:var(--accent-soft);border-radius:4px}
+#rb-bulle{position:absolute;z-index:60;display:none;max-width:460px;background:#fff;border:1px solid #c9d3e3;border-radius:10px;box-shadow:0 12px 30px rgba(20,30,50,.18);padding:8px 12px;font-size:13px;line-height:1.5;color:var(--ink);pointer-events:none}
+#rb-bulle .t{font-weight:600;margin-bottom:3px}
+#rb-bulle .s{color:var(--muted);font-size:12px}
+#rb-bulle hr{border:0;border-top:1px dashed var(--line);margin:5px 0}
+#rb-bulle math{font-size:15px}
 .rb-det{margin:2px 0 6px}
 .rb-det summary{cursor:pointer;color:var(--accent);font-size:12px}
 .rb-det .lc{margin-left:12px;padding-left:8px;border-left:2px dotted var(--line)}
@@ -355,6 +389,7 @@ footer{max-width:1700px;margin:0 auto;padding:0 20px 24px;font-size:12px;color:v
   <div class="pe" id="pop-ev"></div>
 </div>
 <div id="toast"></div>
+<div id="rb-bulle" role="tooltip"></div>
 
 <script>
 "use strict";
@@ -1150,6 +1185,8 @@ function rbTable(f, v){
 function rbLoi(f, g, n, mode, lire){
   const s = rbSpec(g, n), ut = uniteDe(f), manque = [];
   let base = null;
+  /* petits outils pour les explications de la bulle */
+  const e_ = x => `e<sup>${x}</sup>`, tt = t => `${fmt(t)} ${esc(uniteTxt("T", ut, t))}`, ta = `${esc(ut.s)}⁻¹`, L = mode === "A" ? "A" : "R";
   const lu = (p, dim, nom) => { const x = lire(s[p], dim, nom); if (x === undefined) manque.push(nom); return x; };
   if (mode !== "A" && s.type === "sbg") return rbGroupeSB(f, g, n, s, lire);
   if (mode === "A"){
@@ -1160,27 +1197,41 @@ function rbLoi(f, g, n, mode, lire){
       else { const a = lu("mttf", "T", "MTTF de " + n), b = lu("mttr", "T", "MTTR de " + n); l = a > 0 ? 1 / a : a; mu = b > 0 ? 1 / b : b; }
       if (!manque.length){
         if (!(l >= 0 && mu > 0)) throw `${n} : λ ≥ 0 et μ > 0 (MTTF et MTTR > 0)`;
+        const avant = ty === "mm" ? `λ = 1/MTTF = 1/${fmt(1 / l)} = ${fmt(l)} ${ta} ; μ = 1/MTTR = 1/${fmt(1 / mu)} = ${fmt(mu)} ${ta}<br>` : `λ = ${fmt(l)} ${ta} ; μ = ${fmt(mu)} ${ta}<br>`;
         base = {temps: true, lam: l, mu, R: t => t === undefined ? mu / (l + mu) : mu / (l + mu) + l / (l + mu) * Math.exp(-(l + mu) * t),
+          expl: t => avant + (t === undefined
+            ? `Disponibilité stationnaire : A<sub>∞</sub> = μ/(λ + μ) = ${fmt(mu)}/(${fmt(l)} + ${fmt(mu)}) = <b>${fmt(mu / (l + mu))}</b>`
+            : `A(t) = μ/(λ + μ) + λ/(λ + μ)·${e_("−(λ + μ)t")} = ${fmt(mu / (l + mu))} + ${fmt(l / (l + mu))}·${e_(`−${fmt((l + mu) * t)}`)} = <b>${fmt(mu / (l + mu) + l / (l + mu) * Math.exp(-(l + mu) * t))}</b>`),
           inv: x => `μ = λ·A/(1 − A) = ${fmt(l * x / (1 - x))} ${ut.s}⁻¹, soit MTTR = ${fmt((1 - x) / (l * x))} ${uniteTxt("T", ut, (1 - x) / (l * x))}`};
       }
-    } else { const a = lu("A", "P", "A de " + n); if (a !== undefined){ if (!(a >= 0 && a <= 1)) throw `A de ${n} doit être entre 0 et 1`; base = {temps: false, R: () => a}; } }
+    } else { const a = lu("A", "P", "A de " + n); if (a !== undefined){ if (!(a >= 0 && a <= 1)) throw `A de ${n} doit être entre 0 et 1`; base = {temps: false, R: () => a, donnee: true, expl: () => `Valeur donnée : A = <b>${fmt(a)}</b>`}; } }
   } else {
     const ty = s.type || "R";
-    if (ty === "lam"){ const l = lu("lam", "1/T", "λ de " + n); if (l !== undefined){ if (l < 0) throw `λ de ${n} négatif`; base = {temps: true, lam: l, echelle: 1 / l, R: t => Math.exp(-l * t), inv: (x, t) => `λ = −ln(${fmt(x)})/t = ${fmt(-Math.log(x) / t)} ${ut.s}⁻¹`}; } }
-    else if (ty === "mttf"){ const m = lu("mttf", "T", "MTTF de " + n); if (m !== undefined){ if (!(m > 0)) throw `MTTF de ${n} doit être > 0`; base = {temps: true, lam: 1 / m, echelle: m, R: t => Math.exp(-t / m), inv: (x, t) => `MTTF = −t/ln(${fmt(x)}) = ${fmt(-t / Math.log(x))} ${uniteTxt("T", ut, -t / Math.log(x))}`}; } }
+    if (ty === "lam"){ const l = lu("lam", "1/T", "λ de " + n); if (l !== undefined){ if (l < 0) throw `λ de ${n} négatif`; base = {temps: true, lam: l, echelle: 1 / l, R: t => Math.exp(-l * t),
+      expl: t => `Loi exponentielle, λ = ${fmt(l)} ${ta}, t = ${tt(t)}<br>R(t) = ${e_("−λ·t")} = ${e_(`−${fmt(l)} × ${fmt(t)}`)} = ${e_(`−${fmt(l * t)}`)} = <b>${fmt(Math.exp(-l * t))}</b>`, inv: (x, t) => `λ = −ln(${fmt(x)})/t = ${fmt(-Math.log(x) / t)} ${ut.s}⁻¹`}; } }
+    else if (ty === "mttf"){ const m = lu("mttf", "T", "MTTF de " + n); if (m !== undefined){ if (!(m > 0)) throw `MTTF de ${n} doit être > 0`; base = {temps: true, lam: 1 / m, echelle: m, R: t => Math.exp(-t / m),
+      expl: t => `Loi exponentielle, MTTF = ${tt(m)} ⇒ λ = 1/MTTF = ${fmt(1 / m)} ${ta} ; t = ${tt(t)}<br>R(t) = ${e_("−t/MTTF")} = ${e_(`−${fmt(t)}/${fmt(m)}`)} = ${e_(`−${fmt(t / m)}`)} = <b>${fmt(Math.exp(-t / m))}</b>`, inv: (x, t) => `MTTF = −t/ln(${fmt(x)}) = ${fmt(-t / Math.log(x))} ${uniteTxt("T", ut, -t / Math.log(x))}`}; } }
     else if (ty === "weib"){
       const b = lu("beta", "-", "β de " + n), th = lu("eta", "T", "θ de " + n);
       if (b !== undefined && th !== undefined){ if (!(b > 0 && th > 0)) throw `β et θ de ${n} doivent être > 0`;
-        base = {temps: true, echelle: th * M.gamma(1 + 1 / b), R: t => Math.exp(-Math.pow(t / th, b)), inv: (x, t) => `θ = t/(−ln ${fmt(x)})^(1/β) = ${fmt(t / Math.pow(-Math.log(x), 1 / b))} ${uniteTxt("T", ut, t / Math.pow(-Math.log(x), 1 / b))}`}; }
-    } else { const r = lu("R", "P", "R de " + n); if (r !== undefined){ if (!(r >= 0 && r <= 1)) throw `R de ${n} doit être entre 0 et 1`; base = {temps: false, R: () => r}; } }
+        base = {temps: true, echelle: th * M.gamma(1 + 1 / b), R: t => Math.exp(-Math.pow(t / th, b)),
+      expl: t => `Loi de Weibull, β = ${fmt(b)}, θ = ${tt(th)}, t = ${tt(t)}<br>R(t) = exp[−(t/θ)<sup>β</sup>] = exp[−(${fmt(t)}/${fmt(th)})<sup>${fmt(b)}</sup>] = exp(−${fmt(Math.pow(t / th, b))}) = <b>${fmt(Math.exp(-Math.pow(t / th, b)))}</b>`, inv: (x, t) => `θ = t/(−ln ${fmt(x)})^(1/β) = ${fmt(t / Math.pow(-Math.log(x), 1 / b))} ${uniteTxt("T", ut, t / Math.pow(-Math.log(x), 1 / b))}`}; }
+    } else { const r = lu("R", "P", "R de " + n); if (r !== undefined){ if (!(r >= 0 && r <= 1)) throw `R de ${n} doit être entre 0 et 1`; base = {temps: false, R: () => r, donnee: true, expl: () => `Valeur donnée : R = <b>${fmt(r)}</b>`}; } }
   }
   /* structure du bloc : r/m éléments identiques, ou stand-by (1 actif + n réserves, commutateur R_S) */
-  let struct = x => x, sdesc = "", ech = base && base.echelle;
+  let struct = x => x, sdesc = "", ech = base && base.echelle, sexpl = null;
   if (s.str === "rm"){
     const r = lu("r", "-", "r de " + n), m = lu("m", "-", "m de " + n);
     if (r !== undefined && m !== undefined){
       if (!(Number.isInteger(r) && Number.isInteger(m) && r >= 1 && r <= m)) throw `${n} : r et m entiers avec 1 ≤ r ≤ m`;
       struct = x => FUNCS.rm(r, m, x); sdesc = `au moins ${r} sur ${m} : Σ C(${m}, y)·x^y·(1 − x)^(${m} − y) pour y = ${r} à ${m}`; ech = ech && ech * m;
+      sexpl = x => {
+        const ys = []; for (let y = r; y <= m; y++) ys.push(y);
+        const terme = y => comb(m, y) * Math.pow(x, y) * Math.pow(1 - x, m - y);
+        return `Bloc « au moins ${r} sur ${m} » d'éléments identiques (élément ${L} = ${fmt(x)}) :<br>${L}<sub>bloc</sub> = Σ<sub>y=${r}</sub><sup>${m}</sup> C(${m}, y)·${L}<sup>y</sup>·(1 − ${L})<sup>${m}−y</sup><br>= `
+          + ys.map(y => `${fmt(comb(m, y))} × ${fmt(x)}<sup>${y}</sup> × ${fmt(1 - x)}<sup>${m - y}</sup>`).join(" + ")
+          + (ys.length > 1 ? `<br>= ${ys.map(y => fmt(terme(y))).join(" + ")}` : "") + ` = <b>${fmt(FUNCS.rm(r, m, x))}</b>`;
+      };
     }
   } else if (s.str === "sb" && mode !== "A"){
     if (base && !base.lam) throw `${n} : le stand-by (modèles 1 à 3) suppose une loi exponentielle (λ ou MTTF)`;
@@ -1190,9 +1241,13 @@ function rbLoi(f, g, n, mode, lire){
     struct = x => { if (!(x > 0)) return 0; const h = -Math.log(x); let t = 1, sm = 1; for (let k = 1; k <= nr; k++){ t *= rs * h / k; sm += t; } return x * sm; };
     sdesc = `stand-by, ${nr} réserve${nr > 1 ? "s" : ""}${rs < 1 ? `, commutateur R = ${fmt(rs)}` : ""} : e^(−λt)·Σ (${rs < 1 ? `${fmt(rs)}·` : ""}λt)^x/x! pour x = 0 à ${nr}`;
     ech = ech && ech * (nr + 1);
+    sexpl = x => { const h = -Math.log(x);
+      return `Stand-by : 1 élément actif + ${nr} réserve${nr > 1 ? "s" : ""}${rs < 1 ? `, commutateur R = ${fmt(rs)}` : ""} (élément R = ${fmt(x)}, λt = ${fmt(h)})<br>R<sub>bloc</sub> = ${e_("−λt")}·Σ<sub>x=0</sub><sup>${nr}</sup> (${rs < 1 ? "R·" : ""}λt)<sup>x</sup>/x! = ${fmt(x)} × (`
+        + Array.from({length: nr + 1}, (_, k) => fmt(Math.pow(rs * h, k) / fact(k))).join(" + ") + `) = <b>${fmt(struct(x))}</b>`; };
   }
   if (!base || manque.length) return {manque};
-  return {manque, temps: base.temps, elem: base.R, val: t => struct(base.R(t)), struct, sdesc, str: sdesc ? s.str : "", echelle: ech, inv: base.inv, base};
+  const expl = t => base.expl(t) + (sexpl ? `<hr>${sexpl(base.R(t))}` : "");
+  return {manque, temps: base.temps, elem: base.R, val: t => struct(base.R(t)), struct, sdesc, str: sdesc ? s.str : "", echelle: ech, inv: base.inv, base, expl, donnee: base.donnee && !sexpl};
 }
 /* groupe stand-by d'éléments différents (modèles 4 à 6 et au-delà) : le bloc a sa propre loi R(t).
    Chaîne de Markov : état = élément en service + réserves encore intactes ; panne de l'élément
@@ -1257,7 +1312,10 @@ function rbGroupeSB(f, g, n, s, lire){
     } else desc = `${modele}, cas λ${a.m}${b.ls > 0 ? ` + λ${b.m},attente` : ""} = λ${b.m} : chaîne de Markov à ${N} états`;
   } else desc = `${k} éléments : chaîne de Markov à ${N} états (exponentielle de matrice)`;
   const sdesc = `stand-by ${nomT}${rs < 1 ? `, commutateur R = ${fmt(rs)}` : ""}${el.some(e => e.ls > 0) ? `, réserves en attente : ${el.filter(e => e.ls > 0).map(e => `λ${e.m} = ${fmt(e.ls)} ${ut.s}⁻¹`).join(", ")}` : ", réserves froides"} — ${desc}`;
-  return {manque, temps: true, elem: Rt, val: Rt, struct: x => x, sdesc, str: "", groupe: noms, echelle: el.reduce((sm, e) => sm + 1 / e.l, 0), inv: null};
+  const expl = t => `Groupe stand-by d'éléments différents : ${esc(nomT)}${rs < 1 ? `, commutateur R = ${fmt(rs)}` : ""}<br>`
+    + el.map((e, i) => `${esc(e.m)} : λ = ${fmt(e.l)} ${esc(ut.s)}⁻¹${i ? (e.ls > 0 ? `, en attente λ = ${fmt(e.ls)} ${esc(ut.s)}⁻¹` : ", réserve froide") : " (en service au départ)"}`).join("<br>")
+    + `<br>${esc(desc)}<br>R(${fmt(t)}) = <b>${fmt(Rt(t))}</b>`;
+  return {manque, temps: true, elem: Rt, val: Rt, struct: x => x, sdesc, str: "", groupe: noms, echelle: el.reduce((sm, e) => sm + 1 / e.l, 0), inv: null, expl};
 }
 /* résolution complète : valeurs des composants, R_S (ou A_S) pas à pas, états, importance, R_S(t), MTTF, calcul inverse */
 function rbResoudre(f, v){
@@ -1337,7 +1395,8 @@ function rbResoudre(f, v){
 const SUB = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉"};
 let RB_L = "R", RB_AFF = {};   /* R (fiabilité) ou A (disponibilité) ; numéros affichés des résultats intermédiaires */
 const rbNum = e => RB_AFF[e.nom] || e.nom;
-const rbNomML = e => e.compo ? `<msub><mi>${RB_L}</mi><mn>${rbNum(e)}</mn></msub>` : `<msub><mi>${RB_L}</mi><mi mathvariant="normal">${esc(e.nom)}</mi></msub>`;
+const rbNomML = e => `<mrow class="rb-v" data-rbv="${esc((e.compo ? "#" : "") + e.nom)}">` + (e.compo ? `<msub><mi>${RB_L}</mi><mn>${rbNum(e)}</mn></msub>` : `<msub><mi>${RB_L}</mi><mi mathvariant="normal">${esc(e.nom)}</mi></msub>`) + "</mrow>";
+let RB_DEFS = {};   /* définition de chaque résultat intermédiaire (pour la bulle) */
 const rbNomTx = e => e.compo ? RB_L + rbNum(e).split("").map(c => SUB[c] || c).join("") : RB_L + "_" + e.nom;
 const rbQui = e => e.compo ? RB_L + rbNum(e).split("").map(c => SUB[c] || c).join("") : e.nom;
 /* réductions en chaîne regroupées : 4 blocs en parallèle = une ligne 1 − Π(1 − R_i), n blocs en série = Π R_i ;
@@ -1364,7 +1423,7 @@ function rbEtapes(A){
   const condTx = (lab, up) => `${RB_L}|${rbQui(lab)}${up ? "" : "̄"}`;
   /* numérotation des résultats : 1, 2, 3… pour les lignes regroupées ; 3′, 3″… pour leurs intermédiaires */
   const T = rbGrouper(A.trace);
-  RB_AFF = {}; let num = 0;
+  RB_AFF = {}; RB_DEFS = {}; let num = 0;
   for (const s of T) if (s.det){ const k = String(++num); RB_AFF[s.n.nom] = k; s.det.slice(0, -1).forEach((d, i) => RB_AFF[d.n.nom] = k + "′".repeat(i + 1)); }
   const binaire = s => {
     const {n, e1, e2} = s, r = `<mrow class="resv">${numML(n.v)}</mrow>`;
@@ -1385,6 +1444,8 @@ function rbEtapes(A){
       const texte = `${rbNomTx(n)} = ` + (ser ? ops.map(rbNomTx).join("·") : "1 − " + ops.map(o => `(1 − ${rbNomTx(o)})`).join(""))
         + " = " + (ser ? (egaux ? `${numTxtp(ops[0].v)}^${q}` : ops.map(o => fmt(o.v)).join("·")) : "1 − " + (egaux ? `(1 − ${fmt(ops[0].v)})^${q}` : ops.map(o => `(1 − ${fmt(o.v)})`).join(""))) + ` = ${fmt(n.v)}`;
       const noms = ops.map(o => esc(rbQui(o)));
+      RB_DEFS[n.nom] = {html: a + b, note: `${noms.slice(0, -1).join(", ")} et ${noms[q - 1]} en ${ser ? "série" : "parallèle"}`, c: n.c};
+      s.det.slice(0, -1).forEach(d => { const b2 = binaire(d); RB_DEFS[d.n.nom] = {html: b2.html, note: `${esc(rbQui(d.e1))} et ${esc(rbQui(d.e2))} en ${ser ? "série" : "parallèle"} (étape intermédiaire)`, c: d.n.c}; });
       const det = s.det.map(d => { const b2 = binaire(d); return ligne({html: b2.html, a: b2.a, b: b2.b}); }).join("");
       lig({html: a + b, a, b, texte}, s.prof, `${noms.slice(0, -1).join(", ")} et ${noms[q - 1]} en ${ser ? "série" : "parallèle"}
         <details class="rb-det"${RB.details ? " open" : ""}><summary>détail deux à deux (${s.det.length} étapes)</summary>${det}</details>`);
@@ -1399,6 +1460,7 @@ function rbEtapes(A){
         : `<mo>=</mo><mn>1</mn><mo>−</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${numML(e1.v)}<mo stretchy="false">)</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${numML(e2.v)}<mo stretchy="false">)</mo><mo>=</mo>${r}`;
       const texte = s.k === "serie" ? `${rbNomTx(n)} = ${rbNomTx(e1)}·${rbNomTx(e2)} = ${fmt(e1.v)}·${fmt(e2.v)} = ${fmt(n.v)}`
         : `${rbNomTx(n)} = 1 − (1 − ${rbNomTx(e1)})(1 − ${rbNomTx(e2)}) = 1 − (1 − ${fmt(e1.v)})(1 − ${fmt(e2.v)}) = ${fmt(n.v)}`;
+      RB_DEFS[n.nom] = {html: a + b, note: `${esc(rbQui(e1))} et ${esc(rbQui(e2))} en ${s.k === "serie" ? "série" : "parallèle"}`, c: n.c};
       lig({html: a + b, a, b, texte}, s.prof, `${esc(rbQui(e1))} et ${esc(rbQui(e2))} en ${s.k === "serie" ? "série" : "parallèle"}`);
     } else if (s.k === "pivot"){
       const q = rbQui(s.lab);
@@ -1416,6 +1478,195 @@ function rbEtapes(A){
     }
   }
   return {html: out.join(""), texte: tx.join("\n")};
+}
+/* bulles des autres fiches : explications préparées au rendu (Markov, énumération…) */
+const BUL = {};
+const bulleML = (cle, html, contenu) => { BUL[cle] = html; return `<mrow class="rb-v" data-rbv="x:${cle}">${contenu}</mrow>`; };
+/* bulle d'une variable d'une fiche à formules : donnée, convertie, relation saisie ou calculée (ligne de calcul) */
+function bulleVar(k){
+  const f = F(), r = res;
+  if (f.custom || !r || !f.vars[k] || !(k in r.val)) return "";
+  const D = r.D || {}, d = f.vars[k], v = r.val[k];
+  let h = `<div class="t"><math>${symML(f, k)}</math> = ${esc(avecU(f, k, v))} — ${esc(d.nom)}</div>`;
+  if (D.conv && D.conv[k]) h += `<div class="s">Donnée convertie dans l'unité de la fiche :</div><math displaystyle="true">${ligneConv(f, k, D.conv[k]).html}</math>`;
+  else if (D.resolus && D.resolus[k]) h += `<div class="s">Trouvée pour que ${esc(symTxt(f, D.resolus[k].k))} = ${esc(D.resolus[k].expr)} (résolution numérique).</div>`;
+  else if (D.liens && k in D.liens && D.K && k in D.K) h += `<div class="s">Relation saisie : ${esc(symTxt(f, k))} = ${esc(D.liens[k])}</div>`;
+  else if (D.K && k in D.K) h += `<div class="s">Donnée de l'énoncé.</div>`;
+  else if (r.how[k]){
+    const hw = r.how[k], ent = hw.inputs.filter(x => x in r.val && x !== k);
+    let sl = null; try { sl = stepLine(f, r, k, false); } catch (e){}
+    h += `<div class="s">Non donnée : calculée par « ${esc(hw.eq.label)} »${hw.numeric ? " (résolution numérique)" : ""}${hw.arrondi ? ", arrondie" : ""} :</div>`
+      + (sl ? `<math displaystyle="true">${sl.html}</math>` : "")
+      + (ent.length ? `<div class="s">à partir de : ${ent.map(x => esc(symTxt(f, x) + " = " + avecU(f, x, r.val[x]))).join(" ; ")}</div>` : "");
+  } else h += `<div class="s">Déterminée par les relations saisies.</div>`;
+  return h;
+}
+/* =====================================================================
+   SYNTHÈSE DE LA RÉSOLUTION (graphe de calcul ou organigramme de méthode)
+   nœuds {id, l1, l2, v, cls, cle} ; arcs [de, vers, étiquette] ; colonnes = plus long chemin depuis les sources
+   ===================================================================== */
+function synthSVG(nodes, arcs){
+  if (!nodes.length) return "";
+  const BW = 176, BH = 58, GX = 86, GY = 12, par = {}, byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  arcs = arcs.filter(([a, b]) => byId[a] && byId[b] && a !== b);
+  for (const [a, b] of arcs) (par[b] = par[b] || []).push(a);
+  const col = (id, vu = new Set()) => { const n = byId[id]; if (n._c !== undefined) return n._c; if (vu.has(id)) return 0; vu.add(id); return n._c = (par[id] || []).length ? 1 + Math.max(...par[id].map(p => col(p, vu))) : 0; };
+  nodes.forEach(n => col(n.id));
+  const C = Math.max(...nodes.map(n => n._c));
+  let H = 0;
+  for (let c = 0; c <= C; c++){
+    const cs = nodes.filter(n => n._c === c);
+    cs.forEach(n => n._b = (par[n.id] || []).length ? par[n.id].reduce((s, p) => s + byId[p]._y, 0) / par[n.id].length : null);
+    if (c) cs.sort((a, b) => a._b - b._b);
+    let bas = -Infinity;
+    cs.forEach((n, i) => { n._y = Math.max(n._b ?? i * (BH + GY), bas + BH + GY); bas = n._y; n._r = i; });
+    H = Math.max(H, bas + BH);
+  }
+  const W = (C + 1) * (BW + GX) - GX + 8;
+  let h = "";
+  for (const [a, b, lab] of arcs){
+    const s = byId[a], t = byId[b], sx = s._c * (BW + GX) + 4 + BW, sy = s._y + 4 + BH / 2, tx0 = t._c * (BW + GX) + 4, ty = t._y + 4 + BH / 2, mx = tx0 - 14 - 11 * (t._r % 6);
+    h += `<path class="rb-af" d="M${sx},${sy} H${mx} V${ty} H${tx0 - 4}" marker-end="url(#sy-fl)"/>`;
+    if (lab) h += `<text class="rb-al" x="${sx + 4}" y="${sy - 5}">${esc(lab)}</text>`;
+  }
+  const coupe = (s, n) => { s = String(s ?? ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+  for (const n of nodes){
+    const x = n._c * (BW + GX) + 4, y = n._y + 4;
+    h += `<g class="rb-a ${n.cls || ""}"${n.cle ? ` data-rbv="${esc(n.cle)}"` : ""}><rect x="${x}" y="${y}" width="${BW}" height="${BH}" rx="8"/>
+      <text x="${x + 10}" y="${y + 18}" class="l1">${esc(coupe(n.l1, 24))}</text><text x="${x + 10}" y="${y + 35}" class="l2">${esc(coupe(n.l2, 32))}</text>
+      <text x="${x + BW - 10}" y="${y + 51}" class="v" text-anchor="end">${esc(coupe(n.v, 26))}</text></g>`;
+  }
+  return `<svg class="rb-arbre" viewBox="0 0 ${W} ${H + 8}" width="${W}" role="img" aria-label="Synthèse de la résolution"><defs><marker id="sy-fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>${h}</svg>`;
+}
+const SYNTH_BLOC = `<section class="bloc fait synth-bloc" style="cursor:default"><div class="bh"><span class="bt">Synthèse de la résolution</span></div><div id="synth"></div></section>`;
+const SYNTH_LEG = (items) => `<div class="small">Lecture de gauche à droite · survolez une boîte pour le détail. <span class="rb-leg">${items.map(([c, t]) => `<i class="${c}"></i>${t}`).join(" ")}</span></div>`;
+function synthAfficher(html){ const z = document.getElementById("synth"); if (!z) return; z.innerHTML = html || '<div class="small">La synthèse apparaîtra dès qu\'un résultat sera calculé.</div>'; }
+/* fiches à formules : graphe de calcul données → intermédiaires → inconnue */
+function synthFormules(f, r, D, c){
+  const how = r.how, vus = new Set(), noeuds = [], arcs = [];
+  const cibles = c && c in r.val ? [c] : Object.keys(how).filter(k => !Object.values(how).some(h => h.inputs.includes(k)));
+  if (!cibles.length) return "";
+  const lab = k => `${symTxt(f, k)} = ${avecU(f, k, r.val[k])}`;
+  const ajoute = k => {
+    if (vus.has(k) || !(k in r.val)) return; vus.add(k);
+    const h = how[k];
+    if (h){
+      const ent = h.inputs.filter(x => x in r.val && x !== k);
+      ent.forEach(ajoute);
+      ent.forEach(x => arcs.push([x, k]));
+      noeuds.push({id: k, cle: "v:" + k, cls: (cibles.includes(k) ? "calc rac" : "calc") + (h.systeme ? " sys" : ""), l1: symTxt(f, k), l2: h.systeme ? `système ${h.systeme.eqs.length}×${h.systeme.eqs.length}` : `« ${h.eq.label} »${h.numeric ? " (num.)" : ""}`, v: avecU(f, k, r.val[k])});
+    } else {
+      const conv = D.conv && D.conv[k], lien = D.liens && D.liens[k], rs = D.resolus && D.resolus[k];
+      noeuds.push({id: k, cle: "v:" + k, cls: cibles.includes(k) ? "don rac" : "don", l1: symTxt(f, k),
+        l2: conv ? `donnée convertie (${fmt(conv.v0)} ${uniteTxt(f.vars[k].u, conv.de, conv.v0)})` : lien ? `relation : ${lien}` : rs ? `tel que ${symTxt(f, rs.k)} = ${rs.expr}` : "donnée", v: avecU(f, k, r.val[k])});
+    }
+  };
+  cibles.forEach(ajoute);
+  if (!noeuds.some(n => n.cls.startsWith("calc"))) return "";
+  return synthSVG(noeuds, arcs) + SYNTH_LEG([["don", "donnée"], ["calc", "calculée (formule)"], ["sys", "système d'équations"]])
+    + (c ? "" : '<div class="small">Aucune inconnue choisie : toutes les valeurs calculées sont montrées.</div>');
+}
+/* synthèse : arbre de réduction reconstruit à partir des étapes (composants à gauche, R_S à droite) */
+function rbArbre(A){
+  const T = rbGrouper(A.trace), map = {};
+  const feuille = e => e.compo ? (map[e.nom] || {k: "cst", v: e.v}) : {k: "comp", nom: e.nom, v: e.v};
+  let i = 0;
+  const niveau = () => {
+    while (i < T.length){
+      const s = T[i++];
+      if (s.det){ map[s.n.nom] = {k: s.k, nom: s.n.nom, v: s.n.v, ops: s.ops.map(feuille)}; continue; }
+      if (s.k === "res") return feuille(s.e);
+      if (s.k === "res1") return {k: "cst", v: 1, txt: "entrée et sortie reliées"};
+      if (s.k === "res0") return {k: "cst", v: 0, txt: "aucun chemin"};
+      if (s.k === "pivot"){
+        const piv = s.lab.compo ? feuille(s.lab) : {k: "comp", nom: s.lab.nom, v: s.v, rep: s.lab.rep};
+        i++; const up = niveau();
+        i++; const down = niveau();
+        const sm = T[i++];
+        return {k: "pivot", lab: s.lab, pv: s.v, v: sm.v, piv, up, down};
+      }
+    }
+    return null;
+  };
+  return niveau();
+}
+function rbArbreSVG(racine, A, ut){
+  if (!racine) return "";
+  const BW = 172, BH = 58, GX = 84, GY = 12, L = A.mode;
+  const enf = n => n.k === "serie" || n.k === "par" ? n.ops : n.k === "pivot" ? [n.piv, n.up, n.down] : [];
+  const prof = (n, d) => { n._d = d; return Math.max(d, ...enf(n).map(c => prof(c, d + 1))); };
+  const D = prof(racine, 0);
+  let row = 0;
+  const place = n => { const e = enf(n); e.forEach(place); n._y = e.length ? (e[0]._y + e[e.length - 1]._y) / 2 : row++ * (BH + GY); n._x = (D - n._d) * (BW + GX); };
+  place(racine);
+  const W = (D + 1) * (BW + GX) - GX + 8, H = row * (BH + GY) - GY + 8;
+  const nomS = sub => `${L}<tspan dy="3" font-size="10">${esc(sub)}</tspan><tspan dy="-3"> </tspan>`;
+  const loi = nom => {
+    const s = rbSpec(A.g, nom), l = A.lois[nom] || {};
+    if (l.groupe) return "stand-by " + l.groupe.join("→");
+    const b = L === "A" ? ({lm: "μ/(λ+μ)", mm: "MTTF/(MTTF+MTTR)"}[s.atype] || "donnée") : ({lam: "e^(−λt)", mttf: "e^(−t/MTTF)", weib: "Weibull"}[s.type] || "donnée");
+    return s.str === "rm" ? `${b} · ${s.r} sur ${s.m}` : s.str === "sb" && L !== "A" ? `${b} · stand-by` : b;
+  };
+  let h = "";
+  const boite = n => {
+    const x = n._x + 4, y = n._y + 4, rac = n === racine ? " rac" : "";
+    let cls, l1, l2, cle = "";
+    if (n.k === "comp"){ cls = "comp"; l1 = nomS(n.nom); l2 = loi(n.nom) + (n.rep ? " · répété" : ""); cle = n.nom; }
+    else if (n.k === "serie" || n.k === "par"){ cls = n.k; l1 = nomS(rbNum({nom: n.nom})); l2 = `${n.k === "par" ? "parallèle" : "série"} ×${n.ops.length}`; cle = "#" + n.nom; }
+    else if (n.k === "pivot"){ const q = rbQui(n.lab), rq = n.lab.compo ? q : `${L}_${q}`; cls = "piv"; l1 = `Conditionnement sur ${esc(q)}`; l2 = `${rq}·${L}|${q} + (1 − ${rq})·${L}|${q}̄`; }
+    else { cls = "cst"; l1 = n.txt ? esc(n.txt) : "constante"; l2 = ""; }
+    h += `<g class="rb-a ${cls}${rac}"${cle ? ` data-rbv="${esc(cle)}"` : ""}><rect x="${x}" y="${y}" width="${BW}" height="${BH}" rx="8"/>
+      <text x="${x + 10}" y="${y + 18}" class="l1">${l1}</text>
+      <text x="${x + 10}" y="${y + 36}" class="l2">${esc(l2)}</text>
+      <text x="${x + BW - 10}" y="${y + 49}" class="v" text-anchor="end">${rac ? `${L}<tspan dy="3" font-size="9">S</tspan><tspan dy="-3"> = </tspan>` : ""}${fmt(n.v)}</text></g>`;
+    const e = enf(n);
+    e.forEach((c, j) => {
+      const cx = c._x + 4 + BW, cy = c._y + 4 + BH / 2, px = x, py = y + BH / 2, mx = px - 16;
+      h += `<path class="rb-af" d="M${cx},${cy} H${mx} V${py} H${px - 4}" marker-end="url(#rb-fl)"/>`;
+      if (n.k === "pivot"){ const q = rbQui(n.lab), t = [`× ${n.lab.compo ? q : L + "_" + q}`, `si ${q} marche`, `si ${q} en panne`][j]; h += `<text class="rb-al" x="${cx + 4}" y="${cy - 5}">${esc(t)}</text>`; }
+      boite(c);
+    });
+  };
+  boite(racine);
+  return `<svg class="rb-arbre" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="Arbre de réduction"><defs><marker id="rb-fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>${h}</svg>
+    <div class="small">Lecture de gauche à droite : chaque boîte combine celles qui y arrivent ; ${L}₁, ${L}₂… suivent l'ordre du calcul pas à pas. Survolez une boîte pour le détail.
+    <span class="rb-leg"><i class="comp"></i>composant <i class="par"></i>parallèle <i class="serie"></i>série <i class="piv"></i>conditionnement</span></div>`;
+}
+/* bulle d'explication au survol d'une variable des étapes (ou d'une valeur du tableau) :
+   loi et application numérique pour un composant, ligne de définition pour un résultat intermédiaire */
+function rbBulle(el, fixe){
+  const b = document.getElementById("rb-bulle"); if (!b) return;
+  if (!el){ if (!rbBulle.fixe) b.style.display = "none"; return; }
+  if (fixe) rbBulle.fixe = !(rbBulle.fixe && rbBulle.el === el);
+  rbBulle.el = el;
+  const A = rbResoudre.dernier, cle = att(el, "rbv"), f = F();
+  if (cle && /^[vx]:/.test(cle)){
+    const h = fixe && !rbBulle.fixe ? "" : cle[0] === "v" ? bulleVar(cle.slice(2)) : BUL[cle.slice(2)];
+    if (!h){ b.style.display = "none"; rbBulle.fixe = false; return; }
+    return bulleMontrer(b, el, h);
+  }
+  if (!A || !cle || (fixe && !rbBulle.fixe)){ b.style.display = "none"; rbBulle.fixe = false; return; }
+  const L = A.mode, ut = uniteDe(f), quand = L === "A" ? (isFinite(A.t) ? ` à t = ${fmt(A.t)} ${esc(uniteTxt("T", ut, A.t))}` : " stationnaire") : isFinite(A.t) ? ` à t = ${fmt(A.t)} ${esc(uniteTxt("T", ut, A.t))}` : "";
+  const grand = L === "A" ? "disponibilité" : "fiabilité";
+  let h;
+  if (cle[0] === "#"){
+    const d = RB_DEFS[cle.slice(1)], nom = rbQui({compo: true, nom: cle.slice(1)}).replace(/^R/, L);
+    if (!d) return;
+    h = `<div class="t">${esc(nom)} — résultat intermédiaire</div><div class="s">${d.note}</div><math displaystyle="true">${d.html}</math>
+      <div class="s">Regroupe : ${esc([...new Set(d.c)].join(", "))}</div>`;
+  } else {
+    const l = A.lois[cle]; if (!l) return;
+    h = `<div class="t">${L}<sub>${esc(cle)}</sub> = ${fmt(A.R[cle])} — ${grand} de ${esc(cle)}${quand}</div>
+      <div class="s">${l.donnee ? "Donnée de l'énoncé" : "Non donnée directement : calculée à partir de sa loi"}</div>${l.expl(L === "A" ? A.t : A.t ?? 0)}`;
+  }
+  bulleMontrer(b, el, h);
+}
+function bulleMontrer(b, el, h){
+  b.innerHTML = h; b.style.display = "block";
+  const r = el.getBoundingClientRect(), W = Math.min(460, document.documentElement.clientWidth - 20);
+  b.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - W - 12)) + "px";
+  const bas = r.bottom + window.scrollY + 8, hb = b.offsetHeight;
+  b.style.top = (r.bottom + hb + 12 > window.innerHeight && r.top > hb + 12 ? r.top + window.scrollY - hb - 8 : bas) + "px";
 }
 /* courbe R_S(t) */
 function rbCourbe(A, ut){
@@ -2187,7 +2438,8 @@ const FICHES = [
       <div class="rb-don"><label class="rb-t">Temps t <input data-cu="t" value="${esc(v.t || "")}" placeholder="ex. 1000 ou 6 mois" spellcheck="false" autocomplete="off"> <span class="small">${esc(ut.pl || ut.s)} — ${v.mode === "A" ? "facultatif : A(t) instantanée ; vide = A∞" : "pour les lois λ, MTTF et Weibull"}</span></label>
         <div id="rb-comp">${rbTable(this, v)}</div></div>
       </section>
-      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Calcul pas à pas : réductions série / parallèle, puis conditionnement</span><span class="bb"><button class="btn" data-rbdet="1" title="Déplier ou replier le détail deux à deux de toutes les lignes regroupées">🔍 Détails</button> <button class="btn" data-rbcopy="1" title="Copier tout le calcul">📋 Copier</button></span></div><div class="bcalc" id="cu-eqs"></div></div>
+      <div class="work"><div class="rb-g"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Calcul pas à pas : réductions série / parallèle, puis conditionnement</span><span class="bb"><button class="btn" data-rbdet="1" title="Déplier ou replier le détail deux à deux de toutes les lignes regroupées">🔍 Détails</button> <button class="btn" data-rbcopy="1" title="Copier tout le calcul">📋 Copier</button></span></div><div class="bcalc" id="cu-eqs"></div></div>
+        <div class="bloc fait rb-synth" style="cursor:default"><div class="bh"><span class="bt">Synthèse de la résolution : arbre de réduction</span></div><div id="rb-arbre"></div></div></div>
       <aside class="panneau" id="cu-res"></aside></div>`;
   },
   update(v){
@@ -2198,10 +2450,12 @@ const FICHES = [
     document.querySelectorAll("[data-rbr]").forEach(c => c.textContent = "");
     let A;
     try { A = rbResoudre(this, v); }
-    catch (e){ eqs.innerHTML = `<div class="manque">${esc(e)}</div>`; out.innerHTML = ""; rbResoudre.texte = ""; return; }
+    catch (e){ eqs.innerHTML = `<div class="manque">${esc(e)}</div>`; out.innerHTML = ""; rbResoudre.texte = ""; rbResoudre.dernier = null; const ar = document.getElementById("rb-arbre"); if (ar) ar.innerHTML = ""; return; }
     const ut = uniteDe(this), res = A.res, L = A.mode;
-    RB_L = L; const et = rbEtapes(A); RB_L = "R";
-    document.querySelectorAll("[data-rbr]").forEach(c => { const n = att(c, "rbr"); if (n in A.R) c.textContent = fmt(A.R[n]); });
+    RB_L = L; const et = rbEtapes(A), synth = rbArbreSVG(rbArbre(A), A, ut); RB_L = "R";
+    const ar = document.getElementById("rb-arbre"); if (ar) ar.innerHTML = synth;
+    rbResoudre.dernier = A;
+    document.querySelectorAll("[data-rbr]").forEach(c => { const n = att(c, "rbr"); if (n in A.R){ c.textContent = fmt(A.R[n]); c.setAttribute("data-rbv", n); } else c.removeAttribute("data-rbv"); });
     /* blocs composés (r/m, stand-by) : valeur de l'élément puis du bloc */
     const comp = res.comps.filter(n => A.lois[n].sdesc).map(n => {
       const l = A.lois[n], x = l.elem(A.mode === "A" ? undefined : A.t ?? 0);
@@ -2699,6 +2953,7 @@ const FICHES = [
     const eqs = document.getElementById("cu-eqs"), qz = document.getElementById("cu-q"), out = document.getElementById("cu-res");
     if (!eqs || !out) return;
     const g = mkGraphe(v), ut = uniteDe(this);
+    synthAfficher("");
     if (!g.etats.length){ eqs.innerHTML = '<div class="manque">Ajoutez des états (＋ État ou double-clic) ou choisissez un exemple.</div>'; qz.innerHTML = ""; out.innerHTML = ""; return; }
     let mk;
     try {
@@ -2722,18 +2977,37 @@ const FICHES = [
     let h = `<h2>Résultats — départ en ${esc((g.etats.find(e => e.init) || {}).nom || "?")}</h2>`;
     if (mk.res.length){
       h += `<table class="tab"><tr><th>État</th>${mk.res.map(x => `<th>t = ${fmt(x.t)} ${esc(uniteTxt("T", ut, x.t))}</th>`).join("")}</tr>`;
-      h += mk.etats.map(e => `<tr><td>P<sub>${esc(e)}</sub>${mk.marche.includes(e) ? "" : " (panne)"}</td>${mk.res.map(x => `<td>${fmt(x.P[mk.idx[e]])}</td>`).join("")}</tr>`).join("");
-      h += `<tr class="tot"><td>Disponibilité A(t)</td>${mk.res.map(x => `<td>${fmt(x.A)}</td>`).join("")}</tr>`;
-      h += `<tr class="tot"><td>Fiabilité R(t)</td>${mk.res.map(x => `<td>${fmt(x.R)}</td>`).join("")}</tr></table>`;
+      BUL["mk-P"] = `<div class="t">P<sub>e</sub>(t) — probabilité d'être dans l'état e à l'instant t</div><div class="s">Solution des équations de Markov dP/dt = P·Q avec P(0) = 1 dans l'état initial : P(t) = P(0)·exp(Q·t), calculée par exponentielle de matrice.</div>`;
+      h += mk.etats.map(e => `<tr><td data-rbv="x:mk-P">P<sub>${esc(e)}</sub>${mk.marche.includes(e) ? "" : " (panne)"}</td>${mk.res.map(x => `<td>${fmt(x.P[mk.idx[e]])}</td>`).join("")}</tr>`).join("");
+      BUL["mk-A"] = `<div class="t">A(t) — disponibilité à l'instant t</div><div class="s">Somme des probabilités des états de marche (réparations permises) :</div>A(t) = ${mk.marche.map(e => `P<sub>${esc(e)}</sub>(t)`).join(" + ")}`;
+      BUL["mk-R"] = `<div class="t">R(t) — fiabilité</div><div class="s">Même calcul, mais les états de panne (${mk.etats.filter(e => !mk.marche.includes(e)).map(esc).join(", ")}) sont rendus <b>absorbants</b> (aucune sortie) : on compte la probabilité de n'y être jamais entré.</div>R(t) = ${mk.marche.map(e => `P<sub>${esc(e)}</sub><sup>abs</sup>(t)`).join(" + ")}`;
+      h += `<tr class="tot"><td data-rbv="x:mk-A">Disponibilité A(t)</td>${mk.res.map(x => `<td>${fmt(x.A)}</td>`).join("")}</tr>`;
+      h += `<tr class="tot"><td data-rbv="x:mk-R">Fiabilité R(t)</td>${mk.res.map(x => `<td>${fmt(x.R)}</td>`).join("")}</tr></table>`;
     }
     const pr2 = mkParams(v).env, nomE = id => (g.etats.find(e => e.id === id) || {}).nom;
     h += `<details class="trl" open><summary>Transitions prises en compte (${g.trans.length})</summary><table class="tab"><tr><th>De → vers</th><th>Taux</th><th>Valeur</th></tr>` +
       g.trans.map(t => `<tr><td>${esc(nomE(t.a))} → ${esc(nomE(t.b))}</td><td>${esc(t.taux)}</td><td>${fmt(mkTaux(t.taux, pr2))} ${esc(ut.s)}⁻¹</td></tr>`).join("") + "</table></details>";
     if (mk.pinf) h += `<div class="note info">Probabilités stationnaires (πQ = 0, Σπ = 1) : ${mk.etats.map(e => `π<sub>${esc(e)}</sub> = <b>${fmt(mk.pinf[mk.idx[e]])}</b>`).join(" ; ")}</div>`;
-    if (isFinite(mk.Ainf)) h += `<div class="res-line"><math displaystyle="true"><msub><mi>A</mi><mi>∞</mi></msub><mo>=</mo><mrow class="resv">${numML(mk.Ainf)}</mrow></math></div>`;
-    if (isFinite(mk.mttf)) h += `<div class="res-line"><math displaystyle="true"><mi>MTTF</mi><mo>=</mo><mrow class="resv">${numML(mk.mttf)}</mrow><mspace width="0.3em"></mspace><mtext class="unite">${esc(uniteTxt("T", ut, mk.mttf))}</mtext></math></div>`;
+    if (isFinite(mk.Ainf)) h += `<div class="res-line"><math displaystyle="true">${bulleML("mk-ainf", `<div class="t">A<sub>∞</sub> = ${fmt(mk.Ainf)} — disponibilité stationnaire</div><div class="s">Probabilités stationnaires π solution de π·Q = 0 et Σπ = 1 (système linéaire), puis somme sur les états de marche :</div>A<sub>∞</sub> = ${mk.marche.map(e => `π<sub>${esc(e)}</sub>`).join(" + ")} = ${mk.marche.map(e => fmt(mk.pinf[mk.idx[e]])).join(" + ")} = <b>${fmt(mk.Ainf)}</b>`,
+      `<msub><mi>A</mi><mi>∞</mi></msub><mo>=</mo><mrow class="resv">${numML(mk.Ainf)}</mrow>`)}</math></div>`;
+    if (isFinite(mk.mttf)) h += `<div class="res-line"><math displaystyle="true">${bulleML("mk-mttf", `<div class="t">MTTF = ${fmt(mk.mttf)} ${esc(uniteTxt("T", ut, mk.mttf))} — temps moyen avant la 1<sup>re</sup> panne</div><div class="s">États de panne rendus absorbants ; les temps moyens τ passés dans chaque état de marche (${mk.marche.map(esc).join(", ")}) sont solution de τ·Q<sub>marche</sub> = −P(0) (système linéaire) :</div>MTTF = Σ τ<sub>i</sub> = <b>${fmt(mk.mttf)}</b>`,
+      `<mi>MTTF</mi><mo>=</mo><mrow class="resv">${numML(mk.mttf)}</mrow><mspace width="0.3em"></mspace><mtext class="unite">${esc(uniteTxt("T", ut, mk.mttf))}</mtext>`)}</math></div>`;
     h += `<div class="note info">A(t), π, A∞ : réparations permises. R(t) et MTTF : états de panne rendus absorbants (temps moyen avant la 1re panne).</div>`;
     out.innerHTML = h;
+    /* synthèse : organigramme de la méthode de Markov, avec les valeurs */
+    const N = [{id: "g", cls: "don", l1: "Graphe d'états", l2: `${mk.etats.length} états, ${mk.trans.length} transitions`, v: `départ : ${(g.etats.find(e => e.init) || {}).nom || "?"}`},
+      {id: "q", cls: "calc", l1: "Matrice Q (générateur)", l2: "taux ; chaque ligne somme à 0", v: `${mk.etats.length} × ${mk.etats.length}`}], Ar = [["g", "q"]];
+    const serie = f => mk.res.map(x => fmt(f(x))).join(" ; ");
+    if (mk.res.length || isFinite(mk.mttf)){ N.push({id: "qa", cls: "calc", l1: "Q, pannes absorbantes", l2: "états de panne sans sortie", v: ""}); Ar.push(["q", "qa"]); }
+    if (mk.res.length){
+      N.push({id: "p", cls: "calc", cle: "x:mk-P", l1: "P(t) = P(0)·exp(Q·t)", l2: "exponentielle de matrice", v: `t = ${mk.res.map(x => fmt(x.t)).join(" ; ")} ${uniteTxt("T", ut, 2)}`},
+        {id: "a", cls: "calc rac", cle: "x:mk-A", l1: "A(t) disponibilité", l2: "Σ P des états de marche", v: serie(x => x.A)},
+        {id: "r", cls: "calc rac", cle: "x:mk-R", l1: "R(t) fiabilité", l2: "Σ P de marche (absorbant)", v: serie(x => x.R)});
+      Ar.push(["q", "p"], ["p", "a"], ["qa", "r"]);
+    }
+    if (mk.pinf){ N.push({id: "pi", cls: "calc", l1: "π·Q = 0 ; Σπ = 1", l2: "système linéaire", v: `${mk.etats.length} inconnues`}, {id: "ai", cls: "calc rac", cle: "x:mk-ainf", l1: "A∞ stationnaire", l2: "Σ π des états de marche", v: fmt(mk.Ainf)}); Ar.push(["q", "pi"], ["pi", "ai"]); }
+    if (isFinite(mk.mttf)){ N.push({id: "tau", cls: "calc", l1: "τ·Q_marche = −P(0)", l2: "temps moyens par état", v: `${mk.marche.length} inconnues`}, {id: "mttf", cls: "calc rac", cle: "x:mk-mttf", l1: "MTTF", l2: "Σ τ des états de marche", v: `${fmt(mk.mttf)} ${uniteTxt("T", ut, mk.mttf)}`}); Ar.push(["qa", "tau"], ["tau", "mttf"]); }
+    synthAfficher(synthSVG(N, Ar) + SYNTH_LEG([["don", "donnée"], ["calc", "étape de calcul"]]));
   }
 },
 {
@@ -2760,6 +3034,7 @@ const FICHES = [
   update(v){
     const tab = document.getElementById("cu-tab"), out = document.getElementById("cu-res");
     if (!tab || !out) return;
+    synthAfficher("");
     if (!String(v.d || "").trim()){ tab.innerHTML = '<div class="manque">Saisissez les machines ou chargez l\'exemple.</div>'; out.innerHTML = ""; return; }
     let ab;
     try { ab = abcCalc(String(v.d).split("\n"), evalExpr(v.sa ?? "80"), evalExpr(v.sb ?? "95")); }
@@ -2781,6 +3056,16 @@ const FICHES = [
       <div class="note bad"><b>Classe A</b> (priorité) : ${esc(cl("A"))}</div>
       <div class="note warn"><b>Classe B</b> : ${esc(cl("B"))}</div>
       <div class="note info"><b>Classe C</b> : ${esc(cl("C"))}</div>`;
+    const sA = evalExpr(v.sa ?? "80"), sB = evalExpr(v.sb ?? "95"), nb = c => ab.rows.filter(x => x.cl === c).length;
+    synthAfficher(synthSVG([
+      {id: "m", cls: "don", l1: "Machines", l2: `${ab.rows.length} machines : coût, pannes`, v: `CT = ${fmt(ab.CT)}`},
+      {id: "s", cls: "don", l1: "Seuils des classes", l2: `A ≤ ${fmt(sA)} % ; B ≤ ${fmt(sB)} %`, v: "du coût cumulé"},
+      {id: "t", cls: "calc", l1: "Tri décroissant des coûts", l2: `ordre : ${ab.rows.slice(0, 4).map(x => x.n).join(", ")}…`, v: ""},
+      {id: "k", cls: "calc", l1: "Cumuls en %", l2: "ΣC/CT et ΣN/NPT", v: `NPT = ${fmt(ab.NPT)}`},
+      {id: "A", cls: "calc rac", l1: "Classe A (priorité)", l2: cl("A"), v: `${nb("A")} machine${nb("A") > 1 ? "s" : ""}`},
+      {id: "B", cls: "calc rac", l1: "Classe B", l2: cl("B"), v: `${nb("B")} machine${nb("B") > 1 ? "s" : ""}`},
+      {id: "C", cls: "calc rac", l1: "Classe C", l2: cl("C"), v: `${nb("C")} machine${nb("C") > 1 ? "s" : ""}`}],
+      [["m", "t"], ["t", "k"], ["k", "A"], ["k", "B"], ["k", "C"], ["s", "A"], ["s", "B"], ["s", "C"]]) + SYNTH_LEG([["don", "donnée"], ["calc", "étape de calcul"]]));
   }
 },
 {
@@ -2811,6 +3096,7 @@ const FICHES = [
     const tab = document.getElementById("cu-tab"), out = document.getElementById("cu-res");
     if (!tab || !out) return;
     let E;
+    synthAfficher("");
     try { E = enumCalc(String(v.comp || ""), String(v.ch || "")); }
     catch (e){ tab.innerHTML = `<div class="manque">${esc(e)}</div>`; out.innerHTML = ""; return; }
     const lettre = n => n.length === 1 ? n.toLowerCase() : "R" + n;
@@ -2823,9 +3109,18 @@ const FICHES = [
     const somme = E.etats.filter(x => x.marche).map(x => terme(x.s));
     out.innerHTML = `<h2>Résultat</h2>
       <div class="note info">R<sub>S</sub> = somme des probabilités des ${E.nbMarche} états où le système fonctionne :<br>R<sub>S</sub> = ${somme.slice(0, 40).join(" + ")}${somme.length > 40 ? " + …" : ""}</div>
-      <div class="res-line"><math displaystyle="true"><msub><mi>R</mi><mi>S</mi></msub><mo>=</mo><mrow class="resv">${numML(E.Rs)}</mrow></math></div>
+      <div class="res-line"><math displaystyle="true">${bulleML("en-rs", `<div class="t">R<sub>S</sub> = ${fmt(E.Rs)}</div><div class="s">Somme des probabilités des ${E.nbMarche} états (sur ${E.etats.length}) où au moins un chemin de succès a tous ses composants en marche ; chaque probabilité est le produit des R<sub>i</sub> (composant en marche) et des 1 − R<sub>i</sub> (en panne).</div>`,
+        `<msub><mi>R</mi><mi>S</mi></msub><mo>=</mo><mrow class="resv">${numML(E.Rs)}</mrow>`)}</math></div>
       <div class="res-line"><math displaystyle="true"><msub><mi>F</mi><mi>S</mi></msub><mo>=</mo><mn>1</mn><mo>−</mo><msub><mi>R</mi><mi>S</mi></msub><mo>=</mo><mrow class="resv">${numML(1 - E.Rs)}</mrow></math></div>
       <div class="note info">Chemins de succès : ${E.chemins.map(c => c.join("")).join(", ")} · le système fonctionne si tous les composants d'au moins un chemin fonctionnent.</div>`;
+    synthAfficher(synthSVG([
+      {id: "c", cls: "don", l1: "Composants", l2: E.noms.map(n => `${n} = ${fmt(E.R[n])}`).join(" ; "), v: `${E.noms.length} composants`},
+      {id: "ch", cls: "don", l1: "Chemins de succès", l2: E.chemins.map(c => c.join("")).join(", "), v: `${E.chemins.length} chemin${E.chemins.length > 1 ? "s" : ""}`},
+      {id: "e", cls: "calc", l1: `Table des 2ⁿ états`, l2: "P = Π R_i ou (1 − R_i)", v: `${E.etats.length} états`},
+      {id: "m", cls: "calc", l1: "États de marche", l2: "≥ 1 chemin tout en marche", v: `${E.nbMarche} états`},
+      {id: "rs", cls: "calc rac", cle: "x:en-rs", l1: "R_S = Σ P(états de marche)", l2: "somme des probabilités", v: fmt(E.Rs)},
+      {id: "fs", cls: "calc", l1: "F_S = 1 − R_S", l2: "probabilité de panne", v: fmt(1 - E.Rs)}],
+      [["c", "e"], ["e", "m"], ["ch", "m"], ["m", "rs"], ["rs", "fs"]]) + SYNTH_LEG([["don", "donnée"], ["calc", "étape de calcul"]]));
   }
 }
 ];
@@ -3298,7 +3593,7 @@ function renderFiche(){
   if (f.custom){
     $("#main").innerHTML = `<div class="fbar"><div><span class="ch">${f.ch}</span><h1>${esc(f.titre)}</h1><span class="sous">${esc(f.sous)}</span></div>
       <div class="acts">${selUnite(f)}<a class="btn" href="${encodeURI(f.ref.doc)}#page=${f.ref.page}" target="_blank" title="Ouvrir la diapositive du cours">📄 ${esc(f.ref.lib)}</a>
-      <button class="btn" id="btn-clear">Effacer les données</button></div></div>` + f.html(valsOf(f));
+      <button class="btn" id="btn-clear">Effacer les données</button></div></div>` + f.html(valsOf(f)) + (f.id === "diagramme" ? "" : SYNTH_BLOC);
     renderNav(); f.update(valsOf(f)); ajuster();
     return;
   }
@@ -3336,6 +3631,7 @@ function renderFiche(){
   h += `</div>
       <div id="sol"></div>
     </aside></div>`;
+  h += SYNTH_BLOC;
   $("#main").innerHTML = h;
   renderNav();
   update();
@@ -3374,8 +3670,9 @@ function stepLine(f, r, k, final){
   }
   const h = r.how[k], e = h.eq, s = e.solve[k];
   const res = `<mrow class="resv">${numML(r.val[k])}</mrow>${uML(f, k, r.val[k])}`;
-  const ctxSym = {ph: (x, ex) => symML(f, x, ex)};
-  const ctxNum = {num: true, ph: (x, ex, nu) => nu ? numML(r.val[x]) : numMLp(r.val[x])};
+  const bv = (x, html) => `<mrow class="rb-v" data-rbv="v:${x}">${html}</mrow>`;
+  const ctxSym = {ph: (x, ex) => bv(x, symML(f, x, ex))};
+  const ctxNum = {num: true, ph: (x, ex, nu) => bv(x, nu ? numML(r.val[x]) : numMLp(r.val[x]))};
   const tSym = {ph: (x, ex) => symTxt(f, x, ex)};
   const tNum = {num: true, ph: (x, ex, nu) => nu ? fmt(r.val[x]) : numTxtp(r.val[x])};
   const arr = h.arrondi ? "<mtext>&#160;(arrondi)</mtext>" : "";
@@ -3389,7 +3686,7 @@ function stepLine(f, r, k, final){
     return {html, texte, a, b};
   }
   const tree = parseTex(e.solve[e.main].tpl);
-  const ctxMix = {num: true, ph: (x, ex, nu) => x === k ? symML(f, x, ex) : nu ? numML(r.val[x]) : numMLp(r.val[x])};
+  const ctxMix = {num: true, ph: (x, ex, nu) => x === k ? symML(f, x, ex) : bv(x, nu ? numML(r.val[x]) : numMLp(r.val[x]))};
   const tMix = {num: true, ph: (x, ex, nu) => x === k ? symTxt(f, x, ex) : nu ? fmt(r.val[x]) : numTxtp(r.val[x])};
   const html = numMLp(r.val[e.main]) + "<mo>=</mo>" + ml(tree, ctxMix) + "<mo>⇒</mo>" + symML(f, k) + "<mo>=</mo>" + res + "<mtext>&#160;(résolu numériquement)</mtext>";
   const texte = `${numTxtp(r.val[e.main])} = ${tx(tree, tMix)} ⇒ ${symTxt(f, k)} = ${avecU(f, k, r.val[k])} (résolu numériquement)`;
@@ -3559,6 +3856,7 @@ function update(){
   if (F().custom){ F().update(valsOf(F())); ajuster(); return; }
   const f = F(), c = S.cible[f.id] || null, eq = eqOf(f), vars = f.vars, raw = valsOf(f);
   const D = donnees(f, c), K = D.K;
+  D.r.D = D;
   res = D.r;
   const r = res;
   const verifs = verifier(f, r.val, K), parVar = {};
@@ -3709,6 +4007,7 @@ function update(){
   }
   for (const e of r.alertes) h += `<div class="note bad">Données incohérentes avec la formule « ${esc(e.label)} » : vérifiez les valeurs saisies (trop de données ?).</div>`;
   $("#sol").innerHTML = h;
+  synthAfficher(synthFormules(f, r, D, c));
   requestAnimationFrame(caserPanneau);
 
   /* chaque bloc affiche le calcul qu'il permet avec les données */
@@ -3889,6 +4188,7 @@ function brancher(){
     let d;
     if ((d = t.closest("[data-cuex]"))){ S.vals[f.id] = JSON.parse(JSON.stringify(f.exemples[+att(d, "cuex")].vals)); MK.sel = null; MK.mode = null; MK.src = null; RB.sel = null; RB.mode = null; RB.src = null; save(); renderFiche(); return; }
     if ((d = t.closest("[data-rba]"))){ rbAction(att(d, "rba"), d); return; }
+    if ((d = t.closest("[data-rbv]"))){ rbBulle(d, true); return; }
     if (t.closest("[data-rbcopy]")){ if (rbResoudre.texte) copier(rbResoudre.texte); return; }
     if (t.closest("[data-rbdet]")){ const ds = [...document.querySelectorAll("#cu-eqs details.rb-det")], ouv = !ds.every(d => d.open); ds.forEach(d => d.open = ouv); RB.details = ouv; ajuster(); return; }
     if ((d = t.closest("[data-mka]"))){
@@ -3980,6 +4280,9 @@ function brancher(){
     const inp = ev.target.closest("input[data-k]");
     if (inp && !inp.readOnly){ valsOf(F())[att(inp, "k")] = inp.value; save(); update(); }
   });
+  document.addEventListener("click", ev => { if (rbBulle.fixe && !ev.target.closest("[data-rbv]")){ rbBulle.fixe = false; rbBulle(null); } });
+  main.addEventListener("mouseover", ev => { const v = ev.target.closest && ev.target.closest("[data-rbv]"); if (v) rbBulle(v); });
+  main.addEventListener("mouseout", ev => { const v = ev.target.closest && ev.target.closest("[data-rbv]"); if (v && !(ev.relatedTarget && v.contains(ev.relatedTarget))) rbBulle(null); });
   main.addEventListener("toggle", ev => { if (ev.target.matches && ev.target.matches("details.rb-det")) ajuster(); }, true);
   main.addEventListener("pointerdown", ev => {
     if (ev.target.closest("#rb-svg")){ rbPointer(ev); return; }
@@ -4649,6 +4952,79 @@ function autotest(){
   document.querySelector("[data-rbdet]").click(); RB.details = false;
   A = rbR(Dg.exemples[1].vals); RB_L = "R"; rbEtapes(A);
   ok("pont : conditionnement et numérotation R₁, R₂… continue", /R₁/.test(rbEtapes(A).texte) && !/R₇/.test(rbEtapes(A).texte));
+  /* ---- bulle d'explication au survol ---- */
+  S.fiche = "diagramme"; S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[iVA].vals)); RB.details = false; renderFiche();
+  const bulle = () => document.getElementById("rb-bulle"), survol = sel => { const el = document.querySelector(sel); el.dispatchEvent(new MouseEvent("mouseover", {bubbles: true})); return bulle().textContent; };
+  let tb = survol('#cu-eqs [data-rbv="C1"]');
+  ok("bulle R_C1 : loi exponentielle et application numérique e^(−0,2) = 0,818731", bulle().style.display === "block" && /Non donnée/.test(tb) && /−0,0002 × 1000/.test(tb) && /−0,2/.test(tb) && /0,818731/.test(tb));
+  tb = survol('#cu-eqs [data-rbv="T"]');
+  ok("bulle R_T : élément 0,904837 puis bloc 2 sur 3 développé = 0,974556", /au moins 2 sur 3/.test(tb) && /0,904837/.test(tb) && /3 × 0,904837/.test(tb) && /0,974556/.test(tb));
+  tb = survol('#cu-eqs [data-rbv="#' + Object.keys(RB_AFF).find(k => RB_AFF[k] === "1") + '"]');
+  ok("bulle R₁ : résultat intermédiaire, C1 à C4 en parallèle", /résultat intermédiaire/.test(tb) && /C1, C2, C3 et C4 en parallèle/.test(tb) && /Regroupe : C1, C2, C3, C4/.test(tb));
+  document.querySelector('#cu-eqs [data-rbv="C1"]').dispatchEvent(new MouseEvent("mouseout", {bubbles: true}));
+  ok("bulle masquée quand le curseur s'en va", bulle().style.display === "none");
+  tb = survol('#rb-comp [data-rbv="A1"]');
+  ok("bulle aussi sur la valeur R(t) du tableau", /0,606531/.test(tb) && /−0,5/.test(tb));
+  document.querySelector('#rb-comp [data-rbv="A1"]').dispatchEvent(new MouseEvent("mouseout", {bubbles: true}));
+  S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[0].vals)); renderFiche();
+  tb = survol('#cu-eqs [data-rbv="A"]');
+  ok("bulle d'une valeur donnée : « Donnée de l'énoncé »", /Donnée de l'énoncé/.test(tb) && /0,95/.test(tb));
+  document.querySelector('#cu-eqs [data-rbv="A"]').dispatchEvent(new MouseEvent("mouseout", {bubbles: true}));
+  S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[7].vals)); renderFiche();
+  tb = survol('#cu-eqs [data-rbv="Pompe"]');
+  ok("bulle en disponibilité : λ = 1/MTTF, μ = 1/MTTR, A∞ = μ/(λ + μ)", /MTTR/.test(tb) && /A∞ = μ\/\(λ \+ μ\)/.test(tb.replace(/\s+/g, " ")) && /0,984252/.test(tb));
+  document.querySelector('#cu-eqs [data-rbv="Pompe"]').dispatchEvent(new MouseEvent("mouseout", {bubbles: true}));
+  /* ---- synthèse : arbre de réduction ---- */
+  S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[iVA].vals)); renderFiche();
+  const boites = () => [...document.querySelectorAll("#rb-arbre .rb-a")];
+  ok("arbre véhicule : 10 boîtes (7 composants, 2 parallèles, 1 série racine)", boites().length === 10 && boites().filter(b => b.classList.contains("comp")).length === 7
+    && boites().filter(b => b.classList.contains("par")).length === 2 && document.querySelectorAll("#rb-arbre .rb-a.serie.rac").length === 1);
+  ok("arbre véhicule : racine = R_S = 0,822788, parallèle ×4 = 0,99892, bloc T « 2 sur 3 »", /0,822788/.test(document.querySelector("#rb-arbre .rac").textContent)
+    && boites().some(b => /parallèle ×4/.test(b.textContent) && /0,99892/.test(b.textContent)) && boites().some(b => /2 sur 3/.test(b.textContent) && /0,974556/.test(b.textContent)));
+  ok("arbre : les composants sont à gauche de la racine", boites().filter(b => b.classList.contains("comp")).every(b => b.getBoundingClientRect().right < document.querySelector("#rb-arbre .rac").getBoundingClientRect().left));
+  tb = survol('#rb-arbre [data-rbv="C1"]');
+  ok("arbre : bulle sur une boîte composant", /0,818731/.test(tb) && /−0,2/.test(tb));
+  document.querySelector('#rb-arbre [data-rbv="C1"]').dispatchEvent(new MouseEvent("mouseout", {bubbles: true}));
+  S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[1].vals)); renderFiche();
+  ok("arbre du pont : conditionnement sur E (3 flèches), 16 boîtes", document.querySelectorAll("#rb-arbre .rb-a.piv.rac").length === 1 && boites().length === 16
+    && /si E marche/.test($("#rb-arbre").textContent) && /si E en panne/.test($("#rb-arbre").textContent) && /0,999798/.test(document.querySelector("#rb-arbre .rac").textContent));
+  S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[2].vals)); renderFiche();
+  ok("arbre avec composant répété : conditionnement sur A, 0 si A en panne", document.querySelectorAll("#rb-arbre .rb-a.piv").length === 1 && /aucun chemin/.test($("#rb-arbre").textContent));
+  /* ---- bulle sur les autres fiches ---- */
+  const survolQ = el => { el.dispatchEvent(new MouseEvent("mouseover", {bubbles: true})); const t = bulle().style.display === "block" ? bulle().textContent : ""; el.dispatchEvent(new MouseEvent("mouseout", {bubbles: true})); return t; };
+  S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "F"; S.eq.weibull = "w2"; S.unites.weibull = "h"; renderFiche();
+  tb = survolQ(document.querySelector('#sol [data-rbv="v:R"]'));
+  ok("bulle Weibull : R est une donnée de l'énoncé", /Donnée de l'énoncé/.test(tb) && /0,7788/.test(tb));
+  S.vals.weibull = {t: "500", th: "1000", b: "2"}; S.cible.weibull = "F"; renderFiche();
+  tb = survolQ(document.querySelector('#sol [data-rbv="v:R"]'));
+  ok("bulle Weibull : R non donnée → « Fonction fiabilité » et ses entrées", /Non donnée/.test(tb) && /Fonction fiabilité/.test(tb) && /à partir de/.test(tb) && /θ = 1000 h/.test(tb));
+  S.fiche = "expo"; S.vals.expo = {lam: "2/an", t: "6 mois"}; S.cible.expo = "R"; S.eq.expo = "e1"; renderFiche();
+  tb = survolQ(document.querySelector('#sol [data-rbv="v:t"]'));
+  ok("bulle : donnée convertie (6 mois → 4380 h)", /convertie/.test(tb) && /4380/.test(tb));
+  S.fiche = "markov"; S.vals.markov = JSON.parse(JSON.stringify(exS)); MK.sel = null; MK.mode = null; renderFiche();
+  tb = survolQ(document.querySelector('#cu-res [data-rbv="x:mk-mttf"]'));
+  ok("bulle Markov : MTTF (états absorbants, système τ)", /absorbants/.test(tb) && /5150/.test(tb));
+  tb = survolQ(document.querySelector('#cu-res [data-rbv="x:mk-ainf"]'));
+  ok("bulle Markov : A∞ = Σπ des états de marche (π·Q = 0)", /π·Q = 0/.test(tb) && /0,999804/.test(tb));
+  /* ---- synthèse sur toutes les fiches ---- */
+  const sBoites = () => [...document.querySelectorAll("#synth .rb-a")];
+  S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "th"; S.eq.weibull = "w1"; renderFiche();
+  ok("synthèse Weibull : t, R, β (données) → θ (inconnue)", sBoites().length === 4 && sBoites().filter(b => b.classList.contains("don")).length === 3 && /θ/.test(document.querySelector("#synth .rac").textContent) && /999,998/.test(document.querySelector("#synth .rac").textContent));
+  S.fiche = "corrective"; S.vals.corrective = {Ap: "0,994", Cmvp: "200", mttf: "27000", c: "5"}; S.cible.corrective = "Cmv"; S.eq.corrective = "c5"; renderFiche();
+  ok("synthèse corrective : 4 données → K1, K2 → κ → Å∞ → Cmv", sBoites().length === 9 && /Cmv/.test(document.querySelector("#synth .rac").textContent) && /401,207/.test(document.querySelector("#synth .rac").textContent) && /Calcul de κ/.test($("#synth").textContent));
+  ok("synthèse corrective : Cmv à droite de K1", document.querySelector('#synth [data-rbv="v:Cmv"]').getBoundingClientRect().left > document.querySelector('#synth [data-rbv="v:K1"]').getBoundingClientRect().right);
+  S.fiche = "expo"; S.vals.expo = {lam: "2/an", t: "6 mois"}; S.cible.expo = "R"; S.eq.expo = "e1"; renderFiche();
+  ok("synthèse : donnée convertie indiquée", /donnée convertie/.test($("#synth").textContent));
+  S.fiche = "weibull"; S.vals.weibull = {mttf: String(M.gamma(1.5) * 1000), t: "500", R: String(Math.exp(-0.25))}; S.cible.weibull = "b"; S.eq.weibull = "w1"; renderFiche();
+  ok("synthèse : système d'équations signalé", document.querySelectorAll("#synth .rb-a.sys").length >= 1);
+  S.fiche = "markov"; S.vals.markov = JSON.parse(JSON.stringify(exS)); renderFiche();
+  ok("synthèse Markov : graphe → Q → P(t), π, τ → A(t), R(t), A∞, MTTF", ["Matrice Q", "P(t) = P(0)", "π·Q = 0", "MTTF"].every(t => $("#synth").textContent.includes(t)) && /5150/.test($("#synth").textContent));
+  S.fiche = "enumeration"; S.vals.enumeration = Object.assign({}, fi("enumeration").exemples[0].vals); renderFiche();
+  ok("synthèse énumération : 32 états → 16 de marche → R_S", /32 états/.test($("#synth").textContent) && /16 états/.test($("#synth").textContent) && /0,999798/.test($("#synth").textContent));
+  S.fiche = "abc"; S.vals.abc = Object.assign({}, fi("abc").exemples[0].vals); renderFiche();
+  ok("synthèse ABC : tri, cumuls, classes A/B/C", /Tri décroissant/.test($("#synth").textContent) && /Classe A/.test($("#synth").textContent) && /11, 10/.test($("#synth").textContent));
+  const sansSynth = FICHES.filter(f => { S.fiche = f.id; renderFiche(); return !document.getElementById(f.id === "diagramme" ? "rb-arbre" : "synth"); }).map(f => f.id);
+  ok("chaque fiche a sa zone de synthèse" + (sansSynth.length ? " — " + sansSynth.join(", ") : ""), sansSynth.length === 0);
   return T;
 }
 
