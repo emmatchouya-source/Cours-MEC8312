@@ -182,5 +182,70 @@ class ContrainteResistance(unittest.TestCase):
         self.assertAlmostEqual(g["R"], s["R"], 6)
 
 
+class DiagrammeFiabilite(unittest.TestCase):
+    PONT = [("A", "E", "1"), ("B", "E", "2"), ("C", "1", "S"), ("D", "2", "S"), ("X", "1", "2")]
+
+    def test_pont_diapo80(self):
+        s = schema_fiabilite(self.PONT, {n: 0.99 for n in "ABCDX"})
+        self.assertAlmostEqual(s["R_S"], 0.9997981, 6)
+        self.assertAlmostEqual(s["R_S (énumération)"], s["R_S"], 12)
+        self.assertEqual(sorted("".join(c) for c in s["chemins"]), ["AC", "ADX", "BCX", "BD"])
+        self.assertEqual(sorted("".join(c) for c in s["coupes"]), ["AB", "ADX", "BCX", "CD"])
+        self.assertIn("Conditionnement sur X", s.texte())
+
+    def test_serie_parallele(self):
+        blocs = [("A", "E", "1"), ("B", "1", "2"), ("C", "1", "2"), ("D", "2", "S")]
+        s = schema_fiabilite(blocs, {"A": 0.95, "B": 0.9, "C": 0.9, "D": 0.98})
+        self.assertAlmostEqual(s["R_S"], 0.95 * 0.99 * 0.98, 12)
+        self.assertNotIn("Conditionnement", s.texte())
+        self.assertAlmostEqual(s["I_B"]["A"], 0.99 * 0.98, 12)
+
+    def test_composant_repete(self):
+        blocs = [("A", "E", "1"), ("B", "1", "S"), ("A", "E", "2"), ("C", "2", "S")]
+        s = schema_fiabilite(blocs, {"A": 0.9, "B": 0.8, "C": 0.7})
+        self.assertAlmostEqual(s["R_S"], 0.9 * (1 - 0.2 * 0.3), 12)
+        self.assertEqual(s["coupes"][0], ["A"])
+
+    def test_lois_au_temps_t(self):
+        s = schema_fiabilite([("P1", "E", "S"), ("P2", "E", "S")],
+                             {"P1": Exponentielle(0.002), "P2": Exponentielle(0.002)}, t=150)
+        self.assertAlmostEqual(s["R_S"], 0.9328, 4)
+        self.assertIn("t = 150 h", s.texte())
+
+
+class Unites(unittest.TestCase):
+    def test_textes(self):
+        self.assertEqual(unite("1/T", "h"), "h⁻¹")
+        self.assertEqual(unite("$/T", "km"), "$/km")
+        self.assertEqual(unite("$/T2", "an"), "$/an²")
+        self.assertEqual(unite("T", "an", 1.5), "an")
+        self.assertEqual(unite("T", "an", 5.8), "ans")
+        self.assertEqual(unite("#pièce", "h", 5), "pièces")
+        self.assertEqual(unite("P", "h", 0.9), "")
+
+    def test_rapport_exponentielle(self):
+        s = exponentielle(lam=0.002, t=100)
+        self.assertEqual(s.unites["MTTF"], "h")
+        self.assertEqual(s.unites["λ"], "h⁻¹")
+        self.assertNotIn("R(100)", s.unites)
+        self.assertIn("MTTF = 1/λ = 500 h", s.texte())
+        self.assertIn("t = 100 h", s.texte())
+        s = exponentielle(mttf=2, unite_temps="an")
+        self.assertIn("λ = 1/MTTF = 0,5 an⁻¹", s.texte())
+
+    def test_rapport_corrective_km(self):
+        s = corrective(0.994, 200, 27000, 5, decimales_A=3, unite_temps="km")
+        self.assertIn("c = 5 $/km", s.texte())
+        self.assertEqual(s.unites["Cmv"], "$")
+
+    def test_rapport_remplacement_en_annees(self):
+        s = periode_optimale_remplacement(CI=10000, ice=400, icm=200)
+        self.assertEqual(s.unites["t*"], "ans")
+        self.assertIn("$/an²", s.texte())
+
+    def test_rapport_stock(self):
+        self.assertEqual(stock(0.0007, 3000, 0.975).unites["stock exact"], "pièces")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -20,6 +20,6 @@ from .maintenance import (Taux, analyse_abc, corrective, cout_total_annuel,
 from .markov import (chaine_markov, element_reparable, parallele2_reparable,
                      parallele_reparable, serie_reparable, temps_moyens)
 from .numerique import phi, phi_inv
-from .rapport import Solution, fmt
-from .systemes import (parallele, parallele_exp, pont, r_sur_m, r_sur_m_exp, serie,
+from .rapport import Solution, fmt, unite
+from .systemes import (parallele, parallele_exp, pont, r_sur_m, r_sur_m_exp, schema_fiabilite, serie,
                        serie_exp, standby, systeme_chemins, systeme_coupes)

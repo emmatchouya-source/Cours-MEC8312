@@ -17,6 +17,8 @@ Notes de cours dans `Topic 1/`, `Topic 2/`, `Topic 3/` ; boîte à outils de ré
 ## Conventions
 
 - Python standard uniquement (pas de numpy/scipy) : l'outil doit tourner hors ligne sans installation.
-- Chaque solveur renvoie une `Solution` (`rapport.py`) : `sol.etape(texte, valeur, nom)`.
+- Chaque solveur renvoie une `Solution` (`rapport.py`) : `sol.etape(texte, valeur, nom, unite)`, où `unite`
+  est une dimension (`"T"`, `"1/T"`, `"$"`, `"$/T"`, `"#pièce"`…) traduite selon l'argument `unite_temps` du solveur.
+- Calculatrice : chaque variable `V(...)` porte sa dimension `u` (même codes, plus `"P"` probabilité et `"-"` sans unité).
 - Tout nouvel exemple résolu du cours doit être ajouté à `outil/tests/test_exemples_cours.py`.
 - Tests : `python3 -m unittest discover -s outil/tests`.

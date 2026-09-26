@@ -41,39 +41,39 @@ def r_sur_m(R, r, m):
     return sol
 
 
-def serie_exp(lams, t=None):
+def serie_exp(lams, t=None, unite_temps="h"):
     """Série, lois exponentielles : λss = Σλi, Rss(t) = exp(-λss·t), MTTFss = 1/λss."""
-    sol = Solution("SYSTÈME EN SÉRIE — LOI EXPONENTIELLE")
+    sol = Solution("SYSTÈME EN SÉRIE — LOI EXPONENTIELLE", unite_temps)
     lss = sum(lams)
-    sol.etape("λss = Σλi = " + " + ".join(fmt(l) for l in lams), lss, "λss")
-    sol.etape("MTTFss = 1/λss", 1 / lss, "MTTFss")
+    sol.etape("λss = Σλi = " + " + ".join(fmt(l) for l in lams), lss, "λss", "1/T")
+    sol.etape("MTTFss = 1/λss", 1 / lss, "MTTFss", "T")
     for ti in ([t] if t is not None and not isinstance(t, (list, tuple)) else (t or [])):
         sol.etape(f"Rss({fmt(ti)}) = exp(-λss·t)", math.exp(-lss * ti), f"Rss({fmt(ti)})")
     return sol
 
 
-def parallele_exp(lam, k, t=None):
+def parallele_exp(lam, k, t=None, unite_temps="h"):
     """Parallèle de k éléments identiques exponentiels :
     Rps(t) = 1 - [1 - exp(-λt)]^k ; MTTFps = (1/λ)·Σ 1/i."""
-    sol = Solution(f"SYSTÈME EN PARALLÈLE — {k} ÉLÉMENTS IDENTIQUES EXPONENTIELS")
+    sol = Solution(f"SYSTÈME EN PARALLÈLE — {k} ÉLÉMENTS IDENTIQUES EXPONENTIELS", unite_temps)
     H = sum(1 / i for i in range(1, k + 1))
     sol.etape(f"Σ(1/i), i=1..{k}", H)
-    sol.etape(f"MTTFps = (1/λ)·Σ1/i = {fmt(1 / lam)}·{fmt(H)}", H / lam, "MTTFps")
+    sol.etape(f"MTTFps = (1/λ)·Σ1/i = {fmt(1 / lam)}·{fmt(H)}", H / lam, "MTTFps", "T")
     for ti in ([t] if t is not None and not isinstance(t, (list, tuple)) else (t or [])):
         Ri = math.exp(-lam * ti)
         sol.etape(f"R élément({fmt(ti)}) = exp(-λt)", Ri)
         sol.etape(f"Rps({fmt(ti)}) = 1 - [1 - exp(-λt)]^{k}", 1 - (1 - Ri) ** k, f"Rps({fmt(ti)})")
         if lam * ti < 0.2 and k >= 2:
-            sol.etape(f"λps(t) ≈ k·t^(k-1)·Πλi (λt < 0,2)", k * ti ** (k - 1) * lam ** k)
+            sol.etape(f"λps(t) ≈ k·t^(k-1)·Πλi (λt < 0,2)", k * ti ** (k - 1) * lam ** k, unite="1/T")
     return sol
 
 
-def r_sur_m_exp(lam, r, m, t=None):
+def r_sur_m_exp(lam, r, m, t=None, unite_temps="h"):
     """r/m avec éléments exponentiels identiques : MTTF = (1/λ)·Σ_{y=r}^{m} 1/y."""
-    sol = Solution(f"REDONDANCE {r}/{m} — LOI EXPONENTIELLE")
+    sol = Solution(f"REDONDANCE {r}/{m} — LOI EXPONENTIELLE", unite_temps)
     H = sum(1 / y for y in range(r, m + 1))
     sol.etape(f"Σ(1/y), y={r}..{m}", H)
-    sol.etape("MTTF r/m = (1/λ)·Σ1/y", H / lam, "MTTF")
+    sol.etape("MTTF r/m = (1/λ)·Σ1/y", H / lam, "MTTF", "T")
     for ti in ([t] if t is not None and not isinstance(t, (list, tuple)) else (t or [])):
         R = math.exp(-lam * ti)
         sol.etape(f"R élément({fmt(ti)})", R)
@@ -82,7 +82,7 @@ def r_sur_m_exp(lam, r, m, t=None):
     return sol
 
 
-def standby(t=None, lamA=None, lamB=None, Rs=1.0, n=1, lamBsb=0.0):
+def standby(t=None, lamA=None, lamB=None, Rs=1.0, n=1, lamBsb=0.0, unite_temps="h"):
     """Système avec réserve (stand-by), modèles 1 à 6 du cours.
 
     - Éléments identiques : donner lamA seulement (n = nombre d'éléments en réserve).
@@ -96,8 +96,8 @@ def standby(t=None, lamA=None, lamB=None, Rs=1.0, n=1, lamBsb=0.0):
         lam = lamA
         if Rs == 1.0:
             modele = 1 if n == 1 else 2
-            sol = Solution(f"STAND-BY — MODÈLE {modele} (identiques, 1 actif + {n} en réserve, commutateur idéal)")
-            sol.etape(f"MTTFsb = (n+1)/λ = {n + 1}/{fmt(lam)}", (n + 1) / lam, "MTTFsb")
+            sol = Solution(f"STAND-BY — MODÈLE {modele} (identiques, 1 actif + {n} en réserve, commutateur idéal)", unite_temps)
+            sol.etape(f"MTTFsb = (n+1)/λ = {n + 1}/{fmt(lam)}", (n + 1) / lam, "MTTFsb", "T")
             for ti in ts:
                 lt = lam * ti
                 sol.etape(f"λt", lt)
@@ -106,26 +106,26 @@ def standby(t=None, lamA=None, lamB=None, Rs=1.0, n=1, lamBsb=0.0):
         else:
             if n != 1:
                 raise ValueError("Modèle 3 (commutateur non idéal) : n = 1 seulement")
-            sol = Solution("STAND-BY — MODÈLE 3 (identiques, commutateur non idéal)")
-            sol.etape(f"MTTFsb = (1 + Rs)/λ = (1 + {fmt(Rs)})/{fmt(lam)}", (1 + Rs) / lam, "MTTFsb")
+            sol = Solution("STAND-BY — MODÈLE 3 (identiques, commutateur non idéal)", unite_temps)
+            sol.etape(f"MTTFsb = (1 + Rs)/λ = (1 + {fmt(Rs)})/{fmt(lam)}", (1 + Rs) / lam, "MTTFsb", "T")
             for ti in ts:
                 lt = lam * ti
                 sol.etape(f"Rsb({fmt(ti)}) = e^(-λt)·(1 + λt·Rs)", math.exp(-lt) * (1 + lt * Rs), f"Rsb({fmt(ti)})")
         return sol
 
     if lamBsb:
-        sol = Solution("STAND-BY — MODÈLE 6 (différents, réserve pouvant défaillir en attente)")
+        sol = Solution("STAND-BY — MODÈLE 6 (différents, réserve pouvant défaillir en attente)", unite_temps)
         a, b, c = lamA, lamB, lamBsb
-        sol.etape("MTTFsb = 1/λA + λA/[λB(λA + λBsb)]", 1 / a + a / (b * (a + c)), "MTTFsb")
+        sol.etape("MTTFsb = 1/λA + λA/[λB(λA + λBsb)]", 1 / a + a / (b * (a + c)), "MTTFsb", "T")
         for ti in ts:
             val = math.exp(-a * ti) + a / (a + c - b) * (math.exp(-b * ti) - math.exp(-(a + c) * ti))
             sol.etape(f"Rsb({fmt(ti)}) = e^(-λA t) + λA/(λA+λBsb-λB)·[e^(-λB t) - e^(-(λA+λBsb)t)]", val, f"Rsb({fmt(ti)})")
         return sol
 
     modele = 4 if Rs == 1.0 else 5
-    sol = Solution(f"STAND-BY — MODÈLE {modele} (éléments différents" + (", commutateur non idéal)" if modele == 5 else ")"))
+    sol = Solution(f"STAND-BY — MODÈLE {modele} (éléments différents" + (", commutateur non idéal)" if modele == 5 else ")"), unite_temps)
     a, b = lamA, lamB
-    sol.etape(f"MTTFsb = 1/λA + Rs/λB = 1/{fmt(a)} + {fmt(Rs)}/{fmt(b)}", 1 / a + Rs / b, "MTTFsb")
+    sol.etape(f"MTTFsb = 1/λA + Rs/λB = 1/{fmt(a)} + {fmt(Rs)}/{fmt(b)}", 1 / a + Rs / b, "MTTFsb", "T")
     for ti in ts:
         val = math.exp(-a * ti) + a * Rs / (b - a) * (math.exp(-a * ti) - math.exp(-b * ti))
         sol.etape(f"Rsb({fmt(ti)}) = e^(-λA t) + λA·Rs/(λB-λA)·[e^(-λA t) - e^(-λB t)]", val, f"Rsb({fmt(ti)})")
@@ -182,4 +182,204 @@ def systeme_coupes(coupes, R):
         if not any(all(not e[c] for c in cp) for cp in coupes):
             total += _prod(R[n] if e[n] else 1 - R[n] for n in noms)
     sol.etape("Rs", total, "Rs")
+    return sol
+
+
+# ------------------------------------------------------- diagramme de fiabilité quelconque
+
+def _relie(s, t, aretes, marche):
+    """Existe-t-il un chemin de s à t par des arêtes (a, b, composants, …) dont tous les composants marchent ?"""
+    if s == t:
+        return True
+    adj = {}
+    for e in aretes:
+        if all(marche(c) for c in e[2]):
+            adj.setdefault(e[0], []).append(e[1])
+            adj.setdefault(e[1], []).append(e[0])
+    vu, pile = {s}, [s]
+    while pile:
+        x = pile.pop()
+        if x == t:
+            return True
+        for y in adj.get(x, []):
+            if y not in vu:
+                vu.add(y)
+                pile.append(y)
+    return False
+
+
+def _compose(nom):
+    return nom.startswith("R") and nom[1:].isdigit()
+
+
+def _fiab_reseau(s, t, aretes, R, trace=None):
+    """R_S exacte d'un réseau à deux bornes : réductions série/parallèle entre arêtes sans
+    composant commun, puis conditionnement (composant répété d'abord, sinon l'arête la plus
+    centrale). aretes : (a, b, composants, nom) ; trace reçoit les lignes du calcul."""
+    compteur = [0]
+
+    def ecrire(prof, texte):
+        if trace is not None:
+            trace.append("  " * prof + texte)
+
+    def lab(nom):
+        return nom if _compose(nom) else "R_" + nom
+
+    def fus(x, y, genre, a, b, prof):
+        compteur[0] += 1
+        nom = f"R{compteur[0]}"
+        if genre == "serie":
+            v = x[4] * y[4]
+            ecrire(prof, f"{nom} = {lab(x[3])}·{lab(y[3])} = {fmt(x[4])}·{fmt(y[4])} = {fmt(v)}  (série)")
+        else:
+            v = 1 - (1 - x[4]) * (1 - y[4])
+            ecrire(prof, f"{nom} = 1 - (1 - {lab(x[3])})(1 - {lab(y[3])}) = 1 - (1 - {fmt(x[4])})(1 - {fmt(y[4])}) = {fmt(v)}  (parallèle)")
+        return [a, b, x[2] + y[2], nom, v]
+
+    def reduire(s, t, A, prof):
+        """Une réduction série ou parallèle (ou un élagage) ; renvoie True si le graphe a changé."""
+        deg, occ = {}, {}
+        for a, b, comps, _, _ in A:
+            deg[a] = deg.get(a, 0) + 1
+            deg[b] = deg.get(b, 0) + 1
+            for c in comps:
+                occ[c] = occ.get(c, 0) + 1
+        for i, e in enumerate(A):
+            if any(n not in (s, t) and deg[n] == 1 for n in e[:2]):
+                del A[i]
+                return True
+
+        def seul(e):
+            return all(occ[c] == 1 for c in e[2])
+        for i in range(len(A)):
+            for j in range(i + 1, len(A)):
+                x, y = A[i], A[j]
+                if seul(x) and seul(y) and {x[0], x[1]} == {y[0], y[1]}:
+                    A[i] = fus(x, y, "par", x[0], x[1], prof)
+                    del A[j]
+                    return True
+        for n in deg:
+            if n in (s, t) or deg[n] != 2:
+                continue
+            i, j = [k for k, e in enumerate(A) if n in e[:2]]
+            x, y = A[i], A[j]
+            if seul(x) and seul(y):
+                A[i] = fus(x, y, "serie", x[1] if x[0] == n else x[0], y[1] if y[0] == n else y[0], prof)
+                del A[j]
+                return True
+        return False
+
+    def go(s, t, A, prof):
+        A = [list(e) for e in A]
+        while True:
+            if s == t:
+                ecrire(prof, "-> entrée et sortie reliées : R = 1")
+                return 1.0
+            A = [e for e in A if e[0] != e[1]]
+            if not _relie(s, t, A, lambda c: True):
+                ecrire(prof, "-> plus aucun chemin de l'entrée à la sortie : R = 0")
+                return 0.0
+            if len(A) == 1:
+                ecrire(prof, f"-> R = {lab(A[0][3])} = {fmt(A[0][4])}")
+                return A[0][4]
+            if not reduire(s, t, A, prof):
+                break
+        occ, deg = {}, {}
+        for a, b, comps, _, _ in A:
+            deg[a] = deg.get(a, 0) + 1
+            deg[b] = deg.get(b, 0) + 1
+            for c in comps:
+                occ[c] = occ.get(c, 0) + 1
+        reps = sorted((c for c in occ if occ[c] > 1), key=lambda c: -occ[c])
+        if reps:
+            nom = reps[0]
+            les, pv = [e for e in A if nom in e[2]], R[nom]
+            ecrire(prof, f"Conditionnement sur {nom} (composant répété), R_{nom} = {fmt(pv)}")
+        else:
+            e = max(A, key=lambda e: deg[e[0]] + deg[e[1]] - (0.5 if _compose(e[3]) else 0))
+            les, pv, nom = [e], e[4], e[3]
+            ecrire(prof, f"Conditionnement sur {nom} (élément central), {lab(nom)} = {fmt(pv)}")
+        autres = [e for e in A if e not in les]
+        uf = {}
+
+        def f(x):
+            while x in uf:
+                x = uf[x]
+            return x
+        for e in les:
+            x, y = f(e[0]), f(e[1])
+            if x != y:
+                uf[y] = x
+        ecrire(prof, f"Si {nom} marche (remplacé par un fil) :")
+        vh = go(f(s), f(t), [[f(e[0]), f(e[1])] + e[2:] for e in autres], prof + 1)
+        ecrire(prof, f"Si {nom} est en panne (retiré) :")
+        vb = go(s, t, autres, prof + 1)
+        v = pv * vh + (1 - pv) * vb
+        ecrire(prof, f"R = {lab(nom)}·R|{nom} + (1 - {lab(nom)})·R|non {nom} = {fmt(pv)}·{fmt(vh)} + {fmt(1 - pv)}·{fmt(vb)} = {fmt(v)}")
+        return v
+
+    return go(s, t, [[a, b, list(c), n, R[n]] for a, b, c, n in aretes], 0)
+
+
+def schema_fiabilite(blocs, R, t=None, entree="E", sortie="S", unite_temps="h"):
+    """Diagramme de fiabilité quelconque (série, parallèle, pont, composants répétés).
+
+    blocs : liste de (composant, nœud_a, nœud_b) ; un bloc relie deux nœuds, `entree` et
+            `sortie` sont les bornes du système. Deux blocs du même nom sont le même
+            composant (il marche ou tombe en panne partout à la fois).
+            Ex. pont : [("A","E","1"), ("B","E","2"), ("C","1","S"), ("D","2","S"), ("X","1","2")]
+    R     : dict {composant: fiabilité} ; une valeur peut aussi être une loi (Exponentielle,
+            Weibull…) : sa fiabilité est prise au temps t.
+    Calcule R_S pas à pas (réductions série/parallèle puis conditionnement), vérifie par
+    énumération des états, donne les chemins et coupes minimaux et l'importance de Birnbaum
+    I_B = R_S(R_i = 1) - R_S(R_i = 0).
+    """
+    sol = Solution("DIAGRAMME DE FIABILITÉ", unite_temps)
+    Rv = {}
+    for n, x in R.items():
+        if hasattr(x, "R"):
+            if t is None:
+                raise ValueError(f"{n} est donné par une loi : préciser t")
+            Rv[n] = x.R(t)
+        else:
+            Rv[n] = x
+    comps = []
+    for c, _, _ in blocs:
+        if c not in comps:
+            comps.append(c)
+    aretes = [(a, b, [c], c) for c, a, b in blocs]
+    if t is not None:
+        sol.donnee(f"t = {sol.q(t, 'T')}")
+    sol.donnee(" ; ".join(f"R_{n} = {fmt(Rv[n])}" for n in comps))
+    trace = []
+    Rs = _fiab_reseau(entree, sortie, aretes, Rv, trace)
+    sol.section("Calcul pas à pas (réductions série / parallèle, conditionnement)")
+    for ligne in trace:
+        sol.etape(ligne)
+    sol.etape("R_S", Rs, "R_S")
+    if len(comps) <= 16:
+        marche = {}
+        for etat in itertools.product([1, 0], repeat=len(comps)):
+            e = dict(zip(comps, etat))
+            marche[etat] = _relie(entree, sortie, aretes, lambda c: e[c])
+        verif = sum(_prod(Rv[n] if x else 1 - Rv[n] for n, x in zip(comps, etat)) for etat, ok in marche.items() if ok)
+        sol.etape(f"Vérification par énumération des {2 ** len(comps)} états", verif, "R_S (énumération)")
+        chemins, coupes = [], []
+        for etat, ok in marche.items():
+            if ok and all(not marche[etat[:i] + (0,) + etat[i + 1:]] for i, x in enumerate(etat) if x):
+                chemins.append([n for n, x in zip(comps, etat) if x])
+            if not ok and all(marche[etat[:i] + (1,) + etat[i + 1:]] for i, x in enumerate(etat) if not x):
+                coupes.append([n for n, x in zip(comps, etat) if not x])
+        chemins.sort(key=lambda c: (len(c), c))
+        coupes.sort(key=lambda c: (len(c), c))
+        sol.resultats["chemins"], sol.resultats["coupes"] = chemins, coupes
+        sol.note("Chemins de succès minimaux : " + ", ".join("".join(c) for c in chemins))
+        sol.note("Coupes minimales : " + ", ".join("".join(c) for c in coupes))
+    sol.section("Importance de Birnbaum I_B = R_S(R_i = 1) - R_S(R_i = 0)")
+    IB = {}
+    for n in comps:
+        IB[n] = (_fiab_reseau(entree, sortie, aretes, dict(Rv, **{n: 1.0}))
+                 - _fiab_reseau(entree, sortie, aretes, dict(Rv, **{n: 0.0})))
+        sol.etape(f"I_B({n})", IB[n])
+    sol.resultats["I_B"] = IB
     return sol

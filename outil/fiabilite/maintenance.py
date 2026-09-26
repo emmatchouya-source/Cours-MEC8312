@@ -48,7 +48,7 @@ def taux_expression(expr):
 
 # ------------------------------------------------------- préventive systématique
 
-def preventive_systematique(taux, T, n=None, R_cible=None, n_max=1000):
+def preventive_systematique(taux, T, n=None, R_cible=None, n_max=1000, unite_temps="h"):
     """Maintenance préventive idéale : n interventions uniformes sur (0, T),
     période θ = T/(n+1), Rm(T) = exp[-(n+1)·Λ(T/(n+1))].
 
@@ -56,11 +56,12 @@ def preventive_systematique(taux, T, n=None, R_cible=None, n_max=1000):
               taux_expression("...")) ou fonction Python λ(t)
     n       : nombre de maintenances (entier ou liste)
     R_cible : fiabilité minimale à garantir -> n minimal
+    unite_temps : unité de T et de θ (λ(t) en unite_temps⁻¹)
     """
     if not isinstance(taux, Taux):
         taux = Taux(taux)
-    sol = Solution("MAINTENANCE PRÉVENTIVE SYSTÉMATIQUE (idéale)")
-    sol.donnee(f"{taux.desc} ; T = {fmt(T)}")
+    sol = Solution("MAINTENANCE PRÉVENTIVE SYSTÉMATIQUE (idéale)", unite_temps)
+    sol.donnee(f"{taux.desc} ; T = {sol.q(T, 'T')}")
     L = taux.Lambda(T)
     sol.etape(f"Sans maintenance : R(T) = exp[-∫0^T λ(t)dt] = exp(-{fmt(L)})", math.exp(-L), "R(T) sans maintenance")
     ns = [] if n is None else (list(n) if isinstance(n, (list, tuple)) else [n])
@@ -68,7 +69,7 @@ def preventive_systematique(taux, T, n=None, R_cible=None, n_max=1000):
         th = T / (k + 1)
         Lk = taux.Lambda(th)
         sol.section(f"n = {k} maintenances")
-        sol.etape("θ = T/(n+1)", th)
+        sol.etape("θ = T/(n+1)", th, unite="T")
         sol.etape(f"∫0^θ λ(t)dt", Lk)
         sol.etape(f"Rm(T) = exp[-(n+1)·∫0^θ λ(t)dt] = exp(-{k + 1}·{fmt(Lk)})",
                   math.exp(-(k + 1) * Lk), f"Rm(T) n={k}")
@@ -86,22 +87,23 @@ def preventive_systematique(taux, T, n=None, R_cible=None, n_max=1000):
                         Rp = math.exp(-k * taux.Lambda(T / k))
                         sol.etape(f"n = {k - 1} : Rm(T)", Rp)
                     sol.etape(f"n = {k} : Rm(T)", Rk)
-                    sol.etape("n minimal", k, "n_min")
-                    sol.etape("θ = T/(n+1)", T / (k + 1), "θ")
+                    sol.etape("n minimal", k, "n_min", "#maintenance")
+                    sol.etape("θ = T/(n+1)", T / (k + 1), "θ", "T")
                     break
     return sol
 
 
 # ------------------------------------------------------- remplacement
 
-def remplacement_age(loi, Cp, Cd, theta_max=None, theta=None):
+def remplacement_age(loi, Cp, Cd, theta_max=None, theta=None, unite_temps="h"):
     """Remplacement préventif à âge fixé θ :
     C(θ) = [Cp·R(θ) + Cd·(1 - R(θ))] / ∫0^θ R(t)dt, minimisé en θ*.
 
     loi : objet loi (ex. lois.Weibull(b, theta)) ayant R(t) et mttf().
+    unite_temps : unité de θ ; C(θ) est alors en $/unite_temps.
     """
-    sol = Solution("REMPLACEMENT PRÉVENTIF À ÂGE FIXÉ")
-    sol.donnee(f"{loi.nom} ; Cp = {fmt(Cp)} ; Cd = {fmt(Cd)}")
+    sol = Solution("REMPLACEMENT PRÉVENTIF À ÂGE FIXÉ", unite_temps)
+    sol.donnee(f"{loi.nom} ; Cp = {sol.q(Cp, '$')} ; Cd = {sol.q(Cd, '$')}")
 
     def C(th):
         if th <= 0:
@@ -109,13 +111,13 @@ def remplacement_age(loi, Cp, Cd, theta_max=None, theta=None):
         return (Cp * loi.R(th) + Cd * (1 - loi.R(th))) / simpson(loi.R, 0.0, th, 400)
 
     mttf = loi.mttf()
-    sol.etape("Politique corrective seule : C(∞) = Cd/MTTF", Cd / mttf, "C_corrective")
+    sol.etape("Politique corrective seule : C(∞) = Cd/MTTF", Cd / mttf, "C_corrective", "$/T")
     for th in ([] if theta is None else (theta if isinstance(theta, (list, tuple)) else [theta])):
-        sol.etape(f"C(θ = {fmt(th)})", C(th), f"C({fmt(th)})")
+        sol.etape(f"C(θ = {sol.q(th, 'T')})", C(th), f"C({fmt(th)})", "$/T")
     th_max = theta_max or 3 * mttf
     th_opt, c_opt = minimum(C, th_max * 1e-4, th_max, 300)
-    sol.etape("θ* (dC/dθ = 0)", th_opt, "θ*")
-    sol.etape("C(θ*)", c_opt, "C(θ*)")
+    sol.etape("θ* (dC/dθ = 0)", th_opt, "θ*", "T")
+    sol.etape("C(θ*)", c_opt, "C(θ*)", "$/T")
     if c_opt < Cd / mttf * 0.999 and th_opt < th_max * 0.99:
         sol.etape("Gain C(θ*)/C(∞)", c_opt / (Cd / mttf), "gain")
     else:
@@ -123,14 +125,16 @@ def remplacement_age(loi, Cp, Cd, theta_max=None, theta=None):
     return sol
 
 
-def periode_optimale_remplacement(CI, ice, icm, k1=None, k2=None):
-    """Période optimale t* = sqrt(2·CI/(ice + icm)) ; CT* = k1 + k2 - (ice+icm)/2 + sqrt(2·CI·(ice+icm))."""
-    sol = Solution("PÉRIODE OPTIMALE DE REMPLACEMENT (coût total annuel minimal)")
+def periode_optimale_remplacement(CI, ice, icm, k1=None, k2=None, unite_temps="an"):
+    """Période optimale t* = sqrt(2·CI/(ice + icm)) ; CT* = k1 + k2 - (ice+icm)/2 + sqrt(2·CI·(ice+icm)).
+    CI en $, ice et icm en $/an² (croissance annuelle d'un coût annuel), k1 et k2 en $/an."""
+    sol = Solution("PÉRIODE OPTIMALE DE REMPLACEMENT (coût total annuel minimal)", unite_temps)
     s = ice + icm
-    sol.etape(f"t* = √[2·CI/(ice + icm)] = √[2·{fmt(CI)}/{fmt(s)}]", math.sqrt(2 * CI / s), "t*", "ans")
+    sol.donnee(f"CI = {sol.q(CI, '$')} ; ice + icm = {sol.q(s, '$/T2')}")
+    sol.etape(f"t* = √[2·CI/(ice + icm)] = √[2·{fmt(CI)}/{fmt(s)}]", math.sqrt(2 * CI / s), "t*", "T")
     if k1 is not None and k2 is not None:
         sol.etape("CT* = k1 + k2 - (ice + icm)/2 + √[2·CI·(ice + icm)]",
-                  k1 + k2 - s / 2 + math.sqrt(2 * CI * s), "CT*")
+                  k1 + k2 - s / 2 + math.sqrt(2 * CI * s), "CT*", "$/T")
     return sol
 
 
@@ -146,7 +150,7 @@ def _ratio_weibull(x, beta, r):
     return (1 + (1 - math.exp(-x ** beta)) * r) / integ * math.gamma(1 + 1 / beta) / (1 + r)
 
 
-def weibull_systematique(beta, eta, r=None, p=None, P=None):
+def weibull_systematique(beta, eta, r=None, p=None, P=None, unite_temps="h"):
     """Optimisation de la période d'intervention systématique (modèle de Weibull)
     — remplace l'ABAQUE : calcul exact du minimum de C2(x)/C1.
 
@@ -154,16 +158,16 @@ def weibull_systematique(beta, eta, r=None, p=None, P=None):
     """
     if r is None:
         r = P / p
-    sol = Solution("OPTIMISATION DE LA PÉRIODE SYSTÉMATIQUE — MODÈLE DE WEIBULL")
-    sol.donnee(f"β = {fmt(beta)} ; η = {fmt(eta)} ; r = P/p = {fmt(r)}")
+    sol = Solution("OPTIMISATION DE LA PÉRIODE SYSTÉMATIQUE — MODÈLE DE WEIBULL", unite_temps)
+    sol.donnee(f"β = {fmt(beta)} ; η = {sol.q(eta, 'T')} ; r = P/p = {fmt(r)}")
     g = math.gamma(1 + 1 / beta)
-    sol.etape("m∞ = MTBF = η·Γ(1 + 1/β)", eta * g, "MTBF")
+    sol.etape("m∞ = MTBF = η·Γ(1 + 1/β)", eta * g, "MTBF", "T")
     sol.note("C2(x)/C1 = [1 + (1 - e^(-x^β))·r] / ∫0^x e^(-t^β)dt · Γ(1+1/β)/(1 + r),  x = θ/η")
     x0, ratio = minimum(lambda x: _ratio_weibull(x, beta, r), 1e-4, 3.0, 300)
     sol.etape("x0 (minimum de C2/C1)", x0, "x0")
     sol.etape("C2(x0)/C1", ratio, "C2/C1")
     if ratio < 1:
-        sol.etape(f"θ0 = η·x0 = {fmt(eta)}·{fmt(x0)}", eta * x0, "θ0")
+        sol.etape(f"θ0 = η·x0 = {fmt(eta)}·{fmt(x0)}", eta * x0, "θ0", "T")
         sol.note(f"C2/C1 < 1 : la maintenance systématique est rentable (gain de {fmt((1 - ratio) * 100, 3)} %).")
     else:
         sol.note("C2/C1 ≥ 1 : pas de solution, rester en maintenance corrective.")
@@ -172,7 +176,7 @@ def weibull_systematique(beta, eta, r=None, p=None, P=None):
 
 # ------------------------------------------------------- corrective
 
-def corrective(A_actuel, Cmv_actuel, MTTF, c, Cpr=0.0, decimales_A=None):
+def corrective(A_actuel, Cmv_actuel, MTTF, c, Cpr=0.0, decimales_A=None, unite_temps="h"):
     """Maintenance corrective : disponibilité optimale et coût de main-d'œuvre.
 
     A_actuel    : A'∞, disponibilité actuelle
@@ -181,13 +185,14 @@ def corrective(A_actuel, Cmv_actuel, MTTF, c, Cpr=0.0, decimales_A=None):
     c           : facteur de proportionnalité des pertes (coût par unité de temps d'arrêt)
     Cpr         : coût moyen des pièces de rechange (reste constant)
     decimales_A : arrondir Å∞ comme dans les corrigés (ex. 3 -> 0,997)
+    unite_temps : unité du MTTF (h, km…) ; c est alors en $/unite_temps
     """
-    sol = Solution("MAINTENANCE CORRECTIVE — DISPONIBILITÉ OPTIMALE")
-    sol.donnee(f"A'∞ = {fmt(A_actuel)} ; C'mv = {fmt(Cmv_actuel)} ; MTTF = {fmt(MTTF)} ; c = {fmt(c)}")
+    sol = Solution("MAINTENANCE CORRECTIVE — DISPONIBILITÉ OPTIMALE", unite_temps)
+    sol.donnee(f"A'∞ = {fmt(A_actuel)} ; C'mv = {sol.q(Cmv_actuel, '$')} ; MTTF = {sol.q(MTTF, 'T')} ; c = {sol.q(c, '$/T')}")
     K1 = Cmv_actuel * (1 - A_actuel) / A_actuel
-    sol.etape(f"K1 = C'mv·(1 - A'∞)/A'∞ = {fmt(Cmv_actuel)}·(1 - {fmt(A_actuel)})/{fmt(A_actuel)}", K1, "K1")
+    sol.etape(f"K1 = C'mv·(1 - A'∞)/A'∞ = {fmt(Cmv_actuel)}·(1 - {fmt(A_actuel)})/{fmt(A_actuel)}", K1, "K1", "$")
     K2 = c * MTTF
-    sol.etape(f"K2 = c·MTTF = {fmt(c)}·{fmt(MTTF)}", K2, "K2")
+    sol.etape(f"K2 = c·MTTF = {fmt(c)}·{fmt(MTTF)}", K2, "K2", "$")
     kappa = K2 / K1
     sol.etape("κ = K2/K1", kappa, "κ")
     A_opt = math.sqrt(kappa) / (1 + math.sqrt(kappa))
@@ -196,7 +201,7 @@ def corrective(A_actuel, Cmv_actuel, MTTF, c, Cpr=0.0, decimales_A=None):
         A_opt = round(A_opt, decimales_A)
         sol.etape(f"Å∞ arrondi ({decimales_A} décimales)", A_opt)
     Cmv = K1 * A_opt / (1 - A_opt)
-    sol.etape("Cmv = K1·Å∞/(1 - Å∞)", Cmv, "Cmv")
+    sol.etape("Cmv = K1·Å∞/(1 - Å∞)", Cmv, "Cmv", "$")
     if A_opt > A_actuel:
         sol.note("Å∞ > A'∞ : INTENSIFIER la maintenance (augmenter Cmv).")
     elif A_opt < A_actuel:
@@ -208,34 +213,35 @@ def corrective(A_actuel, Cmv_actuel, MTTF, c, Cpr=0.0, decimales_A=None):
     Cp_opt = c * MTTF * (1 / A_opt - 1)
     CT_act = Cmv_actuel + Cpr + Cp_act
     CT_opt = Cmv + Cpr + Cp_opt
-    sol.etape("Pertes actuelles Cp = c·MTTF·(1/A'∞ - 1)", Cp_act, "Cp actuel")
+    sol.etape("Pertes actuelles Cp = c·MTTF·(1/A'∞ - 1)", Cp_act, "Cp actuel", "$")
     suffixe = "" if Cpr else "  (+ Cpr, non donné)"
-    sol.etape("CT actuel = C'mv + Cp" + (" + Cpr" if Cpr else "") + suffixe, CT_act, "CT actuel")
-    sol.etape("Pertes après modification = c·MTTF·(1/Å∞ - 1)", Cp_opt, "Cp optimal")
-    sol.etape("CT après modification = Cmv + Cp" + (" + Cpr" if Cpr else "") + suffixe, CT_opt, "CT optimal")
-    sol.etape("ΔCI = Cmv - C'mv (investissement)", Cmv - Cmv_actuel, "ΔCI")
-    sol.etape("ΔCEX = CT actuel - CT optimal (diminution des charges)", CT_act - CT_opt, "ΔCEX")
-    sol.etape("ΔCP = diminution des pertes", Cp_act - Cp_opt, "ΔCP")
+    sol.etape("CT actuel = C'mv + Cp" + (" + Cpr" if Cpr else "") + suffixe, CT_act, "CT actuel", "$")
+    sol.etape("Pertes après modification = c·MTTF·(1/Å∞ - 1)", Cp_opt, "Cp optimal", "$")
+    sol.etape("CT après modification = Cmv + Cp" + (" + Cpr" if Cpr else "") + suffixe, CT_opt, "CT optimal", "$")
+    sol.etape("ΔCI = Cmv - C'mv (investissement)", Cmv - Cmv_actuel, "ΔCI", "$")
+    sol.etape("ΔCEX = CT actuel - CT optimal (diminution des charges)", CT_act - CT_opt, "ΔCEX", "$")
+    sol.etape("ΔCP = diminution des pertes", Cp_act - Cp_opt, "ΔCP", "$")
     return sol
 
 
 # ------------------------------------------------------- stock
 
-def stock(lam, T, p0, nb_elements=1):
+def stock(lam, T, p0, nb_elements=1, unite_temps="h"):
     """Nombre de pièces de rechange pour avoir un stock suffisant avec la probabilité p0.
 
-    lam : taux de défaillance d'un élément ; T : durée de la mission ;
+    lam : taux de défaillance d'un élément (en unite_temps⁻¹) ; T : durée de la mission ;
     nb_elements : nombre d'éléments identiques en service (système série).
     """
-    sol = Solution("STOCK DE PIÈCES DE RECHANGE")
+    sol = Solution("STOCK DE PIÈCES DE RECHANGE", unite_temps)
+    sol.donnee(f"λ = {sol.q(lam, '1/T')} ; T = {sol.q(T, 'T')} ; p0 = {fmt(p0)}")
     lT = lam * T * nb_elements
     sol.etape("λT" + (f" (× {nb_elements} éléments)" if nb_elements != 1 else ""), lT, "λT")
     sol.section("Formule approximative (loi normale)")
     u = phi_inv(p0)
     sol.etape(f"u tel que F(u) = {fmt(p0)} [tableau N1]", u, "u")
     SN = lT + u * math.sqrt(lT)
-    sol.etape("SN = λT + u·√(λT)", SN, "SN")
-    sol.etape("Stock (arrondi supérieur)", math.ceil(SN - 1e-9), "stock approx")
+    sol.etape("SN = λT + u·√(λT)", SN, "SN", "#pièce")
+    sol.etape("Stock (arrondi supérieur)", math.ceil(SN - 1e-9), "stock approx", "#pièce")
     sol.section("Calcul exact (loi de Poisson)")
     cumul, k, terme = 0.0, 0, math.exp(-lT)
     while True:
@@ -245,7 +251,7 @@ def stock(lam, T, p0, nb_elements=1):
             break
         k += 1
         terme *= lT / k
-    sol.etape("k minimal (Poisson)", k, "stock exact")
+    sol.etape("k minimal (Poisson)", k, "stock exact", "#pièce")
     return sol
 
 

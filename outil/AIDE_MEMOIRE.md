@@ -15,6 +15,7 @@ Numéro = option du menu `python3 outil/examen.py`.
 | k éléments identiques exponentiels, MTTF système | Série/parallèle expo | 9 | `serie_exp`, `parallele_exp` |
 | « en réserve », « stand-by », commutateur Rs | Stand-by modèles 1-6 | 10 | `standby(t, lamA, lamB, Rs, n, lamBsb)` |
 | schéma en pont, « système complexe » | Chemins minimaux | 11 | `pont(...)`, `systeme_chemins(...)` |
+| montage quelconque dessiné, composant répété, importance | Diagramme de fiabilité | 11 | `schema_fiabilite([("A","E","1"), …], R)` ; calculatrice : fiche « Diagramme de fiabilité » |
 | λ et μ (ou MTTF et MTTR), A(t), A∞ | Élément réparable | 12 | `element_reparable` |
 | MUT, MDT, MTBF | Temps moyens | 13 | `temps_moyens` |
 | plusieurs éléments réparables, un réparateur chacun | Série/parallèle réparable | 14 | `serie_reparable`, `parallele_reparable` |
@@ -31,7 +32,9 @@ Numéro = option du menu `python3 outil/examen.py`.
 
 ## Pièges fréquents
 
-- **Unités** : λ en pannes/h avec t en h (ou km/km). MTTR = 1/μ.
+- **Unités** : λ en pannes/h avec t en h (ou km/km). MTTR = 1/μ. Les solveurs acceptent
+  `unite_temps="j"`, `"an"`, `"km"`… (défaut `"h"`, `"an"` pour le remplacement) : le rapport affiche
+  alors 500 h, 0,002 h⁻¹, 5 $/km. Dans la calculatrice, choisir l'unité de la fiche ; « 3 ans » ou « 2/an » est converti.
 - **Γ(x)** : Γ(x+1) = x·Γ(x) ; si x entier, Γ(x) = (x−1)!.
 - **Loi normale, u < 0** : F(−u) = 1 − F(u).
 - **Maintenance préventive** utile seulement si λ(t) croissant (b > 1) ; inutile si constant ; nuisible si décroissant.
