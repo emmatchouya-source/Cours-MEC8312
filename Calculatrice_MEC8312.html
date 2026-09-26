@@ -210,6 +210,20 @@ table.tab{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px}
 .rb-p{margin-right:10px;white-space:nowrap}
 .rb-p input{margin:0 3px}
 .rb-et{border-left:2px solid var(--line);padding-left:8px}
+.rb-step{border:1px solid var(--line);border-left:5px solid #9aa3ae;border-radius:8px;padding:4px 10px 6px;margin:8px 0;background:#fcfcfd}
+.rb-step.par{border-color:#c9d6f5;border-left-color:#2457d6;background:#f6f8ff}
+.rb-step.serie{border-color:#bfe3d2;border-left-color:#0f7b5f;background:#f4fbf7}
+.rb-step.piv{border-color:#ecd3a8;border-left-color:#8a5200;background:#fffaf1}
+.rb-step.struct,.rb-step.don{border-color:#d7dbe2;border-left-color:#5f6b7a;background:#f7f8fa}
+.rb-step.etp{border-color:#bfe3d2;border-left-color:#0f7b5f;background:#f4fbf7}
+.rb-step.fin{border-width:2px;border-left-width:6px;border-color:#8fd3b6;border-left-color:#0f7b5f;background:var(--ok-soft)}
+.inter .rb-step{margin:6px 0}
+.inter{border-left:0;padding:2px 0}
+.rb-sh{font-size:12px;color:var(--muted);margin-bottom:2px}
+.rb-sh b{color:var(--ink)}
+.rb-bl{font-size:14px;line-height:1.6}
+.rb-bl hr{border:0;border-top:1px dashed var(--line);margin:3px 0}
+.rb-blr{font-size:15px;margin-top:2px}
 .rb-et .lc .un,.rb-et .lc .p{text-align:left}
 .bloc .rb-et math{font-size:18px}
 #rb-svg{max-width:100%}
@@ -231,10 +245,17 @@ table.tab{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px}
 .rb-a.don rect{fill:#fff;stroke:#2457d6}
 .rb-a.calc rect{fill:#ecf8f2;stroke:#0f7b5f}
 .rb-a.sys rect{fill:#fff6e8;stroke:#8a5200}
-.synth-bloc{margin-top:10px}
+.synth-bloc{margin:0 0 10px}
 #synth{overflow-x:auto;padding-top:6px}
 .rb-a.rac rect{stroke-width:3.5}
 .rb-a[data-rbv]{cursor:help}
+.rb-a[data-sid]{cursor:pointer}
+.rb-arbre.focus .rb-a:not(.sel):not(.lie){opacity:.3}
+.rb-arbre.focus .rb-af:not(.on),.rb-arbre.focus .rb-al:not(.on){opacity:.15}
+.rb-af.on{stroke:#f08c00;stroke-width:3}
+.rb-al.on{fill:#c05f00;font-weight:700}
+.rb-a.sel rect{stroke:#f08c00;stroke-width:4}
+.rb-a.lie rect{stroke:#f08c00;stroke-width:2.5}
 .rb-a[data-rbv]:hover rect{filter:drop-shadow(0 0 3px #2457d6)}
 .rb-af{fill:none;stroke:#5f6b7a;stroke-width:1.6}
 .rb-al{font:italic 10px "Segoe UI",sans-serif;fill:#8a5200}
@@ -1412,17 +1433,53 @@ function rbGrouper(trace){
   }
   return out;
 }
+/* ordre d'affichage : dans chaque suite de réductions, de gauche à droite (puis de haut en bas)
+   selon la position des blocs dans le schéma, en respectant les dépendances ; les blocs composés
+   (r/m, stand-by) sont intercalés à leur place */
+function rbOrdonner(T, A){
+  const g = A.g, pos = {}, cle = A.mode === "A" ? "atype" : "type", blocs = g.els.filter(e => e.k === "bloc");
+  const feuilles = t => t.k === "bloc" ? [t.nom] : t.l.flatMap(feuilles);
+  for (const e of blocs) (pos[e.nom] = pos[e.nom] || []).push(e);
+  for (const e of blocs){ const s = (g.comps || {})[e.nom]; if (s && s[cle] === "sous") try { feuilles(rbParse(s.expr || "")).forEach(n => (pos[n] = pos[n] || []).push(e)); } catch (er){} }
+  const px = n => pos[n] ? Math.min(...pos[n].map(e => e.x)) : 0, py = n => pos[n] ? Math.min(...pos[n].map(e => e.y)) : 0;
+  const noms = s => s.k === "struct" ? [s.n] : s.n.c;
+  const kx = s => Math.max(...noms(s).map(px)), ky = s => Math.min(...noms(s).map(py));
+  const kahn = run => {
+    const res = [], reste = [...run], produits = new Set(run.filter(s => s.det).map(s => s.n.nom)), faits = new Set();
+    const deps = s => s.k === "struct" ? [] : s.ops.filter(o => o.compo).map(o => o.nom);
+    while (reste.length){
+      const dispo = reste.filter(s => deps(s).every(d => !produits.has(d) || faits.has(d))).sort((a, b) => kx(a) - kx(b) || ky(a) - ky(b));
+      const s = dispo[0] || reste[0];
+      res.push(s); reste.splice(reste.indexOf(s), 1); if (s.det) faits.add(s.n.nom);
+    }
+    return res;
+  };
+  const struct = A.res.comps.filter(n => A.lois[n] && A.lois[n].sdesc).map(n => ({k: "struct", n, prof: 0}));
+  const out = []; let run = [], place = !struct.length;
+  const vider = () => { if (run.length) out.push(...kahn(run)); run = []; };
+  for (const s of T){
+    if (s.det){ if (!place && s.prof === 0){ run.push(...struct); place = true; } run.push(s); }
+    else { vider(); if (!place){ out.push(...kahn(struct)); place = true; } out.push(s); }
+  }
+  vider(); if (!place) out.push(...kahn(struct));
+  return out;
+}
 /* étapes du calcul (lignes MathML + texte à copier) */
 function rbEtapes(A){
   const out = [], tx = [], pad = p => `style="margin-left:${p * 16}px"`;
-  const lig = (sl, p, note) => { out.push(`<div class="rb-et" ${pad(p)}>${ligne(sl)}${note ? `<div class="small">${note}</div>` : ""}</div>`); tx.push("  ".repeat(p) + sl.texte); };
+  let etape = 0;
+  const lig = (sl, p, note, carte) => {
+    if (carte){ etape++; tx.push("  ".repeat(p) + `Étape ${etape} — ${carte.titreTx || txt(carte.titre)} :`); }
+    out.push(`<div class="rb-et${carte ? " rb-step " + carte.cls : ""}" ${pad(p)}>${carte ? `<div class="rb-sh"><b>Étape ${etape}</b> · ${carte.titre}</div>` : ""}${ligne(sl)}${note ? `<div class="small">${note}</div>` : ""}</div>`);
+    tx.push("  ".repeat(p) + (carte ? "  " : "") + sl.texte);
+  };
   const titre = (h, t, p) => { out.push(`<div class="rb-cas" ${pad(p)}>${h}</div>`); tx.push("  ".repeat(p) + t); };
   const barre = n => `<mover><mi mathvariant="normal">${esc(n)}</mi><mo>¯</mo></mover>`;
   const condML = (lab, up) => lab.compo ? `<msub><mi>${RB_L}</mi><mrow><mo>|</mo><mn>${rbNum(lab)}</mn>${up ? "" : "<mo>¯</mo>"}</mrow></msub>`
     : `<msub><mi>${RB_L}</mi><mrow><mo>|</mo>${up ? `<mi mathvariant="normal">${esc(lab.nom)}</mi>` : barre(lab.nom)}</mrow></msub>`;
   const condTx = (lab, up) => `${RB_L}|${rbQui(lab)}${up ? "" : "̄"}`;
   /* numérotation des résultats : 1, 2, 3… pour les lignes regroupées ; 3′, 3″… pour leurs intermédiaires */
-  const T = rbGrouper(A.trace);
+  const T = rbOrdonner(rbGrouper(A.trace), A);
   RB_AFF = {}; RB_DEFS = {}; let num = 0;
   for (const s of T) if (s.det){ const k = String(++num); RB_AFF[s.n.nom] = k; s.det.slice(0, -1).forEach((d, i) => RB_AFF[d.n.nom] = k + "′".repeat(i + 1)); }
   const binaire = s => {
@@ -1434,6 +1491,15 @@ function rbEtapes(A){
     return {html: a + b, a, b};
   };
   for (let s of T){
+    if (s.k === "struct"){
+      const l = A.lois[s.n], x = l.elem(A.mode === "A" ? undefined : A.t ?? 0), Ls = RB_L;
+      etape++;
+      const quoi = l.groupe ? `stand-by ${l.groupe.join(" → ")}` : l.str === "rm" ? "r sur m" : "stand-by";
+      out.push(`<div class="rb-et rb-step struct" ${pad(s.prof)}><div class="rb-sh"><b>Étape ${etape}</b> · Bloc ${esc(s.n)} (${esc(quoi)})</div>
+        <div class="rb-bl">${l.expl(A.mode === "A" ? A.t : A.t ?? 0)}<div class="rb-blr">→ <span class="rb-v" data-rbv="${esc(s.n)}">${Ls}<sub>${esc(s.n)}</sub></span> = <b class="calc">${fmt(A.R[s.n])}</b></div></div></div>`);
+      tx.push(`Étape ${etape} — Bloc ${s.n} (${l.sdesc}) : ${l.groupe ? "" : `élément ${Ls} = ${fmt(x)} → `}${Ls}_${s.n} = ${fmt(A.R[s.n])}`);
+      continue;
+    }
     if (s.det && s.ops.length > 2){
       const {n, ops} = s, r = `<mrow class="resv">${numML(n.v)}</mrow>`, ser = s.k === "serie";
       const egaux = ops.every(o => Math.abs(o.v - ops[0].v) < 1e-15), q = ops.length;
@@ -1447,8 +1513,8 @@ function rbEtapes(A){
       RB_DEFS[n.nom] = {html: a + b, note: `${noms.slice(0, -1).join(", ")} et ${noms[q - 1]} en ${ser ? "série" : "parallèle"}`, c: n.c};
       s.det.slice(0, -1).forEach(d => { const b2 = binaire(d); RB_DEFS[d.n.nom] = {html: b2.html, note: `${esc(rbQui(d.e1))} et ${esc(rbQui(d.e2))} en ${ser ? "série" : "parallèle"} (étape intermédiaire)`, c: d.n.c}; });
       const det = s.det.map(d => { const b2 = binaire(d); return ligne({html: b2.html, a: b2.a, b: b2.b}); }).join("");
-      lig({html: a + b, a, b, texte}, s.prof, `${noms.slice(0, -1).join(", ")} et ${noms[q - 1]} en ${ser ? "série" : "parallèle"}
-        <details class="rb-det"${RB.details ? " open" : ""}><summary>détail deux à deux (${s.det.length} étapes)</summary>${det}</details>`);
+      lig({html: a + b, a, b, texte}, s.prof, `<details class="rb-det"${RB.details ? " open" : ""}><summary>détail deux à deux (${s.det.length} étapes)</summary>${det}</details>`,
+        {cls: s.k, titre: `${ser ? "Série" : "Parallèle"} : ${noms.slice(0, -1).join(", ")} et ${noms[q - 1]}`});
       continue;
     }
     if (s.det) s = Object.assign({}, s.det[0]);
@@ -1461,7 +1527,7 @@ function rbEtapes(A){
       const texte = s.k === "serie" ? `${rbNomTx(n)} = ${rbNomTx(e1)}·${rbNomTx(e2)} = ${fmt(e1.v)}·${fmt(e2.v)} = ${fmt(n.v)}`
         : `${rbNomTx(n)} = 1 − (1 − ${rbNomTx(e1)})(1 − ${rbNomTx(e2)}) = 1 − (1 − ${fmt(e1.v)})(1 − ${fmt(e2.v)}) = ${fmt(n.v)}`;
       RB_DEFS[n.nom] = {html: a + b, note: `${esc(rbQui(e1))} et ${esc(rbQui(e2))} en ${s.k === "serie" ? "série" : "parallèle"}`, c: n.c};
-      lig({html: a + b, a, b, texte}, s.prof, `${esc(rbQui(e1))} et ${esc(rbQui(e2))} en ${s.k === "serie" ? "série" : "parallèle"}`);
+      lig({html: a + b, a, b, texte}, s.prof, "", {cls: s.k, titre: `${s.k === "serie" ? "Série" : "Parallèle"} : ${esc(rbQui(e1))} et ${esc(rbQui(e2))}`});
     } else if (s.k === "pivot"){
       const q = rbQui(s.lab);
       titre(`<b>Conditionnement sur ${esc(q)}</b> (${s.lab.rep ? "composant répété dans le schéma" : "montage non réductible : élément central"}) — probabilité conditionnelle, ${s.lab.compo ? esc(q) : `${RB_L}<sub>${esc(q)}</sub>`} = ${fmt(s.v)}`,
@@ -1474,7 +1540,7 @@ function rbEtapes(A){
       const L = s.lab, pv = rbNomML(L);
       const a = `<mi>${RB_L}</mi><mo>=</mo>${pv}<mo>·</mo>${condML(L, true)}<mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${pv}<mo stretchy="false">)</mo><mo>·</mo>${condML(L, false)}`;
       const b = `<mo>=</mo>${numML(s.pv)}<mo>·</mo>${numMLp(s.vh)}<mo>+</mo>${numMLp(1 - s.pv)}<mo>·</mo>${numMLp(s.vb)}<mo>=</mo><mrow class="resv">${numML(s.v)}</mrow>`;
-      lig({html: a + b, a, b, texte: `${RB_L} = ${rbNomTx(L)}·${condTx(L, true)} + (1 − ${rbNomTx(L)})·${condTx(L, false)} = ${fmt(s.pv)}·${numTxtp(s.vh)} + ${numTxtp(1 - s.pv)}·${numTxtp(s.vb)} = ${fmt(s.v)}`}, s.prof);
+      lig({html: a + b, a, b, texte: `${RB_L} = ${rbNomTx(L)}·${condTx(L, true)} + (1 − ${rbNomTx(L)})·${condTx(L, false)} = ${fmt(s.pv)}·${numTxtp(s.vh)} + ${numTxtp(1 - s.pv)}·${numTxtp(s.vb)} = ${fmt(s.v)}`}, s.prof, "", {cls: "piv", titre: `Probabilité totale sur ${esc(rbQui(L))}`});
     }
   }
   return {html: out.join(""), texte: tx.join("\n")};
@@ -1526,20 +1592,25 @@ function synthSVG(nodes, arcs){
   let h = "";
   for (const [a, b, lab] of arcs){
     const s = byId[a], t = byId[b], sx = s._c * (BW + GX) + 4 + BW, sy = s._y + 4 + BH / 2, tx0 = t._c * (BW + GX) + 4, ty = t._y + 4 + BH / 2, mx = tx0 - 14 - 11 * (t._r % 6);
-    h += `<path class="rb-af" d="M${sx},${sy} H${mx} V${ty} H${tx0 - 4}" marker-end="url(#sy-fl)"/>`;
-    if (lab) h += `<text class="rb-al" x="${sx + 4}" y="${sy - 5}">${esc(lab)}</text>`;
+    h += `<path class="rb-af" data-a="${esc(a)}" data-b="${esc(b)}" d="M${sx},${sy} H${mx} V${ty} H${tx0 - 4}" marker-end="url(#sy-fl)"/>`;
+    if (lab) h += `<text class="rb-al" data-a="${esc(a)}" data-b="${esc(b)}" x="${sx + 4}" y="${sy - 5}">${esc(lab)}</text>`;
   }
   const coupe = (s, n) => { s = String(s ?? ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
   for (const n of nodes){
     const x = n._c * (BW + GX) + 4, y = n._y + 4;
-    h += `<g class="rb-a ${n.cls || ""}"${n.cle ? ` data-rbv="${esc(n.cle)}"` : ""}><rect x="${x}" y="${y}" width="${BW}" height="${BH}" rx="8"/>
+    h += `<g class="rb-a ${n.cls || ""}" data-sid="${esc(n.id)}"${n.cle ? ` data-rbv="${esc(n.cle)}"` : ""}><rect x="${x}" y="${y}" width="${BW}" height="${BH}" rx="8"/>
       <text x="${x + 10}" y="${y + 18}" class="l1">${esc(coupe(n.l1, 24))}</text><text x="${x + 10}" y="${y + 35}" class="l2">${esc(coupe(n.l2, 32))}</text>
       <text x="${x + BW - 10}" y="${y + 51}" class="v" text-anchor="end">${esc(coupe(n.v, 26))}</text></g>`;
   }
-  return `<svg class="rb-arbre" viewBox="0 0 ${W} ${H + 8}" width="${W}" role="img" aria-label="Synthèse de la résolution"><defs><marker id="sy-fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>${h}</svg>`;
+  return `<svg class="rb-arbre" viewBox="0 0 ${W} ${H + 8}" width="${W}" role="img" aria-label="Synthèse de la résolution"><defs><marker id="sy-fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker><marker id="sy-fl-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f08c00"/></marker></defs>${h}</svg>`;
 }
+/* carte d'étape numérotée (même présentation dans toutes les fiches) */
+const carteEtape = (n, cls, titre, corps) => `<div class="rb-step ${cls}"><div class="rb-sh"><b>Étape ${n}</b> · ${titre}</div>${corps}</div>`;
+const SYNTH_ARBRE = `<section class="bloc fait synth-bloc rb-synth" style="cursor:default"><div class="bh"><span class="bt">Synthèse de la résolution : arbre de réduction</span></div><div id="rb-arbre"></div></section>`;
+/* insère un bloc juste après la première section (les données) d'une fiche */
+const apresDonnees = (html, bloc) => { const i = html.indexOf("</section>"); return i < 0 ? html + bloc : html.slice(0, i + 10) + bloc + html.slice(i + 10); };
 const SYNTH_BLOC = `<section class="bloc fait synth-bloc" style="cursor:default"><div class="bh"><span class="bt">Synthèse de la résolution</span></div><div id="synth"></div></section>`;
-const SYNTH_LEG = (items) => `<div class="small">Lecture de gauche à droite · survolez une boîte pour le détail. <span class="rb-leg">${items.map(([c, t]) => `<i class="${c}"></i>${t}`).join(" ")}</span></div>`;
+const SYNTH_LEG = (items) => `<div class="small">Lecture de gauche à droite · survolez une boîte pour le détail, cliquez-la pour illuminer ses liens. <span class="rb-leg">${items.map(([c, t]) => `<i class="${c}"></i>${t}`).join(" ")}</span></div>`;
 function synthAfficher(html){ const z = document.getElementById("synth"); if (!z) return; z.innerHTML = html || '<div class="small">La synthèse apparaîtra dès qu\'un résultat sera calculé.</div>'; }
 /* fiches à formules : graphe de calcul données → intermédiaires → inconnue */
 function synthFormules(f, r, D, c){
@@ -1607,30 +1678,46 @@ function rbArbreSVG(racine, A, ut){
     const b = L === "A" ? ({lm: "μ/(λ+μ)", mm: "MTTF/(MTTF+MTTR)"}[s.atype] || "donnée") : ({lam: "e^(−λt)", mttf: "e^(−t/MTTF)", weib: "Weibull"}[s.type] || "donnée");
     return s.str === "rm" ? `${b} · ${s.r} sur ${s.m}` : s.str === "sb" && L !== "A" ? `${b} · stand-by` : b;
   };
-  let h = "";
+  let h = "", nid = 0;
   const boite = n => {
     const x = n._x + 4, y = n._y + 4, rac = n === racine ? " rac" : "";
+    n._sid = n._sid || "a" + (++nid);
     let cls, l1, l2, cle = "";
     if (n.k === "comp"){ cls = "comp"; l1 = nomS(n.nom); l2 = loi(n.nom) + (n.rep ? " · répété" : ""); cle = n.nom; }
     else if (n.k === "serie" || n.k === "par"){ cls = n.k; l1 = nomS(rbNum({nom: n.nom})); l2 = `${n.k === "par" ? "parallèle" : "série"} ×${n.ops.length}`; cle = "#" + n.nom; }
     else if (n.k === "pivot"){ const q = rbQui(n.lab), rq = n.lab.compo ? q : `${L}_${q}`; cls = "piv"; l1 = `Conditionnement sur ${esc(q)}`; l2 = `${rq}·${L}|${q} + (1 − ${rq})·${L}|${q}̄`; }
     else { cls = "cst"; l1 = n.txt ? esc(n.txt) : "constante"; l2 = ""; }
-    h += `<g class="rb-a ${cls}${rac}"${cle ? ` data-rbv="${esc(cle)}"` : ""}><rect x="${x}" y="${y}" width="${BW}" height="${BH}" rx="8"/>
+    h += `<g class="rb-a ${cls}${rac}" data-sid="${n._sid}"${cle ? ` data-rbv="${esc(cle)}"` : ""}><rect x="${x}" y="${y}" width="${BW}" height="${BH}" rx="8"/>
       <text x="${x + 10}" y="${y + 18}" class="l1">${l1}</text>
       <text x="${x + 10}" y="${y + 36}" class="l2">${esc(l2)}</text>
       <text x="${x + BW - 10}" y="${y + 49}" class="v" text-anchor="end">${rac ? `${L}<tspan dy="3" font-size="9">S</tspan><tspan dy="-3"> = </tspan>` : ""}${fmt(n.v)}</text></g>`;
     const e = enf(n);
     e.forEach((c, j) => {
       const cx = c._x + 4 + BW, cy = c._y + 4 + BH / 2, px = x, py = y + BH / 2, mx = px - 16;
-      h += `<path class="rb-af" d="M${cx},${cy} H${mx} V${py} H${px - 4}" marker-end="url(#rb-fl)"/>`;
-      if (n.k === "pivot"){ const q = rbQui(n.lab), t = [`× ${n.lab.compo ? q : L + "_" + q}`, `si ${q} marche`, `si ${q} en panne`][j]; h += `<text class="rb-al" x="${cx + 4}" y="${cy - 5}">${esc(t)}</text>`; }
+      c._sid = c._sid || "a" + (++nid);
+      h += `<path class="rb-af" data-a="${c._sid}" data-b="${n._sid}" d="M${cx},${cy} H${mx} V${py} H${px - 4}" marker-end="url(#rb-fl)"/>`;
+      if (n.k === "pivot"){ const q = rbQui(n.lab), t = [`× ${n.lab.compo ? q : L + "_" + q}`, `si ${q} marche`, `si ${q} en panne`][j]; h += `<text class="rb-al" data-a="${c._sid}" data-b="${n._sid}" x="${cx + 4}" y="${cy - 5}">${esc(t)}</text>`; }
       boite(c);
     });
   };
   boite(racine);
-  return `<svg class="rb-arbre" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="Arbre de réduction"><defs><marker id="rb-fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>${h}</svg>
-    <div class="small">Lecture de gauche à droite : chaque boîte combine celles qui y arrivent ; ${L}₁, ${L}₂… suivent l'ordre du calcul pas à pas. Survolez une boîte pour le détail.
+  return `<svg class="rb-arbre" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="Arbre de réduction"><defs><marker id="rb-fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker><marker id="rb-fl-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f08c00"/></marker></defs>${h}</svg>
+    <div class="small">Lecture de gauche à droite : chaque boîte combine celles qui y arrivent ; ${L}₁, ${L}₂… suivent l'ordre du calcul pas à pas. Survolez une boîte pour le détail, cliquez-la pour illuminer ses liens.
     <span class="rb-leg"><i class="comp"></i>composant <i class="par"></i>parallèle <i class="serie"></i>série <i class="piv"></i>conditionnement</span></div>`;
+}
+/* clic sur une boîte de synthèse : ses liens entrants et sortants (et les boîtes reliées) s'illuminent */
+function synthLiens(svg, id){
+  const on = id && svg.getAttribute("data-focus") !== id;
+  svg.classList.toggle("focus", !!on);
+  if (on) svg.setAttribute("data-focus", id); else svg.removeAttribute("data-focus");
+  const lies = new Set();
+  svg.querySelectorAll(".rb-af, .rb-al").forEach(p => {
+    const x = on && (att(p, "a") === id || att(p, "b") === id);
+    p.classList.toggle("on", x);
+    if (p.classList.contains("rb-af")) p.setAttribute("marker-end", `url(#${svg.querySelector("#sy-fl") ? "sy-fl" : "rb-fl"}${x ? "-on" : ""})`);
+    if (x){ lies.add(att(p, "a")); lies.add(att(p, "b")); }
+  });
+  svg.querySelectorAll(".rb-a[data-sid]").forEach(g => { const s = att(g, "sid"); g.classList.toggle("sel", on && s === id); g.classList.toggle("lie", on && s !== id && lies.has(s)); });
 }
 /* bulle d'explication au survol d'une variable des étapes (ou d'une valeur du tableau) :
    loi et application numérique pour un composant, ligne de définition pour un résultat intermédiaire */
@@ -2438,8 +2525,7 @@ const FICHES = [
       <div class="rb-don"><label class="rb-t">Temps t <input data-cu="t" value="${esc(v.t || "")}" placeholder="ex. 1000 ou 6 mois" spellcheck="false" autocomplete="off"> <span class="small">${esc(ut.pl || ut.s)} — ${v.mode === "A" ? "facultatif : A(t) instantanée ; vide = A∞" : "pour les lois λ, MTTF et Weibull"}</span></label>
         <div id="rb-comp">${rbTable(this, v)}</div></div>
       </section>
-      <div class="work"><div class="rb-g"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Calcul pas à pas : réductions série / parallèle, puis conditionnement</span><span class="bb"><button class="btn" data-rbdet="1" title="Déplier ou replier le détail deux à deux de toutes les lignes regroupées">🔍 Détails</button> <button class="btn" data-rbcopy="1" title="Copier tout le calcul">📋 Copier</button></span></div><div class="bcalc" id="cu-eqs"></div></div>
-        <div class="bloc fait rb-synth" style="cursor:default"><div class="bh"><span class="bt">Synthèse de la résolution : arbre de réduction</span></div><div id="rb-arbre"></div></div></div>
+      <div class="work"><div class="rb-g"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Calcul pas à pas : réductions série / parallèle, puis conditionnement</span><span class="bb"><button class="btn" data-rbdet="1" title="Déplier ou replier le détail deux à deux de toutes les lignes regroupées">🔍 Détails</button> <button class="btn" data-rbcopy="1" title="Copier tout le calcul">📋 Copier</button></span></div><div class="bcalc" id="cu-eqs"></div></div></div>
       <aside class="panneau" id="cu-res"></aside></div>`;
   },
   update(v){
@@ -2462,7 +2548,7 @@ const FICHES = [
       if (l.groupe) return {h: `<div class="rb-cas"><b>Bloc ${esc(n)}</b> (${esc(l.sdesc)}) → ${L}<sub>${esc(n)}</sub>${isFinite(A.t) ? `(${fmt(A.t)})` : ""} = <b class="calc">${fmt(A.R[n])}</b></div>`, t: `Bloc ${n} (${l.sdesc}) → ${L}_${n} = ${fmt(A.R[n])}`};
       return {h: `<div class="rb-cas"><b>Bloc ${esc(n)}</b> (${esc(l.sdesc)}) : élément ${L} = ${fmt(x)} → ${L}<sub>${esc(n)}</sub> = <b class="calc">${fmt(A.R[n])}</b></div>`, t: `Bloc ${n} (${l.sdesc}) : élément ${L} = ${fmt(x)} → ${L}_${n} = ${fmt(A.R[n])}`};
     });
-    eqs.innerHTML = comp.map(c => c.h).join("") + (et.html || `<div class="small">Le montage est un seul bloc : ${L}<sub>S</sub> = sa valeur.</div>`);
+    eqs.innerHTML = (et.html || `<div class="small">Le montage est un seul bloc : ${L}<sub>S</sub> = sa valeur.</div>`);
     const tt = A.mode === "A" ? " — disponibilité stationnaire" : isFinite(A.t) ? ` (t = ${fmt(A.t)} ${uniteTxt("T", ut, A.t)})` : "";
     const lst = l => l.map(c => c.join(c.some(n => n.length > 1) ? "–" : "")).join(" · ");
     let h = `<h2>Résultat${esc(tt)}</h2>
@@ -2503,7 +2589,7 @@ const FICHES = [
     if (!rbRelie(res.s, res.t, res.aretes, () => true)) h += `<div class="note bad">L'entrée n'est reliée à la sortie par aucun chemin : R<sub>S</sub> = 0. Tracez les fils avec « Relier ».</div>`;
     if (res.s === res.t) h += `<div class="note warn">Un fil relie directement l'entrée à la sortie : R<sub>S</sub> = 1.</div>`;
     out.innerHTML = h;
-    rbResoudre.texte = [`Diagramme de ${L === "A" ? "disponibilité" : "fiabilité"}${tt}`, ...comp.map(c => c.t), et.texte, `${L}_S = ${fmt(A.Rs)}`, A.courbe ? `MTTF_S = ${fmt(A.mttf)} ${uniteTxt("T", ut, A.mttf)}` : ""].filter(Boolean).join("\n");
+    rbResoudre.texte = [`Diagramme de ${L === "A" ? "disponibilité" : "fiabilité"}${tt}`, et.texte, `${L}_S = ${fmt(A.Rs)}`, A.courbe ? `MTTF_S = ${fmt(A.mttf)} ${uniteTxt("T", ut, A.mttf)}` : ""].filter(Boolean).join("\n");
   }
 },
 {
@@ -2944,7 +3030,7 @@ const FICHES = [
       <div class="mk-par"><label>Paramètres — taux en ${esc(uniteDe(this).s)}⁻¹ (utilisables dans les flèches ; 2/an est converti)<input data-cu="params" value="${esc(v.params || "")}" placeholder="λ = 0,01 ; μ = 1" spellcheck="false"></label>
         <label>Temps t en ${esc(uniteDe(this).pl || uniteDe(this).s)} (plusieurs : séparés par ;)<input data-cu="t" value="${esc(v.t || "")}" placeholder="100; 1000" spellcheck="false"></label></div>
       </section>
-      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Équations de Markov et matrice Q</span></div><div class="bcalc" id="cu-eqs"></div><div id="cu-q"></div></div>
+      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Résolution pas à pas</span></div><div class="bcalc" id="cu-eqs"></div><div id="cu-q"></div></div>
       <aside class="panneau" id="cu-res"></aside></div>`;
   },
   update(v){
@@ -2994,6 +3080,17 @@ const FICHES = [
       `<mi>MTTF</mi><mo>=</mo><mrow class="resv">${numML(mk.mttf)}</mrow><mspace width="0.3em"></mspace><mtext class="unite">${esc(uniteTxt("T", ut, mk.mttf))}</mtext>`)}</math></div>`;
     h += `<div class="note info">A(t), π, A∞ : réparations permises. R(t) et MTTF : états de panne rendus absorbants (temps moyen avant la 1re panne).</div>`;
     out.innerHTML = h;
+    /* étapes en cartes : équations, matrice Q, P(t), régime stationnaire, MTTF */
+    const plus = [], marcheP = mk.marche.map(e => `P<sub>${esc(e)}</sub>`).join(" + ");
+    let ne = 2;
+    if (mk.res.length) plus.push(carteEtape(++ne, "etp", "Probabilités d'état : P(t) = P(0)·exp(Q·t) (exponentielle de matrice)",
+      mk.res.map(x => `<div class="rb-bl">t = ${fmt(x.t)} ${esc(uniteTxt("T", ut, x.t))} : ${mk.etats.map(e => `P<sub>${esc(e)}</sub> = ${fmt(x.P[mk.idx[e]])}`).join(" ; ")}<br>A(t) = ${marcheP} = <b class="calc">${fmt(x.A)}</b> ; R(t) (pannes absorbantes) = <b class="calc">${fmt(x.R)}</b></div>`).join("")));
+    if (mk.pinf) plus.push(carteEtape(++ne, "etp", "Régime stationnaire : π·Q = 0 et Σπ = 1",
+      `<div class="rb-bl">${mk.etats.map(e => `π<sub>${esc(e)}</sub> = ${fmt(mk.pinf[mk.idx[e]])}`).join(" ; ")}<br>A<sub>∞</sub> = ${mk.marche.map(e => `π<sub>${esc(e)}</sub>`).join(" + ")} = <b class="calc">${fmt(mk.Ainf)}</b></div>`));
+    if (isFinite(mk.mttf)) plus.push(carteEtape(++ne, "etp fin", "MTTF : états de panne absorbants, temps moyens τ",
+      `<div class="rb-bl">τ·Q<sub>marche</sub> = −P(0), système linéaire sur les états de marche (${mk.marche.map(esc).join(", ")})<br>MTTF = Σ τ<sub>i</sub> = <b class="calc">${fmt(mk.mttf)} ${esc(uniteTxt("T", ut, mk.mttf))}</b></div>`));
+    eqs.innerHTML = carteEtape(1, "don", "Équations de Markov : dP/dt = P·Q", eqs.innerHTML);
+    qz.innerHTML = carteEtape(2, "etp", "Matrice Q (générateur des transitions)", qz.innerHTML) + plus.join("");
     /* synthèse : organigramme de la méthode de Markov, avec les valeurs */
     const N = [{id: "g", cls: "don", l1: "Graphe d'états", l2: `${mk.etats.length} états, ${mk.trans.length} transitions`, v: `départ : ${(g.etats.find(e => e.init) || {}).nom || "?"}`},
       {id: "q", cls: "calc", l1: "Matrice Q (générateur)", l2: "taux ; chaque ligne somme à 0", v: `${mk.etats.length} × ${mk.etats.length}`}], Ar = [["g", "q"]];
@@ -3028,7 +3125,7 @@ const FICHES = [
           <div class="small" style="margin-top:4px">Exemple : ${this.exemples.map((e, i) => `<button class="btn" data-cuex="${i}">${esc(e.nom)}</button>`).join(" ")}</div>
         </div>
       </div></section>
-      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Tableau ABC (ordre décroissant des coûts)</span></div><div id="cu-tab"></div></div>
+      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Résolution pas à pas</span></div><div id="cu-tab"></div></div>
       <aside class="panneau" id="cu-res"></aside></div>`;
   },
   update(v){
@@ -3057,6 +3154,10 @@ const FICHES = [
       <div class="note warn"><b>Classe B</b> : ${esc(cl("B"))}</div>
       <div class="note info"><b>Classe C</b> : ${esc(cl("C"))}</div>`;
     const sA = evalExpr(v.sa ?? "80"), sB = evalExpr(v.sb ?? "95"), nb = c => ab.rows.filter(x => x.cl === c).length;
+    tab.innerHTML = carteEtape(1, "don", "Données : coût et nombre de pannes par machine", `<div class="rb-bl">${ab.rows.length} machines · coût total CT = ${fmt(ab.CT)} · pannes NPT = ${fmt(ab.NPT)}</div>`)
+      + carteEtape(2, "etp", "Tri décroissant des coûts, cumuls ΣC/CT et ΣN/NPT en %", tab.innerHTML)
+      + carteEtape(3, "etp fin", `Classement : A si ΣC/CT ≤ ${fmt(sA)} %, B si ≤ ${fmt(sB)} %, sinon C`,
+        `<div class="rb-bl"><b class="cl-A">A</b> (priorité) : ${esc(cl("A"))}<br><b class="cl-B">B</b> : ${esc(cl("B"))}<br><b class="cl-C">C</b> : ${esc(cl("C"))}</div>`);
     synthAfficher(synthSVG([
       {id: "m", cls: "don", l1: "Machines", l2: `${ab.rows.length} machines : coût, pannes`, v: `CT = ${fmt(ab.CT)}`},
       {id: "s", cls: "don", l1: "Seuils des classes", l2: `A ≤ ${fmt(sA)} % ; B ≤ ${fmt(sB)} %`, v: "du coût cumulé"},
@@ -3089,7 +3190,7 @@ const FICHES = [
           <div class="small" style="margin-top:4px">Exemples : ${this.exemples.map((e, i) => `<button class="btn" data-cuex="${i}">${esc(e.nom)}</button>`).join(" ")}</div>
         </div>
       </div></section>
-      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Table des états</span></div><div id="cu-tab"></div></div>
+      <div class="work"><div class="bloc fait" style="cursor:default"><div class="bh"><span class="bt">Résolution pas à pas</span></div><div id="cu-tab"></div></div>
       <aside class="panneau" id="cu-res"></aside></div>`;
   },
   update(v){
@@ -3113,6 +3214,10 @@ const FICHES = [
         `<msub><mi>R</mi><mi>S</mi></msub><mo>=</mo><mrow class="resv">${numML(E.Rs)}</mrow>`)}</math></div>
       <div class="res-line"><math displaystyle="true"><msub><mi>F</mi><mi>S</mi></msub><mo>=</mo><mn>1</mn><mo>−</mo><msub><mi>R</mi><mi>S</mi></msub><mo>=</mo><mrow class="resv">${numML(1 - E.Rs)}</mrow></math></div>
       <div class="note info">Chemins de succès : ${E.chemins.map(c => c.join("")).join(", ")} · le système fonctionne si tous les composants d'au moins un chemin fonctionnent.</div>`;
+    tab.innerHTML = carteEtape(1, "don", "Données : composants et chemins de succès", `<div class="rb-bl">${E.noms.map(n => `R<sub>${esc(n)}</sub> = ${fmt(E.R[n])}`).join(" ; ")}<br>Chemins : ${E.chemins.map(c => esc(c.join(""))).join(", ")}</div>`)
+      + carteEtape(2, "etp", `Table des 2<sup>${E.noms.length}</sup> = ${E.etats.length} états (probabilité = produit des R<sub>i</sub> et des 1 − R<sub>i</sub>)`, tab.innerHTML)
+      + carteEtape(3, "etp", `Somme des ${E.nbMarche} états de marche`, `<div class="rb-bl">R<sub>S</sub> = ${somme.slice(0, 16).join(" + ")}${somme.length > 16 ? " + …" : ""} = <b class="calc">${fmt(E.Rs)}</b></div>`)
+      + carteEtape(4, "etp fin", "Probabilité de panne du système", `<div class="rb-bl">F<sub>S</sub> = 1 − R<sub>S</sub> = 1 − ${fmt(E.Rs)} = <b class="calc">${fmt(1 - E.Rs)}</b></div>`);
     synthAfficher(synthSVG([
       {id: "c", cls: "don", l1: "Composants", l2: E.noms.map(n => `${n} = ${fmt(E.R[n])}`).join(" ; "), v: `${E.noms.length} composants`},
       {id: "ch", cls: "don", l1: "Chemins de succès", l2: E.chemins.map(c => c.join("")).join(", "), v: `${E.chemins.length} chemin${E.chemins.length > 1 ? "s" : ""}`},
@@ -3593,7 +3698,7 @@ function renderFiche(){
   if (f.custom){
     $("#main").innerHTML = `<div class="fbar"><div><span class="ch">${f.ch}</span><h1>${esc(f.titre)}</h1><span class="sous">${esc(f.sous)}</span></div>
       <div class="acts">${selUnite(f)}<a class="btn" href="${encodeURI(f.ref.doc)}#page=${f.ref.page}" target="_blank" title="Ouvrir la diapositive du cours">📄 ${esc(f.ref.lib)}</a>
-      <button class="btn" id="btn-clear">Effacer les données</button></div></div>` + f.html(valsOf(f)) + (f.id === "diagramme" ? "" : SYNTH_BLOC);
+      <button class="btn" id="btn-clear">Effacer les données</button></div></div>` + apresDonnees(f.html(valsOf(f)), f.id === "diagramme" ? SYNTH_ARBRE : SYNTH_BLOC);
     renderNav(); f.update(valsOf(f)); ajuster();
     return;
   }
@@ -3614,7 +3719,7 @@ function renderFiche(){
       <div class="in"><input data-k="${k}" value="${k === c ? "" : esc(raw[k] ?? "")}" ${k === c ? "readonly" : ""} autocomplete="off" spellcheck="false"${u ? ` style="padding-right:${(0.6 * u.length + 1.1).toFixed(1)}em"` : ""}>${u ? `<span class="suf">${esc(u)}</span>` : ""}</div>
       <div class="etat" id="etat-${k}"></div></div>`;
   }
-  h += `</div></section>
+  h += `</div></section>${SYNTH_BLOC}
     <div class="work"><div class="blocs">`;
   for (const e of f.eqs){
     if (e.cache) continue;
@@ -3631,7 +3736,6 @@ function renderFiche(){
   h += `</div>
       <div id="sol"></div>
     </aside></div>`;
-  h += SYNTH_BLOC;
   $("#main").innerHTML = h;
   renderNav();
   update();
@@ -3953,39 +4057,47 @@ function update(){
 
   if (!c){}
   else if (c in r.val){
-    const inter = trace(r, c).filter(k => k !== c);
+    /* étapes ordonnées comme le graphe de calcul : profondeur croissante depuis les données */
+    const pr = {}, pf = (k, vu = new Set()) => { if (k in pr) return pr[k]; if (vu.has(k)) return 0; vu.add(k); const hw = r.how[k]; return pr[k] = hw ? 1 + Math.max(0, ...hw.inputs.filter(x => x in r.val && x !== k).map(x => pf(x, vu))) : 0; };
+    const inter = trace(r, c).filter(k => k !== c).map((k, i) => [k, i]).sort((a, b) => pf(a[0]) - pf(b[0]) || a[1] - b[1]).map(x => x[0]);
+    const tag = (l, cls, titre) => Object.assign(l, {cls, titre});
     const dep = dependances(r, c);
     const liensSym = D.invariant && D.invariant.vars.includes(c) ? D.pendRel.map(q => {
       const html = `${symML(f, q.k)}<mo>=</mo><mtext>${esc(q.expr)}</mtext>`;
-      return {html, a: html, b: "", texte: `${symTxt(f, q.k)} = ${q.expr}`};
+      return tag({html, a: html, b: "", texte: `${symTxt(f, q.k)} = ${q.expr}`}, "don", `Relation saisie : ${esc(symTxt(f, q.k))}`);
     }) : [];
     const liensL = liensSym.length ? liensSym : Object.keys(D.liens).filter(k => (dep.has(k) || eq.vars.includes(k)) && k in K).map(k => {
       const html = `${symML(f, k)}<mo>=</mo><mtext>${esc(D.liens[k])}</mtext><mo>=</mo><mrow class="resv">${numML(K[k])}</mrow>${uML(f, k, K[k])}`;
-      return {html, a: html, b: "", texte: `${symTxt(f, k)} = ${D.liens[k]} = ${avecU(f, k, K[k])}`};
+      return tag({html, a: html, b: "", texte: `${symTxt(f, k)} = ${D.liens[k]} = ${avecU(f, k, K[k])}`}, "don", `Relation saisie : ${esc(symTxt(f, k))}`);
     });
     const algL = Object.keys(D.resolus).map(k => {
       const p = D.resolus[k];
       const html = `${symML(f, k)}<mtext>&#160;tel que&#160;</mtext>${symML(f, p.k)}<mo>=</mo><mtext>${esc(p.expr)}</mtext><mo>⇒</mo>${symML(f, k)}<mo>=</mo><mrow class="resv">${numML(K[k])}</mrow>${uML(f, k, K[k])}`;
-      return {html, a: html, b: "", texte: `${symTxt(f, k)} tel que ${symTxt(f, p.k)} = ${p.expr} ⇒ ${symTxt(f, k)} = ${avecU(f, k, K[k])}`};
+      return tag({html, a: html, b: "", texte: `${symTxt(f, k)} tel que ${symTxt(f, p.k)} = ${p.expr} ⇒ ${symTxt(f, k)} = ${avecU(f, k, K[k])}`}, "piv", `Relation résolue : ${esc(symTxt(f, k))}`);
     });
     const vusSys = new Set(), interL = [];
     for (const k of inter){
       const h = r.how[k];
       if (h.systeme){ if (vusSys.has(h.systeme) || h.systeme.vars.includes(c)) continue; vusSys.add(h.systeme); }
-      interL.push(stepLine(f, r, k, false));
+      interL.push(h.systeme ? tag(stepLine(f, r, k, false), "piv", `Système de ${h.systeme.eqs.length} équations : ${esc(h.systeme.vars.map(x => symTxt(f, x)).join(", "))}`)
+        : tag(stepLine(f, r, k, false), h.numeric ? "piv" : "etp", `« ${esc(h.eq.label)} » → ${esc(symTxt(f, k))}${h.numeric ? " (résolution numérique)" : ""}`));
     }
-    const convL = Object.keys(D.conv).filter(k => dep.has(k) || eq.vars.includes(k) || k === c).map(k => ligneConv(f, k, D.conv[k]));
+    const convL = Object.keys(D.conv).filter(k => dep.has(k) || eq.vars.includes(k) || k === c).map(k => tag(ligneConv(f, k, D.conv[k]), "don", `Donnée convertie : ${esc(symTxt(f, k))}`));
     const lignes = [...convL, ...liensL, ...algL, ...interL];
     let fin;
     if (r.alg && r.alg.k === c){
       const p = r.alg.rel;
       const html = `${symML(f, c)}<mtext>&#160;tel que&#160;</mtext>${symML(f, p.k)}<mo>=</mo><mtext>${esc(p.expr)}</mtext><mo>⇒</mo>${symML(f, c)}<mo>=</mo><mrow class="resv">${numML(r.val[c])}</mrow>${uML(f, c, r.val[c])}`;
-      fin = {html, a: html, b: "", texte: `${symTxt(f, c)} tel que ${symTxt(f, p.k)} = ${p.expr} ⇒ ${symTxt(f, c)} = ${avecU(f, c, r.val[c])}`};
-    } else fin = stepLine(f, r, c, true);
-    if (lignes.length) h += `<div class="inter"><div class="il">Calculs intermédiaires</div>${lignes.map(l => ligne(l)).join("")}</div>`;
-    res.texteTout = [...lignes.map(l => l.texte), fin.texte].join("\n");
+      fin = tag({html, a: html, b: "", texte: `${symTxt(f, c)} tel que ${symTxt(f, p.k)} = ${p.expr} ⇒ ${symTxt(f, c)} = ${avecU(f, c, r.val[c])}`}, "etp fin", `Résultat : relation résolue → ${esc(symTxt(f, c))}`);
+    } else {
+      const hc = r.how[c];
+      fin = tag(stepLine(f, r, c, true), "etp fin", hc && hc.systeme ? `Résultat : système de ${hc.systeme.eqs.length} équations → ${esc(symTxt(f, c))}` : `Résultat : « ${esc(hc ? hc.eq.label : "")} » → ${esc(symTxt(f, c))}${hc && hc.numeric ? " (résolution numérique)" : ""}`);
+    }
+    const carteL = (l, n) => `<div class="rb-step ${l.cls}"><div class="rb-sh"><b>Étape ${n}</b> · ${l.titre}</div>${ligne(l)}</div>`;
+    if (lignes.length) h += `<div class="inter"><div class="il">Calculs intermédiaires</div>${lignes.map((l, i) => carteL(l, i + 1)).join("")}</div>`;
+    res.texteTout = [...lignes.map((l, i) => `Étape ${i + 1} — ${txt(l.titre)} : ${l.texte}`), `Étape ${lignes.length + 1} — ${txt(fin.titre)} : ${fin.texte}`].join("\n");
     res.texteFin = fin.texte;
-    h += `<div class="res-line">${ligne(fin)}
+    h += `<div class="res-line rb-step ${fin.cls}"><div class="rb-sh"><b>Étape ${lignes.length + 1}</b> · ${fin.titre}</div>${ligne(fin)}
       <span class="acts"><button class="btn" data-copy="1" title="Copier la ligne de résultat">📋 Copier</button><button class="btn" data-copyall="1" title="Copier tout le calcul">📋 Tout</button><button class="btn" data-pin="${c}">📌 Épingler</button></span></div>`;
   } else {
     const manque = autres.filter(k => !(k in r.val));
@@ -4188,6 +4300,8 @@ function brancher(){
     let d;
     if ((d = t.closest("[data-cuex]"))){ S.vals[f.id] = JSON.parse(JSON.stringify(f.exemples[+att(d, "cuex")].vals)); MK.sel = null; MK.mode = null; MK.src = null; RB.sel = null; RB.mode = null; RB.src = null; save(); renderFiche(); return; }
     if ((d = t.closest("[data-rba]"))){ rbAction(att(d, "rba"), d); return; }
+    const svgS = t.closest && t.closest("svg.rb-arbre");
+    if (svgS){ const g = t.closest(".rb-a[data-sid]"); synthLiens(svgS, g ? att(g, "sid") : null); return; }
     if ((d = t.closest("[data-rbv]"))){ rbBulle(d, true); return; }
     if (t.closest("[data-rbcopy]")){ if (rbResoudre.texte) copier(rbResoudre.texte); return; }
     if (t.closest("[data-rbdet]")){ const ds = [...document.querySelectorAll("#cu-eqs details.rb-det")], ouv = !ds.every(d => d.open); ds.forEach(d => d.open = ouv); RB.details = ouv; ajuster(); return; }
@@ -4943,8 +5057,10 @@ function autotest(){
   chk("Véhicule autonome : R_sys(1000 h) = 0,822788", rbR(Dg.exemples[iVA].vals).Rs, 0.822788, 1e-6);
   ok("regroupé : 4 caméras en une ligne 1 − (1 − 0,818731)^4", rbResoudre.texte.includes("R₁ = 1 − (1 − R_C1)(1 − R_C2)(1 − R_C3)(1 − R_C4) = 1 − (1 − 0,818731)^4 = 0,99892"));
   ok("regroupé : série en une ligne R₃ = R₁·R_T·R₂", rbResoudre.texte.includes("R₃ = R₁·R_T·R₂ = 0,99892·0,974556·0,845182 = 0,822788"));
-  ok("regroupé : 3 lignes de calcul (+ résultat) au lieu de 6, détails repliés", document.querySelectorAll("#cu-eqs > .rb-et").length === 4 && document.querySelectorAll("#cu-eqs details.rb-det").length === 2 && ![...document.querySelectorAll("#cu-eqs details.rb-det")].some(d => d.open));
+  ok("étapes en cartes : bloc T + 3 réductions (+ résultat), détails repliés", document.querySelectorAll("#cu-eqs > .rb-step").length === 4 && document.querySelectorAll("#cu-eqs > .rb-et").length === 5 && document.querySelectorAll("#cu-eqs details.rb-det").length === 2 && ![...document.querySelectorAll("#cu-eqs details.rb-det")].some(d => d.open));
   ok("détail des caméras : 3 étapes deux à deux (R₁′, R₁″, R₁)", document.querySelector("#cu-eqs details.rb-det").querySelectorAll(".lc").length === 3 && /′/.test(document.querySelector("#cu-eqs details.rb-det").textContent));
+  const titres = () => [...document.querySelectorAll("#cu-eqs > .rb-step .rb-sh")].map(x => x.textContent);
+  ok("ordre du schéma : caméras, bloc T, actionneurs, puis la série", /Parallèle : C1/.test(titres()[0]) && /Bloc T/.test(titres()[1]) && /Parallèle : A1/.test(titres()[2]) && /Série/.test(titres()[3]));
   document.querySelector("[data-rbdet]").click();
   ok("bouton Détails : tout se déplie", [...document.querySelectorAll("#cu-eqs details.rb-det")].every(d => d.open));
   S.vals.diagramme.t = "500"; update();
@@ -4990,6 +5106,11 @@ function autotest(){
     && /si E marche/.test($("#rb-arbre").textContent) && /si E en panne/.test($("#rb-arbre").textContent) && /0,999798/.test(document.querySelector("#rb-arbre .rac").textContent));
   S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[2].vals)); renderFiche();
   ok("arbre avec composant répété : conditionnement sur A, 0 si A en panne", document.querySelectorAll("#rb-arbre .rb-a.piv").length === 1 && /aucun chemin/.test($("#rb-arbre").textContent));
+  S.vals.diagramme = {rapide: "", g: rbConstruire(rbParse("serie(par(B1; B2); X; par(A1; A2; A3))"),
+    {B1: {type: "R", R: "0,9"}, B2: {type: "R", R: "0,9"}, X: {type: "R", R: "0,95"}, A1: {type: "R", R: "0,8"}, A2: {type: "R", R: "0,8"}, A3: {type: "R", R: "0,8"}})}; renderFiche();
+  ok("ordre du schéma (branche de gauche d'abord) et numérotation R₁, R₂ dans cet ordre", /Parallèle : B1 et B2/.test(titres()[0]) && /Parallèle : A1, A2 et A3/.test(titres()[1]) && /Série/.test(titres()[2])
+    && rbResoudre.texte.includes("R₁ = 1 − (1 − R_B1)(1 − R_B2)") && rbResoudre.texte.includes("R₂ = 1 − (1 − R_A1)"));
+  ok("cartes colorées par type (parallèle, série, bloc)", document.querySelectorAll("#cu-eqs .rb-step.par").length === 2 && document.querySelectorAll("#cu-eqs .rb-step.serie").length === 1);
   /* ---- bulle sur les autres fiches ---- */
   const survolQ = el => { el.dispatchEvent(new MouseEvent("mouseover", {bubbles: true})); const t = bulle().style.display === "block" ? bulle().textContent : ""; el.dispatchEvent(new MouseEvent("mouseout", {bubbles: true})); return t; };
   S.fiche = "weibull"; S.vals.weibull = {t: "500", R: "0,7788", b: "2"}; S.cible.weibull = "F"; S.eq.weibull = "w2"; S.unites.weibull = "h"; renderFiche();
@@ -5023,8 +5144,42 @@ function autotest(){
   ok("synthèse énumération : 32 états → 16 de marche → R_S", /32 états/.test($("#synth").textContent) && /16 états/.test($("#synth").textContent) && /0,999798/.test($("#synth").textContent));
   S.fiche = "abc"; S.vals.abc = Object.assign({}, fi("abc").exemples[0].vals); renderFiche();
   ok("synthèse ABC : tri, cumuls, classes A/B/C", /Tri décroissant/.test($("#synth").textContent) && /Classe A/.test($("#synth").textContent) && /11, 10/.test($("#synth").textContent));
+  /* ---- cartes d'étapes sur toutes les fiches ---- */
+  const cartes = sel => [...document.querySelectorAll(sel + " .rb-step .rb-sh")].map(x => x.textContent);
+  S.fiche = "corrective"; S.vals.corrective = {Ap: "0,994", Cmvp: "200", mttf: "27000", c: "5"}; S.cible.corrective = "Cmv"; S.eq.corrective = "c5"; renderFiche();
+  let cs = cartes("#sol");
+  ok("cartes corrective : K1, K2 puis κ puis Å∞, résultat Cmv en dernier", cs.length === 5 && /Étape 1/.test(cs[0]) && cs.findIndex(t => /κ/.test(t)) > cs.findIndex(t => /K1/.test(t)) && cs.findIndex(t => /Disponibilité optimale/.test(t)) > cs.findIndex(t => /κ/.test(t)) && /Résultat/.test(cs[4]) && /Cmv/.test(cs[4]));
+  ok("texte copié : « Étape n — … »", /^Étape 1 — /.test(res.texteTout) && /Étape 5 — Résultat/.test(res.texteTout));
+  S.fiche = "expo"; S.vals.expo = {lam: "2/an", t: "6 mois"}; S.cible.expo = "R"; S.eq.expo = "e1"; renderFiche();
+  cs = cartes("#sol");
+  ok("cartes : données converties puis résultat", /Donnée convertie/.test(cs[0]) && /Résultat/.test(cs[cs.length - 1]));
+  S.fiche = "markov"; S.vals.markov = JSON.parse(JSON.stringify(exS)); MK.sel = null; MK.mode = null; renderFiche();
+  cs = cartes("#main .work");
+  ok("cartes Markov : équations, Q, P(t), stationnaire, MTTF", cs.length === 5 && /Équations/.test(cs[0]) && /Matrice Q/.test(cs[1]) && /P\(t\)/.test(cs[2]) && /stationnaire/.test(cs[3]) && /MTTF/.test(cs[4]));
+  S.fiche = "enumeration"; S.vals.enumeration = Object.assign({}, fi("enumeration").exemples[0].vals); renderFiche();
+  cs = cartes("#cu-tab");
+  ok("cartes énumération : données, table, somme, F_S", cs.length === 4 && /Somme des 16 états/.test(cs[2]));
+  S.fiche = "abc"; S.vals.abc = Object.assign({}, fi("abc").exemples[0].vals); renderFiche();
+  cs = cartes("#cu-tab");
+  ok("cartes ABC : données, tri et cumuls, classement", cs.length === 3 && /Classement/.test(cs[2]));
   const sansSynth = FICHES.filter(f => { S.fiche = f.id; renderFiche(); return !document.getElementById(f.id === "diagramme" ? "rb-arbre" : "synth"); }).map(f => f.id);
   ok("chaque fiche a sa zone de synthèse" + (sansSynth.length ? " — " + sansSynth.join(", ") : ""), sansSynth.length === 0);
+  S.fiche = "corrective"; S.vals.corrective = {Ap: "0,994", Cmvp: "200", mttf: "27000", c: "5"}; S.cible.corrective = "Cmv"; S.eq.corrective = "c5"; renderFiche();
+  const clicS = sel => document.querySelector(sel).dispatchEvent(new MouseEvent("click", {bubbles: true}));
+  clicS('#synth [data-sid="kap"] rect');
+  const allum = () => [...document.querySelectorAll("#synth .rb-af.on")].map(p => att(p, "a") + ">" + att(p, "b")).sort().join(" ");
+  ok("clic sur κ : liens entrants (K1, K2) et sortant (Å∞) illuminés, le reste estompé", allum() === "K1>kap K2>kap kap>Ao" && document.querySelector("#synth svg").classList.contains("focus")
+    && document.querySelector('#synth [data-sid="kap"]').classList.contains("sel") && ["K1", "K2", "Ao"].every(k => document.querySelector(`#synth [data-sid="${k}"]`).classList.contains("lie")));
+  clicS('#synth [data-sid="kap"] rect');
+  ok("second clic sur la même boîte : tout redevient normal", allum() === "" && !document.querySelector("#synth svg").classList.contains("focus"));
+  clicS('#synth [data-sid="Ap"] rect'); clicS("#synth svg");
+  ok("clic dans le vide de la synthèse : annule", allum() === "");
+  S.fiche = "diagramme"; S.vals.diagramme = JSON.parse(JSON.stringify(Dg.exemples[iVA].vals)); renderFiche();
+  const gT = [...document.querySelectorAll("#rb-arbre .rb-a")].find(g => g.getAttribute("data-rbv") === "T");
+  gT.querySelector("rect").dispatchEvent(new MouseEvent("click", {bubbles: true}));
+  ok("arbre de réduction : clic sur T → son lien vers la série illuminé", document.querySelectorAll("#rb-arbre .rb-af.on").length === 1 && document.querySelector("#rb-arbre .rb-a.rac").classList.contains("lie"));
+  const malPlace = FICHES.filter(f => { S.fiche = f.id; renderFiche(); const d = document.querySelector("#main section.feuille"), s = document.querySelector("#main .synth-bloc"); return !(d && s && d.nextElementSibling === s); }).map(f => f.id);
+  ok("synthèse juste après le bloc des données, dans toutes les fiches" + (malPlace.length ? " — " + malPlace.join(", ") : ""), malPlace.length === 0);
   return T;
 }
 
